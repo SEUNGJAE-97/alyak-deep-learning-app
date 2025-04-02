@@ -1,4 +1,4 @@
-# application_project
+#📱 application_project
 
 ## 개요
   이 프로젝트는 알약 관리 및 판별을 위한 안드로이드 어플리케이션입니다. 
