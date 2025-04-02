@@ -43,7 +43,7 @@ application_project/
 │ ├── extensions/ # Kotlin 확장 함수
 │ └── constants/ # 상수 값 정의
 |
-├── di/ # 의존성 주입 설정 (Hilt/Dagger)
+├── di/ # 의존성 주입 설정 (Hilt)
 │ └── AppModule.kt # Hilt 모듈 설정 파일
 |
 ├── navigation/ # Jetpack Navigation 구성 파일
