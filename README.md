@@ -5,23 +5,21 @@
 ## 📂 프로젝트 구성
 
 ### 1. 딥러닝 분류기 프로젝트 (`classifier_project`)
-- **목표**: 약학정보원의 데이터셋을 사용하여 이미지 분류 모델 개발.
-- **기술 스택**: Python, TensorFlow/Keras.
+- **프로그래밍 언어**
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=Python&logoColor=white">
+- **라이브러리 및 프레임워크**
+  <img src="https://img.shields.io/badge/Keras-D00000?style=for-the-badge&logo=Keras&logoColor=white"><img src="https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=OpenCV&logoColor=white">
+- **IDE**<br>
+  <img src="https://img.shields.io/badge/Visual Studio Code-007ACC?style=for-the-badge&logo=Visual Studio Code&logoColor=white">
 - [프로젝트 상세 보기](./classifier_project/README.md)
 
 ### 2. 어플리케이션 개발 프로젝트 (`application_project`)
-- **목표**: 약물 관리 및 추적 기능을 제공하는 웹 애플리케이션 개발.
-- **기술 스택**: Flask, React, Docker.
+- **프로그래밍 언어**<br>
+  <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=Kotlin&logoColor=white">
+- **개발 환경**<br>
+  <img src="https://img.shields.io/badge/Android Studio-3DDC84?style=for-the-badge&logo=Android Studio&logoColor=white">
+- **배포 플랫폼**: Docker, AWS
 - [프로젝트 상세 보기](./application_project/README.md)
-
-## 주요 기술 및 도구
-- 머신러닝/딥러닝<br>
-<img src="https://img.shields.io/badge/Visual Studio Code-007ACC?style=for-the-badge&logo=Visual Studio Code&logoColor=white"><img src="https://img.shields.io/badge/Keras-D00000?style=for-the-badge&logo=Keras&logoColor=white"><img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=Python&logoColor=white"><img src="https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=OpenCV&logoColor=white">
-
-- 어플리케이션 개발<br>
-<img src="https://img.shields.io/badge/Android Studio-3DDC84?style=for-the-badge&logo=Android Studio&logoColor=white"><img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=Kotlin&logoColor=white">
-
-- 배포: Docker, AWS.
 
 ## 사용 방법
 1. 레포지토리를 클론합니다:
