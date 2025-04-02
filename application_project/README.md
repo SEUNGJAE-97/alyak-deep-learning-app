@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=Kotlin&logoColor=white">
 -  🚀 **배포 플랫폼**: Docker, AWS
 
-### ⚙️ 개발 환경
+- ⚙️ 개발 환경
 #### **IDE**<br>    
   - <img src="https://img.shields.io/badge/Android Studio-3DDC84?style=for-the-badge&logo=Android Studio&logoColor=white"> **2024.2.1.11-LadyBug**
   - **Gradle 버전**: 8.0
