@@ -5,9 +5,9 @@
 ## 📂 프로젝트 구성
 
 ### 1. 딥러닝 분류기 프로젝트 (`classifier_project`)
-- **프로그래밍 언어**
+- **프로그래밍 언어**<br>
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=Python&logoColor=white">
-- **라이브러리 및 프레임워크**
+- **라이브러리 및 프레임워크**<br>
   <img src="https://img.shields.io/badge/Keras-D00000?style=for-the-badge&logo=Keras&logoColor=white"><img src="https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=OpenCV&logoColor=white">
 - **IDE**<br>
   <img src="https://img.shields.io/badge/Visual Studio Code-007ACC?style=for-the-badge&logo=Visual Studio Code&logoColor=white">
