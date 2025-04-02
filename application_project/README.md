@@ -16,6 +16,7 @@
 - **배포 플랫폼**: Docker, AWS
 
 ## 📂 프로젝트 구성
+```plaintext```
 application_project/
 |
 ├── data/ # 데이터 관련 코드 (Model 계층)
@@ -49,7 +50,7 @@ application_project/
 │ └── NavGraph.kt # 네비게이션 그래프 정의
 |
 └── README.md # 어플리케이션 프로젝트 설명
-
+```plaintext```
 
 
 ## 사용 방법
