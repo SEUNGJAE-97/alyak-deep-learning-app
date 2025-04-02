@@ -14,26 +14,26 @@
 -  🚀 **배포 플랫폼**: Docker, AWS
 
 - ⚙️ 개발 환경
-#### **IDE**<br>    
-  - <img src="https://img.shields.io/badge/Android Studio-3DDC84?style=for-the-badge&logo=Android Studio&logoColor=white"> **2024.2.1.11-LadyBug**
-  - **Gradle 버전**: 8.0
-  - **빌드 시스템** : Gradle
-#### **Android SDK**
-  - **minSdkVersion**: 21(Android 5.0 Lollipop)
-  - **targetSdkVersion**: 34 (Android 14)
-  - **compileSdkVersion**: 34
-#### **dependencies**
-  - **kotlin 버전**: 1.9.x
-  - **Jetpack Compose**: 1.x.x
-  - **Library**:
-    - **Retrofit**: 네트워크 통신
-    - **Room**: 로컬 데이터베이스 관리
-    - **Hilt**: 의존성 주입
-### 2. 서버 (API)
-- **프레임워크**: Spring Boot
-- **ORM 및 데이터 접근 계층**: MyBatis
-- **데이터베이스**: MySQL
-- **API 명세 도구**: Swagger
+  - #### **IDE**<br>    
+    - <img src="https://img.shields.io/badge/Android Studio-3DDC84?style=for-the-badge&logo=Android Studio&logoColor=white"> **2024.2.1.11-LadyBug**
+    - **Gradle 버전**: 8.0
+    - **빌드 시스템** : Gradle
+  - #### **Android SDK**
+    - **minSdkVersion**: 21(Android 5.0 Lollipop)
+    - **targetSdkVersion**: 34 (Android 14)
+    - **compileSdkVersion**: 34
+  - #### **dependencies**
+    - **kotlin 버전**: 1.9.x
+    - **Jetpack Compose**: 1.x.x
+    - **Library**:
+      - **Retrofit**: 네트워크 통신
+      - **Room**: 로컬 데이터베이스 관리
+      - **Hilt**: 의존성 주입
+  - 🖥 서버 (API)
+    - **프레임워크**: Spring Boot
+    - **ORM 및 데이터 접근 계층**: MyBatis
+    - **데이터베이스**: MySQL
+    - **API 명세 도구**: Swagger
 
 ---
 
@@ -54,6 +54,8 @@
 
 ### 3. API 명세
 API 명세는 Swagger UI를 통해 확인할 수 있습니다
+
+---
 
 ## 📂 프로젝트 구성
 ```plaintext
