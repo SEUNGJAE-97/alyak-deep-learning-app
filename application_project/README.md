@@ -1,19 +1,19 @@
 # 📱 application_project
 
-## 개요
+## 📝 개요
   이 프로젝트는 알약 관리 및 판별을 위한 안드로이드 어플리케이션입니다. 
   
-### 1. 주요 기능
+### ✅ 주요 기능
   1. 약물 복용 시간 알림.
   2. 약물 기록 관리
   3. 약물 판별 및 정보조회 
 
-### 2. 기술 스택
-- **프로그래밍 언어**<br>
+### 🛠️ 기술 스택
+- 📖 **프로그래밍 언어**<br>
   <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=Kotlin&logoColor=white">
-- **개발 환경**<br>
+-  ⚙️ **개발 환경**<br>
   <img src="https://img.shields.io/badge/Android Studio-3DDC84?style=for-the-badge&logo=Android Studio&logoColor=white">
-- **배포 플랫폼**: Docker, AWS
+-  🚀 **배포 플랫폼**: Docker, AWS
 
 ## 📂 프로젝트 구성
 ```plaintext
