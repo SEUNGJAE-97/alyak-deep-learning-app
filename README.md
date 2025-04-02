@@ -15,7 +15,7 @@
 - [프로젝트 상세 보기](./application_project/README.md)
 
 ## 주요 기술 및 도구
-- 머신러닝/딥러닝: <img src="https://img.shields.io/badge/keras-#D00000?style=for-the-badge&logo=keras&logoColor=white">
+- 머신러닝/딥러닝: <img src="https://img.shields.io/badge/Visual Studio Code-007ACC?style=for-the-badge&logo=Visual Studio Code&logoColor=white"><img src="https://img.shields.io/badge/Keras-D00000?style=for-the-badge&logo=Keras&logoColor=white">
 , python, visual studio code
 - 어플리케이션 개발: AndroidStudio, .
 - 배포: Docker, AWS.
