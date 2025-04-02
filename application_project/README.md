@@ -29,7 +29,7 @@
       - **Retrofit**: 네트워크 통신
       - **Room**: 로컬 데이터베이스 관리
       - **Hilt**: 의존성 주입
-  - 🖥 서버 (API)
+- **🖥 서버 (API)**
     - **프레임워크**: Spring Boot
     - **ORM 및 데이터 접근 계층**: MyBatis
     - **데이터베이스**: MySQL
