@@ -16,39 +16,41 @@
 - **배포 플랫폼**: Docker, AWS
 
 ## 📂 프로젝트 구성
-   application_project/          # Alyak_Application -> application_project로 변경
+application_project/
 |
-├── data/                     # 데이터 관련 코드 (Model 계층)
-│   ├── local/                # 로컬 데이터베이스 (Room 등)
-│   │   ├── dao/              # Data Access Object 인터페이스
-│   │   └── entities/         # 데이터 엔티티 클래스
-│   ├── remote/               # 네트워크 관련 코드 (Retrofit 등)
-│   │   ├── api/              # API 인터페이스 정의
-│   │   └── models/           # 네트워크 응답 모델
-│   └── repository/           # 데이터 소스 관리 (로컬 + 원격 통합)
+├── data/ # 데이터 관련 코드 (Model 계층)
+│ ├── local/ # 로컬 데이터베이스 (Room 등)
+│ │ ├── dao/ # Data Access Object 인터페이스
+│ │ └── entities/ # 데이터 엔티티 클래스
+│ ├── remote/ # 네트워크 관련 코드 (Retrofit 등)
+│ │ ├── api/ # API 인터페이스 정의
+│ │ └── models/ # 네트워크 응답 모델
+│ └── repository/ # 데이터 소스 관리 (로컬 + 원격 통합)
 |
-├── domain/                   # 비즈니스 로직 계층 (선택적)
-│   └── usecases/             # 유스케이스 클래스 (비즈니스 로직 처리)
+├── domain/ # 비즈니스 로직 계층 (선택적)
+│ └── usecases/ # 유스케이스 클래스 (비즈니스 로직 처리)
 |
-├── ui/                       # 사용자 인터페이스 관련 코드 (View 계층)
-│   ├── activities/           # 액티비티 클래스
-│   ├── fragments/            # 프래그먼트 클래스
-│   └── adapters/             # RecyclerView 어댑터 등 UI 관련 어댑터
+├── ui/ # 사용자 인터페이스 관련 코드 (View 계층)
+│ ├── activities/ # 액티비티 클래스
+│ ├── fragments/ # 프래그먼트 클래스
+│ └── adapters/ # RecyclerView 어댑터 등 UI 관련 어댑터
 |
-├── viewmodel/                # ViewModel 계층
-│   └── MainViewModel.kt      # ViewModel 클래스 정의
+├── viewmodel/ # ViewModel 계층
+│ └── MainViewModel.kt # ViewModel 클래스 정의
 |
-├── utils/                    # 유틸리티 클래스 및 헬퍼 함수
-│   ├── extensions/           # Kotlin 확장 함수
-│   └── constants/            # 상수 값 정의
+├── utils/ # 유틸리티 클래스 및 헬퍼 함수
+│ ├── extensions/ # Kotlin 확장 함수
+│ └── constants/ # 상수 값 정의
 |
-├── di/                       # 의존성 주입 설정 (Hilt/Dagger)
-│   └── AppModule.kt          # Hilt 모듈 설정 파일
+├── di/ # 의존성 주입 설정 (Hilt/Dagger)
+│ └── AppModule.kt # Hilt 모듈 설정 파일
 |
-├── navigation/               # Jetpack Navigation 구성 파일
-│   └── NavGraph.kt           # 네비게이션 그래프 정의
+├── navigation/ # Jetpack Navigation 구성 파일
+│ └── NavGraph.kt # 네비게이션 그래프 정의
 |
-└── README.md                 # 어플리케이션 프로젝트 설명
+└── README.md # 어플리케이션 프로젝트 설명
+
+
 
 ## 사용 방법
 1. 레포지토리를 클론합니다:
