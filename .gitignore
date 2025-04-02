@@ -1,0 +1,112 @@
+# --------------------------
+# 공통: 운영체제(OS) 관련 파일
+# --------------------------
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+### Windows ###
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.stackdump
+
+### Linux ###
+*~
+.directory
+.Trash-*
+.fuse_hidden*
+.nfs*
+
+# --------------------------
+# IDE 및 에디터 관련 파일
+# --------------------------
+
+### Android Studio / IntelliJ IDEA ###
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Android Studio specific cache files
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/gradle.xml
+.idea/usage.statistics.xml
+
+# --------------------------
+# 안드로이드(Android) 프로젝트 관련 파일
+# --------------------------
+
+# Gradle 관련 파일 및 빌드 아티팩트
+.gradle/
+build/
+
+# 로컬 설정 파일 (환경별 경로 설정)
+local.properties
+
+# APK 및 빌드 결과물 제외
+*.apk
+*.ap_
+*.dex
+
+# Proguard 설정 파일 (빌드 시 생성)
+proguard-rules.pro
+
+# Android NDK 관련 파일 (선택적)
+ndkBuild/
+
+# --------------------------
+# 파이썬(Python) 프로젝트 관련 파일
+# --------------------------
+
+# 컴파일된 파이썬 바이트코드 및 캐시 디렉토리 제외
+__pycache__/
+*.py[cod]
+
+# 가상 환경 디렉토리 제외 (예: venv, .env)
+venv/
+.env/
+
+# Jupyter Notebook 체크포인트 제외
+.ipynb_checkpoints/
+
+# 환경 변수 파일 및 민감 정보 제외
+.env
+
+# 로그 파일 및 데이터베이스 제외
+*.log
+*.sqlite3
+
+# --------------------------
+# 기타 공통 항목 (로그, 임시파일 등)
+# --------------------------
+
+### 로그(Log) 및 임시파일 ###
+*.log
+*.tmp
+
+### 백업 파일 ###
+*~
+*.bak
+
+### 배포 관련 ###
+dist/
+node_modules/
+coverage/
+
