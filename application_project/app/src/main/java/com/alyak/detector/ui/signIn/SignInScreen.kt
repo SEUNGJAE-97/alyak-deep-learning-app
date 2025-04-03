@@ -1,7 +1,11 @@
-package com.alyak.detector.ui.login
+package com.alyak.detector.ui.signIn
 
 import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text2.BasicSecureTextField
+import androidx.compose.foundation.text2.input.TextFieldState
+import androidx.compose.foundation.text2.input.TextObfuscationMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,13 +14,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.alyak.detector.ui.components.CustomButton
-import java.util.Scanner
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun loginScreen(){
+fun SignInScreen(){
     var email by remember { mutableStateOf(" ") }
-    var password by remember { mutableStateOf(" ") }
-
+    var password by remember { mutableStateOf(false) }
+    val state = remember {TextFieldState()}
     //ui layout
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -38,12 +42,20 @@ fun loginScreen(){
         Spacer(modifier = Modifier.height(16.dp))
 
         //password input
-        OutlinedTextField(
-            value = password,
-            onValueChange = {password = it},
-            label = { Text("Password")},
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+        BasicSecureTextField(
+            state = state,
+            textObfuscationMode =
+            if(password){
+                TextObfuscationMode.Visible
+            }else{
+                TextObfuscationMode.RevealLastTyped
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            decorator = {
+                innerTextField -> Box(       )
+            }
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -56,7 +68,7 @@ fun loginScreen(){
 
         CustomButton(
             text = "sign up",
-            onClick = { Log.d("sign up" , "가입할래우")},
+            onClick = { Log.d("sign In" , "가입할래우")},
             modifier = Modifier.padding(16.dp).fillMaxWidth()
         )
     }
@@ -64,6 +76,6 @@ fun loginScreen(){
 
 @Preview(showBackground = true)
 @Composable
-fun loginScreenPreview(){
-    loginScreen()
+fun SignInScreenPreview(){
+    SignInScreen()
 }
