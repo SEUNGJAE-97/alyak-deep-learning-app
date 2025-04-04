@@ -50,8 +50,6 @@ fun SignInScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         //password input
-
-
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
