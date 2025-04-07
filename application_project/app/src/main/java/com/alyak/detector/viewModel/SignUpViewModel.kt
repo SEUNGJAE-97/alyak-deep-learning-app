@@ -21,10 +21,10 @@ import java.util.regex.Pattern
  * */
 
 data class SignUpState(
-    var validPhoneNumber: Boolean = false,
-    var validSSN: Boolean = false,
-    var validEmail: Boolean = false,
-    var validPassword: Boolean = false,
+    val validPhoneNumber: Boolean = false,
+    val validSSN: Boolean = false,
+    val validEmail: Boolean = false,
+    val validPassword: Boolean = false,
 
     // DB와 연결 후 체크하는 로직 必
     val duplicatedEmail: Boolean = false,
@@ -39,23 +39,27 @@ class SignUpViewModel @Inject constructor() : ViewModel() {
 
     fun validateEmail(email: String) {
         val pattern: Pattern = Patterns.EMAIL_ADDRESS
-        if (pattern.matcher(email).matches()) state.value.validEmail = true
+        val isValid = pattern.matcher(email).matches()
+        _state.value = _state.value.copy(validEmail = isValid)
     }
 
     fun validatePhoneNumber(phoneNumber: String) {
-        val pattern: Pattern = Patterns.PHONE
-        if (pattern.matcher(phoneNumber).matches()) state.value.validEmail = true
+        val pattern = Pattern.compile("^01[0-9]{1}-?[0-9]{3,4}-?[0-9]{4}$")
+        val isValid = pattern.matcher(phoneNumber).matches()
+        _state.value = _state.value.copy(validPhoneNumber = isValid)
     }
 
     fun validatePassword(password: String) {
         val pattern =
-            Pattern.compile("^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[$@$!%*#?&.])[A-Za-z[0-9]$@$!%*#?&.]{8,20}$")
-        if (pattern.matcher(password).matches()) state.value.validPassword = true
+            Pattern.compile("^(?=.*[A-Za-z])(?=.*[0-9])(?=.*[$@$!%*#?&])[A-Za-z0-9$@$!%*#?&]{8,20}$")
+        val isValid = pattern.matcher(password).matches()
+        _state.value = _state.value.copy(validPassword = isValid)
     }
 
     fun validateSSN(ssn: String) {
-        val pattern = Pattern.compile("\\d{6} \\- [1-4]\\d{6}")
-        if (pattern.matcher(ssn).matches()) state.value.validSSN = true
+        val pattern = Pattern.compile("^\\d{6}-[1-4]\\d{6}$")
+        val isValid = pattern.matcher(ssn).matches()
+        _state.value = _state.value.copy(validSSN = isValid)
     }
 
 

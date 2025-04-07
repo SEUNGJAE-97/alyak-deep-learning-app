@@ -20,7 +20,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -73,7 +72,10 @@ fun SignUpScreen(
         //password input
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = {
+                password = it
+                signUpViewModel.validatePassword(it)
+            },
             label = { Text("password") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -109,7 +111,10 @@ fun SignUpScreen(
         //userPhoneNumber input
         OutlinedTextField(
             value = userPhoneNumber,
-            onValueChange = { userPhoneNumber = it },
+            onValueChange = {
+                userPhoneNumber = it
+                signUpViewModel.validatePhoneNumber(it)
+            },
             label = { Text("userPhoneNumber") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -120,7 +125,10 @@ fun SignUpScreen(
         //userBirthDay input
         OutlinedTextField(
             value = userSSN,
-            onValueChange = { userSSN = it },
+            onValueChange = {
+                userSSN = it
+                signUpViewModel.validateSSN(it)
+            },
             label = { Text("userSSN") },
             modifier = Modifier.fillMaxWidth()
         )
