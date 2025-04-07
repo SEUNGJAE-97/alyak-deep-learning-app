@@ -2,6 +2,8 @@ package com.alyak.detector.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -12,7 +14,8 @@ data class SignInState(
     val loginError : Boolean = false
 )
 
-class SignInViewModel : ViewModel(){
+@HiltViewModel
+class SignInViewModel @Inject constructor() : ViewModel(){
     private val _state = MutableStateFlow(SignInState())
     val state : StateFlow<SignInState> = _state
 

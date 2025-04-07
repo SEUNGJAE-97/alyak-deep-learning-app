@@ -114,7 +114,6 @@ fun SignInScreen(
         CustomButton(
             text = "sign up",
             onClick = {
-                Log.d("sign up", "가입할래우")
                 navController.navigate("SignUpScreen") },
             modifier = Modifier
                 .fillMaxWidth()
