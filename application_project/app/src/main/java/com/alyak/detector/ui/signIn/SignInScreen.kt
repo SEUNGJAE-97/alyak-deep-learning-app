@@ -42,8 +42,8 @@ fun SignInScreen(
     navController: NavController,
     signInViewModel: SignInViewModel
 ) {
-    var email by remember { mutableStateOf(" ") }
-    var password by remember { mutableStateOf(" ") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     val state by signInViewModel.state.collectAsState()
 
