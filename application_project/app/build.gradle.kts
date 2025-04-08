@@ -42,9 +42,11 @@ android {
 }
 
 dependencies {
+    // splash screen
+    implementation(libs.androidx.core.splashscreen)
     // JUnit
     testImplementation(libs.junit)
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation(libs.kotlinx.coroutines.test)
 
     // Android Instrumentation Test
     androidTestImplementation(libs.androidx.junit)
