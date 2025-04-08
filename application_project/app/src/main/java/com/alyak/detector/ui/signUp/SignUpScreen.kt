@@ -34,12 +34,12 @@ fun SignUpScreen(
     signUpViewModel: SignUpViewModel
 ) {
     val state by signUpViewModel.state.collectAsState()
-    var email by remember { mutableStateOf(" ") }
-    var password by remember { mutableStateOf(" ") }
-    var checkPassword by remember { mutableStateOf(" ") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var checkPassword by remember { mutableStateOf("") }
     var userName by remember { mutableStateOf(" ") }
-    var userPhoneNumber by remember { mutableStateOf(" ") }
-    var userSSN by remember { mutableStateOf(" ") }
+    var userPhoneNumber by remember { mutableStateOf("") }
+    var userSSN by remember { mutableStateOf("") }
 
 
     Column(
@@ -63,7 +63,7 @@ fun SignUpScreen(
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
         )
-        if (!state.validEmail) {
+        if (email.isNotEmpty() && !state.validEmail) {
             Text("Invalid Email Format please check", color = Color.Red, fontSize = 10.sp)
         }
 
@@ -79,7 +79,7 @@ fun SignUpScreen(
             label = { Text("password") },
             modifier = Modifier.fillMaxWidth()
         )
-        if (!state.validPassword) {
+        if (password.isNotEmpty() && !state.validPassword) {
             Text("영문, 숫자, 특수문자 중 2가지 이상을 조합해 최소 8자리를 입력해주세요", color = Color.Red, fontSize = 10.sp)
         }
 
@@ -118,7 +118,9 @@ fun SignUpScreen(
             label = { Text("userPhoneNumber") },
             modifier = Modifier.fillMaxWidth()
         )
-        if (!state.validPhoneNumber) Text("유효하지 않은 전화번호 입니다.", color = Color.Red, fontSize = 10.sp)
+        if (userPhoneNumber.isNotEmpty() && !state.validPhoneNumber) {
+            Text("유효하지 않은 전화번호 입니다.", color = Color.Red, fontSize = 10.sp)
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -132,7 +134,7 @@ fun SignUpScreen(
             label = { Text("userSSN") },
             modifier = Modifier.fillMaxWidth()
         )
-        if (!state.validSSN) {
+        if (userSSN.isNotEmpty() && !state.validSSN) {
             Text(
                 "유효하지 않은 주민등록번호 입니다.",
                 color = Color.Red,
