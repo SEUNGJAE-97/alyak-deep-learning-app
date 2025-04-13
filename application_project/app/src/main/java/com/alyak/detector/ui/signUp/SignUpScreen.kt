@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.ui.components.CustomButton
-import com.alyak.detector.viewModel.SignUpViewModel
 
 @Composable
 fun SignUpScreen(

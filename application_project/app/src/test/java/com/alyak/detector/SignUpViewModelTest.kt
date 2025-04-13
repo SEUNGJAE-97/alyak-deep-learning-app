@@ -1,6 +1,6 @@
 package com.alyak.detector
 
-import com.alyak.detector.viewModel.SignUpViewModel
+import com.alyak.detector.ui.signUp.SignUpViewModel
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
