@@ -44,6 +44,7 @@ android {
 dependencies {
     // splash screen
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.constraintlayout)
     // JUnit
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

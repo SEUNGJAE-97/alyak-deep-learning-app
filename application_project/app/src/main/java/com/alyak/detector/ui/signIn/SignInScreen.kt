@@ -1,6 +1,5 @@
 package com.alyak.detector.ui.signIn
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.ui.components.CustomButton
-import com.alyak.detector.viewModel.SignInViewModel
 
 @Composable
 fun SignInScreen(
@@ -94,7 +92,7 @@ fun SignInScreen(
         // login Button
         CustomButton(
             text = "sign in",
-            onClick = { Log.d("sign in", "$email , $password") },
+            onClick = { signInViewModel.signIn(email, password) },
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
@@ -103,7 +101,7 @@ fun SignInScreen(
         )
         if (state.loginSuccess) {
             LaunchedEffect(Unit) {
-                navController.navigate("HomeScreen") {
+                navController.navigate("MainScreen") {
                     popUpTo("SignInScreen") { inclusive = true }
                 }
             }
@@ -114,7 +112,8 @@ fun SignInScreen(
         CustomButton(
             text = "sign up",
             onClick = {
-                navController.navigate("SignUpScreen") },
+                navController.navigate("SignUpScreen")
+            },
             modifier = Modifier
                 .fillMaxWidth()
         )
