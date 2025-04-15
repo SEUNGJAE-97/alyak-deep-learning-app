@@ -5,6 +5,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.alyak.detector.ui.camera.CameraScreen
 import com.alyak.detector.ui.main.MainScreen
 import com.alyak.detector.ui.signIn.SignInScreen
 import com.alyak.detector.ui.signIn.SignInViewModel
@@ -38,6 +39,9 @@ fun Navigator() {
 
         composable("MainScreen") {
             MainScreen(navController)
+        }
+        composable("CameraScreen") {
+            CameraScreen(navController)
         }
     }
 }

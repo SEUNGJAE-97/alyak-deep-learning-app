@@ -68,7 +68,17 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Quick Action Buttons
-            QuickActionButtons()
+            QuickActionButtons(
+                onQrScanClick = {
+                    navController.navigate("CameraScreen")
+                },
+                onPillSearchClick = {
+                    navController.navigate("pillSearch")
+                },
+                onFamilyManageClick = {
+                    navController.navigate("family")
+                }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -120,7 +130,11 @@ fun NextMedicationCard() {
 }
 
 @Composable
-fun QuickActionButtons() {
+fun QuickActionButtons(
+    onQrScanClick: () -> Unit,
+    onPillSearchClick: () -> Unit,
+    onFamilyManageClick: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -128,19 +142,22 @@ fun QuickActionButtons() {
         QuickActionButton(
             icon = "📷",
             text = "QR 스캔",
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            onClick = onQrScanClick
         )
         Spacer(modifier = Modifier.width(8.dp))
         QuickActionButton(
             icon = "💊",
             text = "알약 검색",
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            onClick = onPillSearchClick
         )
         Spacer(modifier = Modifier.width(8.dp))
         QuickActionButton(
             icon = "👨‍👩‍👧‍👦",
             text = "가족 관리",
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            onClick = onFamilyManageClick
         )
     }
 }
@@ -149,9 +166,11 @@ fun QuickActionButtons() {
 fun QuickActionButton(
     icon: String,
     text: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     Card(
+        onClick = onClick,
         modifier = modifier
             .height(100.dp),
         shape = RoundedCornerShape(16.dp),
