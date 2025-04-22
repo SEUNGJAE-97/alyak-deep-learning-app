@@ -1,6 +1,8 @@
 package com.alyak.detector.ui.main
 
 
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,16 +23,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.alyak.detector.R
 import com.alyak.detector.ui.theme.BackgroundGradientEnd
 import com.alyak.detector.ui.theme.BackgroundGradientStart
 import com.alyak.detector.ui.theme.CardBackground
 import com.alyak.detector.ui.theme.PrimaryGreen
+import androidx.compose.foundation.Image
 
 @Composable
 fun MainScreen(
@@ -140,22 +145,22 @@ fun QuickActionButtons(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         QuickActionButton(
-            icon = "📷",
-            text = "QR 스캔",
+            icon = painterResource(id = R.drawable.camera),
+            text = "알약 스캔",
             modifier = Modifier.weight(1f),
             onClick = onQrScanClick
         )
         Spacer(modifier = Modifier.width(8.dp))
         QuickActionButton(
-            icon = "💊",
+            icon = painterResource(id = R.drawable.pill),
             text = "알약 검색",
             modifier = Modifier.weight(1f),
             onClick = onPillSearchClick
         )
         Spacer(modifier = Modifier.width(8.dp))
         QuickActionButton(
-            icon = "👨‍👩‍👧‍👦",
-            text = "가족 관리",
+            icon = painterResource(id = R.drawable.map),
+            text = "주변 약국",
             modifier = Modifier.weight(1f),
             onClick = onFamilyManageClick
         )
@@ -164,7 +169,7 @@ fun QuickActionButtons(
 
 @Composable
 fun QuickActionButton(
-    icon: String,
+    icon: Painter,
     text: String,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
@@ -183,9 +188,10 @@ fun QuickActionButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = icon,
-                fontSize = 24.sp
+            Image(
+                painter = icon,
+                contentDescription = text,
+                modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(

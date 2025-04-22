@@ -7,4 +7,20 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Main Blue: 신뢰, 집중 -->
+    <color name="main_blue">#034c81</color>
+    <!-- Point Blue: 산뜻한 포인트 -->
+    <color name="point_blue">#2ca3fa</color>
+    <!-- Lime Green: 건강, 긍정 -->
+    <color name="lime_green">#14d45c</color>
+    <!-- Mint: 부드러운 건강 포인트 -->
+    <color name="mint">#9ecabf</color>
+    <!-- Soft Apricot: 알림, 포인트 -->
+    <color name="soft_apricot">#e99d8e</color>
+    <!-- Beige: 보조 배경 -->
+    <color name="beige">#c9bbaa</color>
+    <!-- Light Gray: 배경, 보조 -->
+    <color name="light_gray">#7f858c</color>
+    <!-- Deep Gray: 텍스트, 구분선 등 -->
+    <color name="deep_gray">#648886</color>
 </resources>

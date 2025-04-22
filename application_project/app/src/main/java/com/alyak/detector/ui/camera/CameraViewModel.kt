@@ -13,7 +13,5 @@ class CameraViewModel @Inject constructor() : ViewModel() {
     fun setCameraPermission(granted: Boolean) {
         cameraPermission.value = granted
     }
-
-
 }
 
