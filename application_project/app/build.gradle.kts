@@ -42,9 +42,16 @@ android {
 }
 
 dependencies {
+    // camera
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.lifecycle)
+
     // splash screen
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.appcompat)
     // JUnit
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -59,6 +66,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     // Hilt
+    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     // jetpack Compose Nav
