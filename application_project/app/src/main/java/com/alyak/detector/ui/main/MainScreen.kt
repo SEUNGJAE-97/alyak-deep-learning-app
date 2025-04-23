@@ -80,8 +80,8 @@ fun MainScreen(
                 onPillSearchClick = {
                     navController.navigate("pillSearch")
                 },
-                onFamilyManageClick = {
-                    navController.navigate("family")
+                onMapSearchClick = {
+                    navController.navigate("MapScreen")
                 }
             )
 
@@ -138,7 +138,7 @@ fun NextMedicationCard() {
 fun QuickActionButtons(
     onQrScanClick: () -> Unit,
     onPillSearchClick: () -> Unit,
-    onFamilyManageClick: () -> Unit
+    onMapSearchClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -162,7 +162,7 @@ fun QuickActionButtons(
             icon = painterResource(id = R.drawable.map),
             text = "주변 약국",
             modifier = Modifier.weight(1f),
-            onClick = onFamilyManageClick
+            onClick = onMapSearchClick
         )
     }
 }

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">application_project</string>
+    <string name="kakao_map_key">2cab7252771e6d4824bde6fe53083d81</string>
 </resources>
