@@ -48,9 +48,12 @@ android {
 }
 
 dependencies {
+    // retrofit
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
     // kakao map
-    implementation("com.kakao.sdk:v2-all:2.20.1")
-    implementation ("com.kakao.maps.open:android:2.12.8")
+    implementation(libs.v2.all)
+    implementation (libs.android)
     // camera
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)

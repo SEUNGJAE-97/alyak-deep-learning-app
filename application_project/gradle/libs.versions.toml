@@ -1,8 +1,10 @@
 [versions]
 agp = "8.7.2"
+android = "2.12.8"
 cameraLifecycleVersion = "1.3.0"
 cameraViewVersion = "1.3.0"
 composeBomVersion = "2025.03.01"
+converterGson = "2.9.0"
 coreSplashscreen = "1.0.1"
 hiltNavigationCompose = "1.2.0"
 kotlin = "2.0.0"
@@ -21,9 +23,12 @@ constraintlayout = "2.2.1"
 appcompat = "1.7.0"
 cameraView = "1.4.2"
 cameraLifecycle = "1.4.2"
+retrofit = "2.9.0"
+v2All = "2.20.1"
 v2Common = "2.20.1"
 
 [libraries]
+android = { module = "com.kakao.maps.open:android", version.ref = "android" }
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraLifecycleVersion" }
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraLifecycleVersion" }
 androidx-camera-lifecycle-v130 = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraLifecycleVersion" }
@@ -35,6 +40,7 @@ androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-com
 androidx-mateiral3 = { module = "androidx.compose.material3:mateiral3" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -55,6 +61,8 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraLifecycle" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+v2-all = { module = "com.kakao.sdk:v2-all", version.ref = "v2All" }
 v2-common = { module = "com.kakao.sdk:v2-common", version.ref = "v2Common" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

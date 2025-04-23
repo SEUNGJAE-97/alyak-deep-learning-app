@@ -15,8 +15,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         // hash key 확인
-//        var keyHash = Utility.getKeyHash(this)
-//        Log.d("Mykey" , keyHash)
+        var keyHash = Utility.getKeyHash(this)
+        Log.d("Mykey" , keyHash)
         setContent {
             Navigator()
         }
