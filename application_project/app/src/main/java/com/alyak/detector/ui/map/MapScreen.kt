@@ -1,8 +1,11 @@
 package com.alyak.detector.ui.map
 
+import android.content.Context
 import android.graphics.Color
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -15,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -25,8 +29,11 @@ import com.kakao.vectormap.LatLng
 import com.kakao.vectormap.MapLifeCycleCallback
 import com.kakao.vectormap.MapView
 import com.alyak.detector.R
+import com.kakao.sdk.friend.m.s
+import com.kakao.vectormap.camera.CameraUpdateFactory
 import com.kakao.vectormap.label.LabelOptions
 import com.kakao.vectormap.label.LabelStyle
+import com.kakao.vectormap.label.LabelStyles
 import com.kakao.vectormap.label.LabelTextBuilder
 import com.kakao.vectormap.label.LabelTextStyle
 
@@ -41,99 +48,73 @@ fun MapScreen(
     val context = LocalContext.current
     val apiKey = "KakaoAK ${context.getString(R.string.REST_API_KEY)}"
     val categoryGroupCode = "PM9"
-    val x = "127"
-    val y = "37"
+    val x = 127.1
+    val y = 37.2
     val radius = 2000
 
-    val kakaoMapState = remember { mutableStateOf<KakaoMap?>(null) }
-    val mapView = rememberMapViewWithLifecycle(
-        onMapReady = { kakaoMap ->
-            kakaoMapState.value = kakaoMap
-            isMapReady = true
-        }
-    )
+    modifier.fillMaxSize()
 
-    LaunchedEffect(Unit) {
-        Log.d("MapScreen", "fetchPlaces 호출됨")
-        viewModel.fetchPlaces(apiKey, categoryGroupCode, x, y, radius)
-    }
+    LectureKakaoMap(x, y)
 
-    LaunchedEffect(markerList, kakaoMapState.value, isMapReady) {
-        if (!isMapReady) {
-            Log.d("MapScreen", "Map is not ready yet")
-            return@LaunchedEffect
-        }
 
-        val kakaoMap = kakaoMapState.value
-        val labelManager = try {
-            kakaoMap?.labelManager
-        } catch (e: Exception) {
-            null
-        }
-        val labelLayer = labelManager?.layer
 
-        if (kakaoMap == null || labelManager == null || labelLayer == null) {
-            Log.d("MapScreen", "kakaoMap, labelManager, or labelLayer is not ready")
-            return@LaunchedEffect
-        }
-
-        labelLayer.removeAll()
-
-        markerList.forEach { place ->
-            try {
-                val lat = place.y.toDouble()
-                val lng = place.x.toDouble()
-                val labelText = place.place_name ?: "Unknown"
-                val latLng = LatLng.from(lat, lng)
-
-                val options = LabelOptions.from(latLng)
-                    .setTexts(LabelTextBuilder().setTexts(labelText))
-                labelLayer.addLabel(options)
-
-                Log.d("MapScreen", "Added label: $labelText ($lat, $lng)")
-            } catch (e: Exception) {
-                Log.e("MapScreen", "Error adding label: ${e.localizedMessage}")
-            }
-        }
-    }
-    AndroidView(
-        modifier = modifier.fillMaxSize(),
-        factory = { mapView }
-    )
 }
-
-
 @Composable
-fun rememberMapViewWithLifecycle(
-    onMapReady: (KakaoMap) -> Unit
-): MapView {
+fun LectureKakaoMap(
+    locationX: Double, // 서버에서 제공하는 X 값 (경도)
+    locationY: Double, // 서버에서 제공하는 Y 값 (위도)
+) {
     val context = LocalContext.current
-    val mapView = remember { MapView(context) }
+    val mapView = remember { MapView(context) } // KakaoMapView를 기억하여 재사용할 수 있도록 설정
 
-    mapView.start(
-        object : MapLifeCycleCallback() {
-            override fun onMapDestroy() {
-                Log.d("MapView", "Map is destroyed.")
-            }
+    AndroidView(
+        factory = { context ->
+            mapView.apply {
+                mapView.start(
+                    object : MapLifeCycleCallback() {
+                        // 지도 생명 주기 콜백: 지도가 파괴될 때 호출
+                        override fun onMapDestroy() {
+                            // 필자가 직접 만든 Toast생성 함수
+                            Toast.makeText(context, "지도를 불러오는데 실패했습니다." , Toast.LENGTH_SHORT).show()
+                        }
 
-            override fun onMapError(p0: Exception?) {
-                Log.d("MapView", "Map is occured Error.")
+                        // 지도 생명 주기 콜백: 지도 로딩 중 에러가 발생했을 때 호출
+                        override fun onMapError(exception: Exception?) {
+                            // 필자가 직접 만든 Toast생성 함수
+                            Toast.makeText(context, "지도를 불러오는중 에러가 발생했습니다.." , Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    object : KakaoMapReadyCallback() {
+                        // KakaoMap이 준비되었을 때 호출
+                        override fun onMapReady(kakaoMap: KakaoMap) {
+                            // 카메라를 (locationY, locationX) 위치로 이동시키는 업데이트 생성
+                            val cameraUpdate = CameraUpdateFactory.newCenterPosition(LatLng.from(locationY, locationX))
+
+                            // 지도에 표시할 라벨의 스타일 설정
+                            val style = kakaoMap.labelManager?.addLabelStyles(LabelStyles.from(LabelStyle.from(R.drawable.pharmacy)))
+
+                            // 라벨 옵션을 설정하고 위치와 스타일을 적용
+                            val options = LabelOptions.from(LatLng.from(locationY, locationX)).setStyles(style)
+
+                            // KakaoMap의 labelManager에서 레이어를 가져옴
+                            val layer = kakaoMap.labelManager?.layer
+
+                            // 카메라를 지정된 위치로 이동
+                            kakaoMap.moveCamera(cameraUpdate)
+
+                            // 지도에 라벨을 추가
+                            layer?.addLabel(options)
+                        }
+
+                        override fun getPosition(): LatLng {
+                            // 현재 위치를 반환
+                            return LatLng.from(locationY, locationX)
+                        }
+                    },
+                )
             }
         },
-        object : KakaoMapReadyCallback() {
-            override fun getPosition(): LatLng {
-                return LatLng.from(37.5665, 126.9780)
-            }
-
-            override fun onMapReady(kakaoMap: KakaoMap) {
-                // 지도 준비가 완료되면 호출됩니다.
-                // 여기서 지도 설정 및 마커 추가 등의 작업을 수행합니다.
-                onMapReady(kakaoMap)
-            }
-        }
     )
-
-    return mapView
 }
 
 @Preview(showBackground = true)
