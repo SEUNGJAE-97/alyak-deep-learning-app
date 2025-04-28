@@ -54,6 +54,7 @@ dependencies {
     // kakao map
     implementation(libs.v2.all)
     implementation (libs.android)
+    implementation ("com.kakao.maps.open:android:2.12.8")
     // camera
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)

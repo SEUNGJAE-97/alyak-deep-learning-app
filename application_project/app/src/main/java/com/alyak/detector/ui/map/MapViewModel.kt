@@ -28,14 +28,20 @@ class MapViewModel @Inject constructor(
         size: Int? = null,
         sort: String? = null
     ) {
+
         viewModelScope.launch {
             try {
                 val result = repo.searchPlace(
                     apiKey, categoryGroupCode, x, y, radius, page, size, sort
                 )
+                // markerList에 값 할당 전
+                Log.d("MapViewModel", "places size: ${size}")
+                // 네트워크 응답 후
+                Log.d("MapViewModel", "fetchPlaces result: $result")
                 _places.value = result
             } catch (e: Exception) {
                 // 에러 처리
+                Log.e("MapViewModel", "fetchPlaces error: ${e.message}", e)
             }
         }
     }
