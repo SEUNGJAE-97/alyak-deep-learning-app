@@ -1,6 +1,7 @@
 package com.alyak.detector.ui.map
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.util.Log
 import android.view.View
@@ -33,8 +34,11 @@ import com.kakao.vectormap.LatLng
 import com.kakao.vectormap.MapLifeCycleCallback
 import com.kakao.vectormap.MapView
 import com.alyak.detector.R
+import com.alyak.detector.data.api.KakaoLocalApi
 import com.kakao.sdk.friend.m.s
+import com.kakao.vectormap.RoadViewRequest.Marker
 import com.kakao.vectormap.camera.CameraUpdateFactory
+import com.kakao.vectormap.label.LabelManager
 import com.kakao.vectormap.label.LabelOptions
 import com.kakao.vectormap.label.LabelStyle
 import com.kakao.vectormap.label.LabelStyles
@@ -45,7 +49,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
+private const val TAG = "MapScreen"
 @Composable
 fun MapScreen(
     navController: NavController,
@@ -55,15 +62,55 @@ fun MapScreen(
     val markerList by viewModel.places.collectAsState()
     val context = LocalContext.current
     val apiKey = "KakaoAK ${context.getString(R.string.REST_API_KEY)}"
-    val categoryGroupCode = "PM9"
+    val categoryGroupCode = "HP8"
     val x = "127.1"
     val y = "37.2"
     val radius = 2000
-
     val mapView = rememberMapViewWithLifecycle()
-    AndroidView({ mapView }) { view ->
 
+    LaunchedEffect(Unit) {
+        viewModel.fetchPlaces(apiKey, categoryGroupCode, x, y, radius)
     }
+    LaunchedEffect(markerList) {
+        Log.d(TAG, "MapScreen: $markerList")
+    }
+    LaunchedEffect(markerList, mapView) {
+//        val kakaoMap = mapView.kakaoMap ?: return@LaunchedEffect
+//        val labelManager = kakaoMap.labelManager ?: return@LaunchedEffect
+//        val labelLayer = labelManager.layer ?: return@LaunchedEffect
+//
+//        // 기존 라벨 제거
+//        labelLayer.clear()
+//
+//        // 스타일 준비
+//        val style = LabelStyles.from(
+//            "dynamicStyle",
+//            getLabelStyleByCategory(context, "PM9"),
+//            getLabelStyleByCategory(context, "HP8")
+//        )
+//        labelManager.addLabelStyles(style)
+//
+//        // 새 라벨 추가
+//        markerList.forEach { place ->
+//            val lat = place.y.toDoubleOrNull() ?: return@forEach
+//            val lng = place.x.toDoubleOrNull() ?: return@forEach
+//            val position = LatLng.from(lat, lng)
+//
+//            val label = LabelOptions.from(position)
+//                .setStyles(style)
+//                .setTexts(
+//                    LabelTextBuilder.from(place.place_name)
+//                        .setTextStyles(LabelTextStyle.from(Color.BLACK, 14f))
+//                )
+//            labelLayer.addLabel(label)
+//        }
+//
+//        // 중심 카메라 옮기고 싶다면 여기서
+//        // kakaoMap.moveCamera(CameraUpdateFactory.newCenterPosition(...))
+    }
+
+
+    AndroidView({ mapView }) { view -> }
 }
 
 @Composable
@@ -97,7 +144,22 @@ fun rememberMapViewWithLifecycle(): View {
                         }
 
                         override fun onMapReady(kakaoMap: KakaoMap) {
-                            onMapReady(kakaoMap)
+                            // 기본 카메라 위치 설정
+                            val position = LatLng.from(37.2, 127.1)
+                            kakaoMap.moveCamera(CameraUpdateFactory.newCenterPosition(position))
+
+                            // 라벨 매니저 초기화 및 라벨 추가
+                            val labelManager: LabelManager? = kakaoMap.labelManager
+                            labelManager?.let { manager ->
+                                val style = LabelStyles.from(
+                                    "myStyleId",
+                                    getLabelStyleByCategory(context, "PM9"),
+                                    getLabelStyleByCategory(context, "HP8")
+                                )
+                                manager.addLabelStyles(style)
+                                val labelOptions = LabelOptions.from(position).setStyles(style)
+                                manager.layer?.addLabel(labelOptions)
+                            }
                         }
                     }
                 )
@@ -119,6 +181,16 @@ fun rememberMapViewWithLifecycle(): View {
         }
     }
     return mapView
+}
+
+fun getLabelStyleByCategory(context: Context, category: String): LabelStyle {
+    val mark =
+        when (category) {
+            "PM9" -> R.drawable.pharmacy
+            "HP8" -> R.drawable.pharmacy
+            else -> R.drawable.hospital
+        }
+    return LabelStyle.from(mark).setZoomLevel(10).setApplyDpScale(true)
 }
 
 @Preview(showBackground = true)
