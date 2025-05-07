@@ -12,12 +12,18 @@ android {
 
     defaultConfig {
         applicationId = "com.alyak.detector"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters.add("arm64-v8a")
+            abiFilters.add("armeabi-v7a")
+            abiFilters.add("x86")
+            abiFilters.add("x86_64")
+        }
     }
 
     buildTypes {
@@ -42,6 +48,13 @@ android {
 }
 
 dependencies {
+    // retrofit
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    // kakao map
+    implementation(libs.v2.all)
+    implementation (libs.android)
+    implementation ("com.kakao.maps.open:android:2.12.8")
     // camera
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
