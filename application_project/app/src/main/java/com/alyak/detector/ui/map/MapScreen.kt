@@ -1,6 +1,7 @@
 package com.alyak.detector.ui.map
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.util.Log
 import android.view.View
@@ -35,6 +36,7 @@ import com.kakao.vectormap.MapView
 import com.alyak.detector.R
 import com.kakao.sdk.friend.m.s
 import com.kakao.vectormap.camera.CameraUpdateFactory
+import com.kakao.vectormap.label.LabelManager
 import com.kakao.vectormap.label.LabelOptions
 import com.kakao.vectormap.label.LabelStyle
 import com.kakao.vectormap.label.LabelStyles
@@ -45,6 +47,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
 
 @Composable
 fun MapScreen(
@@ -97,7 +100,22 @@ fun rememberMapViewWithLifecycle(): View {
                         }
 
                         override fun onMapReady(kakaoMap: KakaoMap) {
-                            onMapReady(kakaoMap)
+                            // 기본 카메라 위치 설정
+                            val position = LatLng.from(37.2, 127.1)
+                            kakaoMap.moveCamera(CameraUpdateFactory.newCenterPosition(position))
+
+                            // 라벨 매니저 초기화 및 라벨 추가
+                            val labelManager: LabelManager? = kakaoMap.labelManager
+                            labelManager?.let { manager ->
+                                val style = LabelStyles.from(
+                                    "myStyleId",
+                                    getLabelStyleByCategory(context, "PM9"),
+                                    getLabelStyleByCategory(context, "HP8")
+                                )
+                                manager.addLabelStyles(style)
+                                val labelOptions = LabelOptions.from(position).setStyles(style)
+                                manager.layer?.addLabel(labelOptions)
+                            }
                         }
                     }
                 )
@@ -120,7 +138,19 @@ fun rememberMapViewWithLifecycle(): View {
     }
     return mapView
 }
-
+fun getLabelStyleByCategory(context: Context, category : String) : LabelStyle {
+    val bitmap = BitmapFactory.decodeResource(
+        context.resources,
+        when(category){
+            "PM9" -> R.drawable.pharmacy
+            "HP8" -> R.drawable.hospital
+            else ->R.drawable.ic_launcher_background
+        }
+    )
+    return LabelStyle.from(bitmap)
+        .setZoomLevel(12)
+        .setSize(48f, 48f)
+}
 @Preview(showBackground = true)
 @Composable
 fun MapScreenPreview() {
