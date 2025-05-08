@@ -1,6 +1,6 @@
 package com.alyak.detector.data.api
 
-import com.alyak.detector.data.dto.KakoPlaceResponse
+import com.alyak.detector.data.dto.KakaoPlaceResponse
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -17,5 +17,5 @@ interface KakaoLocalApi {
         @Query("page") page: Int? = null,
         @Query("size") size: Int? = null,
         @Query("sort") sort: String? = null
-    ): Response<KakoPlaceResponse>
+    ): Response<KakaoPlaceResponse>
 }

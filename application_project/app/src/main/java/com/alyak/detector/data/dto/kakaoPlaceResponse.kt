@@ -1,6 +1,6 @@
 package com.alyak.detector.data.dto
 
-data class KakoPlaceResponse(
+data class KakaoPlaceResponse(
     val meta: Meta,
     val documents: List<KakaoPlaceDto>
 )
