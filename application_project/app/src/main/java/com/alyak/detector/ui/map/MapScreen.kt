@@ -1,9 +1,12 @@
 package com.alyak.detector.ui.map
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import android.view.View
+import android.webkit.PermissionRequest
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -29,6 +32,7 @@ import com.kakao.vectormap.LatLng
 import com.kakao.vectormap.MapLifeCycleCallback
 import com.kakao.vectormap.MapView
 import com.alyak.detector.R
+import com.alyak.detector.util.PermissionManager
 import com.kakao.vectormap.camera.CameraUpdateFactory
 import com.kakao.vectormap.label.LabelManager
 import com.kakao.vectormap.label.LabelOptions
@@ -92,6 +96,7 @@ fun rememberMapViewWithLifecycle(
     val context = LocalContext.current
     val mapView = remember { MapView(context) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val permissionManager = remember { PermissionManager(context as AppCompatActivity) }
 
     DisposableEffect(lifecycle) {
         val observer = object : DefaultLifecycleObserver {
@@ -117,11 +122,14 @@ fun rememberMapViewWithLifecycle(
                         }
 
                         override fun onMapReady(kakaoMap: KakaoMap) {
+                            // 1. 퍼미션 받기
+                            permissionManager.requestPermissions()
+
                             kakaoMapState.value = kakaoMap
                             val position = LatLng.from(37.2, 127.1)
                             kakaoMap.moveCamera(CameraUpdateFactory.newCenterPosition(position))
 
-                            // 라벨 매니저 초기화 및 라벨 추가
+                            // 2. 라벨 매니저 초기화 및 라벨 추가
                             val labelManager: LabelManager? = kakaoMap.labelManager
                             labelManager?.let { manager ->
                                 val style = LabelStyles.from(
@@ -138,6 +146,11 @@ fun rememberMapViewWithLifecycle(
                 )
             }
 
+            override fun onStart(owner: LifecycleOwner) {
+                super.onStart(owner)
+                //FusedLocation start
+            }
+
             override fun onResume(owner: LifecycleOwner) {
                 super.onResume(owner)
                 mapView.resume()
@@ -147,6 +160,13 @@ fun rememberMapViewWithLifecycle(
                 super.onPause(owner)
                 mapView.pause()
             }
+
+            override fun onStop(owner: LifecycleOwner) {
+                super.onStop(owner)
+                //FusedLocation stop
+            }
+
+
         }
         lifecycle.addObserver(observer)
         onDispose {

@@ -13,7 +13,6 @@ class FusedLocationRepo(private val context: Context) : LocationRepo {
     }
 
     override fun stopLocationUpdate() {
-        TODO("Not yet implemented")
+        fused
     }
-
 }
