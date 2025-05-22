@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alyak.detector.data.dto.KakaoPlaceDto
+import com.alyak.detector.data.dto.LocationDto
+import com.alyak.detector.data.repository.FusedLocationRepo
 import com.alyak.detector.data.repository.KakaoPlaceRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,10 +15,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MapViewModel @Inject constructor(
-    private val repo: KakaoPlaceRepo
+    private val repo: KakaoPlaceRepo,
+    private val locRepo : FusedLocationRepo
 ) : ViewModel() {
+    private val _curLocation = MutableStateFlow(LocationDto(37.2, 127.1))
     private val _places = MutableStateFlow<List<KakaoPlaceDto>>(emptyList())
     val places: StateFlow<List<KakaoPlaceDto>> = _places
+    val curLocation: StateFlow<LocationDto> = _curLocation
 
     /**
      * 카카오 장소 카테고리 검색 요청
@@ -53,4 +58,12 @@ class MapViewModel @Inject constructor(
             }
         }
     }
+
+    fun fetchLocation(){
+        viewModelScope.launch {
+            val result = locRepo.getCurrentLocation()
+            _curLocation.value = result
+        }
+    }
+
 }

@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import android.Manifest
+import androidx.core.content.ContextCompat
 
 /** 권한이 모두 허용되었을 때 실행할 콜백 인터페이스**/
 fun interface OnGrantedListener {
@@ -39,24 +40,16 @@ class PermissionManager(activityOrFragment: Any) {
      * @return 모든 권한이 허용되어 있으면 true, 아니면 false
      */
     fun checkPermission(context: Context, permissions: Array<String>): Boolean {
-        this.context = context
-        for (permission in permissions) {
-            if (ActivityCompat.checkSelfPermission(
-                    context,
-                    permission
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return false
-            }
+        return permissions.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }
-        return true
     }
 
     /**
      * 런타임 권한 요청을 위한 ActivityResultLauncher
      * 권한 요청 결과는 resultChecking()에서 처리
      */
-    val requestPermissionLauncher: ActivityResultLauncher<Array<String>> =
+    private val requestPermissionLauncher: ActivityResultLauncher<Array<String>> =
         when (activityOrFragment) {
             is AppCompatActivity -> {
                 activityOrFragment.registerForActivityResult(
@@ -98,7 +91,7 @@ class PermissionManager(activityOrFragment: Any) {
     /**
      * 사용자가 권한을 거부했을 때, 앱 설정 화면으로 이동하도록 안내하는 함수
      */
-    private fun moveToSettings() {
+    fun moveToSettings() {
         val alertDialog = AlertDialog.Builder(context)
         alertDialog.setTitle("권한이 필요합니다.")
         alertDialog.setMessage("설정으로 이동합니다.")

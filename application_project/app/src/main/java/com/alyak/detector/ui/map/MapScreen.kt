@@ -1,6 +1,10 @@
 package com.alyak.detector.ui.map
 
+import android.Manifest
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import android.view.View
@@ -20,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -48,16 +53,35 @@ fun MapScreen(
 ) {
     val kakaoMapState = remember { mutableStateOf<KakaoMap?>(null) }
     val markerList by viewModel.places.collectAsState()
+    val loc by viewModel.curLocation.collectAsState()
     val context = LocalContext.current
     val apiKey = "KakaoAK ${context.getString(R.string.REST_API_KEY)}"
     val categoryGroupCode = "HP8"
-    val x = "127.1"
-    val y = "37.2"
+    val x = loc.latitude
+    val y = loc.longitude
     val radius = 2000
     val mapView = rememberMapViewWithLifecycle(kakaoMapState, context)
+    val permissionManager = PermissionManager(context)
 
     LaunchedEffect(Unit) {
-        viewModel.fetchPlaces(apiKey, categoryGroupCode, x, y, radius)
+        permissionManager.requestPermissions()
+        runCatching {
+            permissionManager.checkPermission(
+                context,
+                arrayOf(
+                    ACCESS_FINE_LOCATION,
+                    ACCESS_COARSE_LOCATION
+                )
+            )
+        }.onSuccess {
+            viewModel.fetchLocation()
+            Log.d(TAG, "MapScreen: $loc")
+        }.onFailure {
+            permissionManager.moveToSettings()
+        }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.fetchPlaces(apiKey, categoryGroupCode, x.toString(), y.toString(), radius)
     }
     LaunchedEffect(markerList) {
         Log.d(TAG, "MapScreen: $markerList")
@@ -126,6 +150,7 @@ fun rememberMapViewWithLifecycle(
                             permissionManager.requestPermissions()
 
                             kakaoMapState.value = kakaoMap
+
                             val position = LatLng.from(37.2, 127.1)
                             kakaoMap.moveCamera(CameraUpdateFactory.newCenterPosition(position))
 

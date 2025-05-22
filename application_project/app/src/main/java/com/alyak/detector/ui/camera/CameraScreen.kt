@@ -3,9 +3,7 @@ package com.alyak.detector.ui.camera
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.drawable.Icon
 import android.util.Log
-import android.view.Display.Mode
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -20,9 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -47,8 +43,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.alyak.detector.ui.components.CustomButton
-import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Shape
 
 @Composable
