@@ -25,7 +25,9 @@ fun interface OnGrantedListener {
 /**
  * 액티비티 또는 프래그먼트에서 런타임 권한을 요청하고 결과를 처리하는 매니저 클래스
  */
-class PermissionManager(activityOrFragment: Any) {
+class PermissionManager(
+    activityOrFragment: Any
+) {
     private lateinit var context: Context
 
     private lateinit var permitted: OnGrantedListener

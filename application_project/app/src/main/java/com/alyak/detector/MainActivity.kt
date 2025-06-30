@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import com.alyak.detector.navigation.Navigator
 import com.kakao.sdk.common.util.Utility
 import dagger.hilt.android.AndroidEntryPoint

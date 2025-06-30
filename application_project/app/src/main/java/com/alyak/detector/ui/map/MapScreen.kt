@@ -55,6 +55,7 @@ fun MapScreen(
     val markerList by viewModel.places.collectAsState()
     val loc by viewModel.curLocation.collectAsState()
     val context = LocalContext.current
+
     val apiKey = "KakaoAK ${context.getString(R.string.REST_API_KEY)}"
     val categoryGroupCode = "HP8"
     val x = loc.latitude
@@ -117,10 +118,10 @@ fun rememberMapViewWithLifecycle(
     kakaoMapState: MutableState<KakaoMap?>,
     context: Context
 ): View {
-    val context = LocalContext.current
     val mapView = remember { MapView(context) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val permissionManager = remember { PermissionManager(context as AppCompatActivity) }
+    val activity = context as? AppCompatActivity ?: throw IllegalStateException("Activity가 아닙니다.")
+    val permissionManager = remember { PermissionManager(activity) }
 
     DisposableEffect(lifecycle) {
         val observer = object : DefaultLifecycleObserver {
