@@ -23,4 +23,12 @@
     <color name="light_gray">#7f858c</color>
     <!-- Deep Gray: 텍스트, 구분선 등 -->
     <color name="deep_gray">#648886</color>
+    <!-- pink -->
+    <color name="pink">#EFB0EE</color>
+    <!--primary blue-->
+    <color name="primaryBlue">#4F46E5</color>
+    <!--kakao color-->
+    <color name="kakaoYellow">#FFD437</color>
+    <!--google color-->
+    <color name="googleGray">#F2F2F2</color>
 </resources>
