@@ -2,6 +2,8 @@ package com.alyak.detector.ui.signIn
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alyak.detector.ui.signIn.state.SignInState
+import com.alyak.detector.ui.signIn.state.UserInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow

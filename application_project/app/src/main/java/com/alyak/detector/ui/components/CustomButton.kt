@@ -1,6 +1,7 @@
 package com.alyak.detector.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 
@@ -27,9 +29,11 @@ fun CustomButton(
     modifier: Modifier = Modifier,
     image: Painter? = null,
     contentDescription: String? = null,
-    containerColor: Color = Color.Red,
+    containerColor: Color = Color.Gray,
     contentColor: Color = Color.White,
-    shape: Shape = RoundedCornerShape(24.dp)
+    shape: Shape = RoundedCornerShape(24.dp),
+    textColor: Color = Color.Gray,
+    imageSize: Dp = 32.dp
 ) {
     Button(
         onClick = onClick,
@@ -38,21 +42,25 @@ fun CustomButton(
             containerColor = containerColor,
             contentColor = contentColor
         ),
-        shape = shape
+        shape = shape,
+        contentPadding = PaddingValues(15.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (image != null) {
                 Image(
                     painter = image,
                     contentDescription = contentDescription,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(imageSize)
                 )
                 if (text.isNotEmpty()) {
                     Spacer(modifier = Modifier.width(8.dp))
                 }
             }
             if (text.isNotEmpty()) {
-                Text(text)
+                Text(
+                    text = text,
+                    color = textColor
+                )
             }
         }
     }
