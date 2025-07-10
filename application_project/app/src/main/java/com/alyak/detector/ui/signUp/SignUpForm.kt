@@ -32,41 +32,32 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.alyak.detector.R
-import com.alyak.detector.data.dto.Gender
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.CustomUnderlineTextField
-import com.alyak.detector.ui.signIn.state.SignInState
 
 @Composable
 fun SignUpForm(
-    name: String,
-    email: String,
-    password: String,
-    gender: Gender,
-    residentNumber: String,
-    phoneNumber: String,
-    isPasswordVisible: Boolean,
-    onEmailChange: (String) -> Unit,
-    onTogglePassword: () -> Unit,
-    onNavigateToSignUp: () -> Unit,
-    state: SignInState,
+    onNavigateToLogin: () -> Unit,
     navController: NavController,
     signUpViewModel: SignUpViewModel
 ) {
     val state by signUpViewModel.state.collectAsState()
+
+    // 자체 상태 관리
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var checkPassword by remember { mutableStateOf("") }
-    var userName by remember { mutableStateOf(" ") }
+    var userName by remember { mutableStateOf("") }
     var userPhoneNumber by remember { mutableStateOf("") }
     var userSSN by remember { mutableStateOf("") }
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
     ContentBox(modifier = Modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "비밀번호",
+            text = "이메일",
             color = colorResource(R.color.primaryBlue)
         )
 
@@ -88,7 +79,7 @@ fun SignUpForm(
                         imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                         contentDescription = "Toggle password visibility",
                         modifier = Modifier
-                            .clickable { onTogglePassword() }
+                            .clickable { isPasswordVisible = !isPasswordVisible }
                             .size(24.dp)
                     )
                     Icon(
@@ -99,15 +90,11 @@ fun SignUpForm(
                 }
             }
         )
-        Text(
-            text = "10자리 이상의 영문, 숫자, 특수기호를 포함해야합니다.",
-            color = colorResource(R.color.lightGray),
-            fontSize = 10.sp
-        )
+
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "비밀번호 재입력",
+            text = "비밀번호",
             color = colorResource(R.color.primaryBlue)
         )
 
@@ -119,34 +106,45 @@ fun SignUpForm(
                 password = it
                 signUpViewModel.validatePassword(it)
             },
-            hint = "이메일",
+            hint = "비밀번호",
             trailingIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                        contentDescription = "Toggle password visibility",
-                        modifier = Modifier
-                            .clickable { onTogglePassword() }
-                            .size(24.dp)
-                    )
-                    Icon(
-                        painter = painterResource(R.drawable.cancle),
-                        modifier = Modifier.size(24.dp),
-                        contentDescription = "check email state"
-                    )
-                }
+                Icon(
+                    imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                    contentDescription = "Toggle password visibility",
+                    modifier = Modifier
+                        .clickable { isPasswordVisible = !isPasswordVisible }
+                        .size(24.dp)
+                )
             }
         )
-        // 비밀번호 규칙 체크
-        if (password.isNotEmpty() && !state.validPassword) {
-//            Toast.makeText(
-//                Context,
-//                "영문, 숫자, 특수문자 중 2가지 이상을 조합해 최소 8자리를 입력해주세요",
-//            )
-        }
+
+        Text(
+            text = "10자리 이상의 영문, 숫자, 특수기호를 포함해야합니다.",
+            color = colorResource(R.color.lightGray),
+            fontSize = 10.sp
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text(
+            text = "비밀번호 재입력",
+            color = colorResource(R.color.primaryBlue)
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        CustomUnderlineTextField(
+            value = checkPassword,
+            onValueChange = { checkPassword = it },
+            hint = "비밀번호 재입력",
+            trailingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.cancle),
+                    modifier = Modifier.size(24.dp),
+                    contentDescription = "check password state"
+                )
+            }
+        )
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -158,8 +156,9 @@ fun SignUpForm(
         Spacer(modifier = Modifier.height(20.dp))
 
         CustomUnderlineTextField(
-            value = name,
-            onValueChange = onEmailChange,
+            value = userName,
+            onValueChange = { userName = it },
+            hint = "이름"
         )
 
         Spacer(modifier = Modifier.height(30.dp))
@@ -172,8 +171,9 @@ fun SignUpForm(
         Spacer(modifier = Modifier.height(20.dp))
 
         CustomUnderlineTextField(
-            value = residentNumber,
-            onValueChange = onEmailChange,
+            value = userSSN,
+            onValueChange = { userSSN = it },
+            hint = "주민번호",
             modifier = Modifier
                 .fillMaxWidth(0.30f),
             textAlign = TextAlign.Center
@@ -198,10 +198,8 @@ fun SignUpForm(
             modifier = Modifier.fillMaxWidth(0.45f),
             textAlign = TextAlign.Center
         )
-        //전화번호가 비어있거나 유효하지 않을때
-        if (userPhoneNumber.isNotEmpty() && !state.validPhoneNumber) {
-//            Text("유효하지 않은 전화번호 입니다.", color = Color.Red, fontSize = 10.sp)
-        }
+
+        Spacer(modifier = Modifier.height(30.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -211,7 +209,7 @@ fun SignUpForm(
             Surface(
                 modifier = Modifier
                     .size(65.dp)
-                    .clickable { /* onClick */ },
+                    .clickable { onNavigateToLogin() },
                 shape = RoundedCornerShape(50.dp),
                 color = colorResource(R.color.white),
                 shadowElevation = 2.dp
@@ -224,37 +222,28 @@ fun SignUpForm(
                         .size(30.dp)
                 )
             }
+
+            Spacer(modifier = Modifier.padding(16.dp))
+
             CustomButton(
                 text = "",
-                onClick = { },
+                onClick = { /* TODO: 회원가입 로직 */ },
                 image = painterResource(R.drawable.arrow),
                 containerColor = colorResource(R.color.primaryBlue),
                 modifier = Modifier.size(80.dp),
                 shape = RoundedCornerShape(50.dp),
-                imageSize = 40.dp,
-
-                )
+                imageSize = 40.dp
+            )
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
 fun SignUpFormPreview() {
     SignUpForm(
-        name = "김싸피",
-        email = "test@example.com",
-        password = "**********************",
-        gender = Gender.male,
-        residentNumber = "970324",
-        phoneNumber = "010-1234-5678",
-        isPasswordVisible = false,
-        onEmailChange = {},
-        onTogglePassword = {},
-        onNavigateToSignUp = {},
-        state = SignInState(),
-        navController = TODO(),
-        signUpViewModel = TODO(),
+        onNavigateToLogin = {},
+        navController = androidx.navigation.compose.rememberNavController(),
+        signUpViewModel = SignUpViewModel()
     )
 }

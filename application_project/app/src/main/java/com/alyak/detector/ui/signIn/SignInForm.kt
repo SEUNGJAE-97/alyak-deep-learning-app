@@ -19,6 +19,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,19 +40,16 @@ import com.alyak.detector.ui.signIn.state.SignInState
 
 @Composable
 fun SignInForm(
-    email: String,
-    password: String,
-    isPasswordVisible: Boolean,
-    onEmailChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit,
-    onTogglePassword: () -> Unit,
-    onSignIn: () -> Unit,
     onNavigateToSignUp: () -> Unit,
     onNavigateToFindPassword: () -> Unit,
     state: SignInState,
     navController: NavController
 ) {
     val context = LocalContext.current
+    
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
     ContentBox(modifier = Modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.height(30.dp))
@@ -62,7 +63,7 @@ fun SignInForm(
 
         CustomUnderlineTextField(
             value = email,
-            onValueChange = onEmailChange,
+            onValueChange = { email = it },
             hint = "이메일",
             trailingIcon = {
                 Icon(
@@ -84,14 +85,14 @@ fun SignInForm(
 
         CustomUnderlineTextField(
             value = password,
-            onValueChange = onPasswordChange,
+            onValueChange = { password = it },
             hint = "password",
             trailingIcon = {
                 Icon(
                     imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                     contentDescription = "Toggle password visibility",
                     modifier = Modifier
-                        .clickable { onTogglePassword() }
+                        .clickable { isPasswordVisible = !isPasswordVisible }
                         .size(24.dp)
                 )
             },
@@ -107,18 +108,18 @@ fun SignInForm(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "회원가입",
-                    modifier = Modifier.clickable { }
+                    modifier = Modifier.clickable { onNavigateToSignUp() }
                 )
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
                     text = "비밀번호 찾기",
-                    modifier = Modifier.clickable { }
+                    modifier = Modifier.clickable { onNavigateToFindPassword() }
                 )
             }
 
             CustomButton(
                 text = "",
-                onClick = { },
+                onClick = { /* TODO: 로그인 로직 */ },
                 image = painterResource(R.drawable.arrow),
                 containerColor = colorResource(R.color.primaryBlue),
                 modifier = Modifier.size(80.dp),

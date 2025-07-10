@@ -27,29 +27,28 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
+import com.alyak.detector.ui.other.FindPasswordForm
 import com.alyak.detector.ui.signIn.state.ContentState
 import com.alyak.detector.ui.signUp.SignUpForm
+import com.alyak.detector.ui.signUp.SignUpViewModel
 
 @Composable
 fun SignInScreen(
     navController: NavController,
-    signInViewModel: SignInViewModel
+    signInViewModel: SignInViewModel,
+    signUpViewModel: SignUpViewModel
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isPasswordVisible by remember { mutableStateOf(false) }
     val state by signInViewModel.state.collectAsState()
     var screenState by remember { mutableStateOf<ContentState>(ContentState.Login) }
 
-    //ui layout
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.horizontalGradient(
                     colorStops = arrayOf(
-                        0.0f to colorResource(id = R.color.pink),       // 0% 위치에 핑크
-                        1.0f to colorResource(id = R.color.primaryBlue) // 100% 위치에 블루
+                        0.0f to colorResource(id = R.color.pink),
+                        1.0f to colorResource(id = R.color.primaryBlue)
                     )
                 )
             ),
@@ -57,7 +56,11 @@ fun SignInScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "어서오세요!\n로그인을 진행해주세요",
+            text = when (screenState) {
+                is ContentState.Login -> "어서오세요!\n로그인을 진행해주세요"
+                is ContentState.SignUp -> "회원가입\n정보를 입력해주세요"
+                is ContentState.FindPassword -> "비밀번호 찾기\n이메일을 입력해주세요"
+            },
             style = MaterialTheme.typography.headlineMedium,
             color = Color.White,
             fontWeight = FontWeight.Bold,
@@ -72,17 +75,11 @@ fun SignInScreen(
 
         Spacer(modifier = Modifier.height(70.dp))
 
+        // Fragment-like content switching
         when (screenState) {
             is ContentState.Login -> {
                 SignInForm(
-                    email = email,
-                    password = password,
-                    isPasswordVisible = isPasswordVisible,
-                    onEmailChange = { email = it },
-                    onPasswordChange = { password = it },
-                    onTogglePassword = { isPasswordVisible = !isPasswordVisible },
-                    onSignIn = { signInViewModel.signIn(email, password) },
-                    onNavigateToSignUp = { screenState = ContentState.Login },
+                    onNavigateToSignUp = { screenState = ContentState.SignUp },
                     onNavigateToFindPassword = { screenState = ContentState.FindPassword },
                     state = state,
                     navController = navController
@@ -91,25 +88,16 @@ fun SignInScreen(
 
             is ContentState.SignUp -> {
                 SignUpForm(
-                    name = TODO(),
-                    email = TODO(),
-                    password = TODO(),
-                    gender = TODO(),
-                    residentNumber = TODO(),
-                    phoneNumber = TODO(),
-                    isPasswordVisible = TODO(),
-                    onEmailChange = TODO(),
-                    onTogglePassword = TODO(),
-                    onNavigateToSignUp = TODO(),
-                    state = state,
+                    onNavigateToLogin = { screenState = ContentState.Login },
                     navController = navController,
-                    signUpViewModel = TODO()
+                    signUpViewModel = signUpViewModel
                 )
-
             }
 
             is ContentState.FindPassword -> {
-
+                FindPasswordForm(
+                    //onNavigateToLogin = { screenState = ContentState.Login }
+                )
             }
         }
     }
@@ -118,5 +106,9 @@ fun SignInScreen(
 @Preview(showBackground = true)
 @Composable
 fun SignInScreenPreview() {
-    SignInScreen(navController = rememberNavController(), SignInViewModel())
+    SignInScreen(
+        navController = rememberNavController(),
+        signInViewModel = SignInViewModel(),
+        signUpViewModel = SignUpViewModel()
+    )
 }

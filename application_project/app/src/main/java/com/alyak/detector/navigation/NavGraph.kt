@@ -10,7 +10,6 @@ import com.alyak.detector.ui.main.MainScreen
 import com.alyak.detector.ui.map.MapScreen
 import com.alyak.detector.ui.signIn.SignInScreen
 import com.alyak.detector.ui.signIn.SignInViewModel
-import com.alyak.detector.ui.signUp.SignUpScreen
 import com.alyak.detector.ui.signUp.SignUpViewModel
 import com.alyak.detector.ui.splash.SplashScreen
 
@@ -29,13 +28,9 @@ fun Navigator() {
         }
 
         composable("SignInScreen") {
-            val viewModel: SignInViewModel = viewModel()
-            SignInScreen(navController, viewModel)
-        }
-
-        composable("SignUpScreen") {
-            val viewModel: SignUpViewModel = viewModel()
-            SignUpScreen(navController, viewModel)
+            val signInViewModel: SignInViewModel = viewModel()
+            val signUpViewModel: SignUpViewModel = viewModel()
+            SignInScreen(navController, signInViewModel, signUpViewModel)
         }
 
         composable("MainScreen") {
