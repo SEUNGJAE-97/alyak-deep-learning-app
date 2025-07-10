@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.signIn
+package com.alyak.detector.ui.signIn.state
 
 /**
  * @constructor : 회원가입시 입력한 데이터의 유효성 체크
