@@ -1,12 +1,12 @@
 package com.github.seungjae97.alyak.alyakapiserver.repository;
 
 import com.github.seungjae97.alyak.alyakapiserver.dto.FamiliesDto;
-import org.apache.ibatis.annotations.Mapper;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Mapper
-public interface FamiliesMapper {
+@Repository
+public interface FamiliesRepository {
     List<FamiliesDto> selectAll();
     FamiliesDto selectById(Long id);
     int insert(FamiliesDto dto);

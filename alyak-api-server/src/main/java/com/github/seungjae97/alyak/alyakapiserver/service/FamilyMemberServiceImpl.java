@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.dao.FamilyMemberMapper;
+import com.github.seungjae97.alyak.alyakapiserver.repository.FamilyMemberMapper;
 import com.github.seungjae97.alyak.alyakapiserver.dto.FamilyMemberDto;
 import org.springframework.stereotype.Service;
 import java.util.List;

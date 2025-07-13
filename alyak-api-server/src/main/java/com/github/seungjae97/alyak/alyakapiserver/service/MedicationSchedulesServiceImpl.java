@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.dao.MedicationSchedulesMapper;
+import com.github.seungjae97.alyak.alyakapiserver.repository.MedicationSchedulesMapper;
 import com.github.seungjae97.alyak.alyakapiserver.dto.MedicationSchedulesDto;
 import org.springframework.stereotype.Service;
 import java.util.List;

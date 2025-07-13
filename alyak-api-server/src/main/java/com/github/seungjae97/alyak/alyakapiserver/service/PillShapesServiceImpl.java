@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.dao.PillShapesMapper;
+import com.github.seungjae97.alyak.alyakapiserver.repository.PillShapesMapper;
 import com.github.seungjae97.alyak.alyakapiserver.dto.PillShapesDto;
 import org.springframework.stereotype.Service;
 import java.util.List;

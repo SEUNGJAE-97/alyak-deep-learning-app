@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.dao.UserMapper;
+import com.github.seungjae97.alyak.alyakapiserver.repository.UserMapper;
 import com.github.seungjae97.alyak.alyakapiserver.dto.UserDto;
 import org.springframework.stereotype.Service;
 import java.util.List;
