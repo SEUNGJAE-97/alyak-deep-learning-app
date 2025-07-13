@@ -1,4 +1,4 @@
-package com.github.seungjae97.alyak.alyakapiserver.dao;
+package com.github.seungjae97.alyak.alyakapiserver.repository;
 
 import com.github.seungjae97.alyak.alyakapiserver.dto.FamiliesDto;
 import org.apache.ibatis.annotations.Mapper;
