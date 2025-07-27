@@ -1,12 +1,15 @@
 package com.github.seungjae97.alyak.alyakapiserver.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.dto.UserDto;
+import com.github.seungjae97.alyak.alyakapiserver.entity.User;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserService {
-    List<UserDto> getAll();
-    UserDto getById(Long id);
-    void create(UserDto dto);
-    void update(UserDto dto);
+    List<User> getAll();
+    Optional<User> getById(Long id);
+    Optional<User> getByEmail(String email);
+    User create(User user);
+    User update(User user);
     void delete(Long id);
+    boolean existsByEmail(String email);
 } 

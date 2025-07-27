@@ -1,15 +1,9 @@
 package com.github.seungjae97.alyak.alyakapiserver.repository;
 
-import com.github.seungjae97.alyak.alyakapiserver.dto.FamiliesDto;
+import com.github.seungjae97.alyak.alyakapiserver.entity.Families;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
-public interface FamiliesRepository {
-    List<FamiliesDto> selectAll();
-    FamiliesDto selectById(Long id);
-    int insert(FamiliesDto dto);
-    int update(FamiliesDto dto);
-    int delete(Long id);
+public interface FamiliesRepository extends JpaRepository<Families, Long> {
 } 

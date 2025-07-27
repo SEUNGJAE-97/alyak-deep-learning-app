@@ -1,40 +1,51 @@
 package com.github.seungjae97.alyak.alyakapiserver.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.repository.UserMedicationMapper;
-import com.github.seungjae97.alyak.alyakapiserver.dto.UserMedicationDto;
+import com.github.seungjae97.alyak.alyakapiserver.entity.UserMedication;
+import com.github.seungjae97.alyak.alyakapiserver.repository.UserMedicationRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserMedicationServiceImpl implements UserMedicationService {
-    private final UserMedicationMapper userMedicationMapper;
+    private final UserMedicationRepository userMedicationRepository;
 
-    public UserMedicationServiceImpl(UserMedicationMapper userMedicationMapper) {
-        this.userMedicationMapper = userMedicationMapper;
+    public UserMedicationServiceImpl(UserMedicationRepository userMedicationRepository) {
+        this.userMedicationRepository = userMedicationRepository;
     }
 
     @Override
-    public List<UserMedicationDto> getAll() {
-        return userMedicationMapper.selectAll();
+    public List<UserMedication> getAll() {
+        return userMedicationRepository.findAll();
     }
 
     @Override
-    public UserMedicationDto getById(Long id) {
-        return userMedicationMapper.selectById(id);
+    public Optional<UserMedication> getById(Long id) {
+        return userMedicationRepository.findById(id);
     }
 
     @Override
-    public void create(UserMedicationDto dto) {
-        userMedicationMapper.insert(dto);
+    public UserMedication create(UserMedication userMedication) {
+        return userMedicationRepository.save(userMedication);
     }
 
     @Override
-    public void update(UserMedicationDto dto) {
-        userMedicationMapper.update(dto);
+    public UserMedication update(UserMedication userMedication) {
+        return userMedicationRepository.save(userMedication);
     }
 
     @Override
     public void delete(Long id) {
-        userMedicationMapper.delete(id);
+        userMedicationRepository.deleteById(id);
+    }
+
+    @Override
+    public List<UserMedication> findByUserId(Long userId) {
+        return userMedicationRepository.findByUserId(userId);
+    }
+
+    @Override
+    public List<UserMedication> findByPillId(Long pillId) {
+        return userMedicationRepository.findByPillId(pillId);
     }
 } 
