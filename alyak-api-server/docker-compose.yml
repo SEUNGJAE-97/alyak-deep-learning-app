@@ -1,0 +1,50 @@
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: alyak-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: alyak
+      MYSQL_USER: alyak_user
+      MYSQL_PASSWORD: alyak_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - alyak-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Spring Boot Application
+  alyak-api:
+    build: .
+    container_name: alyak-api-server
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/alyak?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: alyak_user
+      SPRING_DATASOURCE_PASSWORD: alyak_password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - alyak-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  alyak-network:
+    driver: bridge 

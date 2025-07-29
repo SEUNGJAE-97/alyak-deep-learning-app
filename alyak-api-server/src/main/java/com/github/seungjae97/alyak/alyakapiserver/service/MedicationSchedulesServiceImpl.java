@@ -1,40 +1,57 @@
 package com.github.seungjae97.alyak.alyakapiserver.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.repository.MedicationSchedulesMapper;
-import com.github.seungjae97.alyak.alyakapiserver.dto.MedicationSchedulesDto;
+import com.github.seungjae97.alyak.alyakapiserver.entity.MedicationSchedules;
+import com.github.seungjae97.alyak.alyakapiserver.repository.MedicationSchedulesRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Service
 public class MedicationSchedulesServiceImpl implements MedicationSchedulesService {
-    private final MedicationSchedulesMapper medicationSchedulesMapper;
+    private final MedicationSchedulesRepository medicationSchedulesRepository;
 
-    public MedicationSchedulesServiceImpl(MedicationSchedulesMapper medicationSchedulesMapper) {
-        this.medicationSchedulesMapper = medicationSchedulesMapper;
+    public MedicationSchedulesServiceImpl(MedicationSchedulesRepository medicationSchedulesRepository) {
+        this.medicationSchedulesRepository = medicationSchedulesRepository;
     }
 
     @Override
-    public List<MedicationSchedulesDto> getAll() {
-        return medicationSchedulesMapper.selectAll();
+    public List<MedicationSchedules> getAll() {
+        return medicationSchedulesRepository.findAll();
     }
 
     @Override
-    public MedicationSchedulesDto getById(Long id) {
-        return medicationSchedulesMapper.selectById(id);
+    public Optional<MedicationSchedules> getById(Long id) {
+        return medicationSchedulesRepository.findById(id);
     }
 
     @Override
-    public void create(MedicationSchedulesDto dto) {
-        medicationSchedulesMapper.insert(dto);
+    public MedicationSchedules create(MedicationSchedules medicationSchedules) {
+        return medicationSchedulesRepository.save(medicationSchedules);
     }
 
     @Override
-    public void update(MedicationSchedulesDto dto) {
-        medicationSchedulesMapper.update(dto);
+    public MedicationSchedules update(MedicationSchedules medicationSchedules) {
+        return medicationSchedulesRepository.save(medicationSchedules);
     }
 
     @Override
     public void delete(Long id) {
-        medicationSchedulesMapper.delete(id);
+        medicationSchedulesRepository.deleteById(id);
+    }
+
+    @Override
+    public List<MedicationSchedules> findByUserMedicationId(Long userMedicationId) {
+        return medicationSchedulesRepository.findByUserMedicationId(userMedicationId);
+    }
+
+    @Override
+    public List<MedicationSchedules> findByScheduledTimeBetween(LocalDateTime start, LocalDateTime end) {
+        return medicationSchedulesRepository.findByScheduledTimeBetween(start, end);
+    }
+
+    @Override
+    public List<MedicationSchedules> findByStatus(MedicationSchedules.Status status) {
+        return medicationSchedulesRepository.findByStatus(status);
     }
 } 

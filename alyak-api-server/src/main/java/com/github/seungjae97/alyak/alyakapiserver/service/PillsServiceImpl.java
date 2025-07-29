@@ -1,40 +1,51 @@
 package com.github.seungjae97.alyak.alyakapiserver.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.repository.PillsMapper;
-import com.github.seungjae97.alyak.alyakapiserver.dto.PillsDto;
+import com.github.seungjae97.alyak.alyakapiserver.entity.Pills;
+import com.github.seungjae97.alyak.alyakapiserver.repository.PillsRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PillsServiceImpl implements PillsService {
-    private final PillsMapper pillsMapper;
+    private final PillsRepository pillsRepository;
 
-    public PillsServiceImpl(PillsMapper pillsMapper) {
-        this.pillsMapper = pillsMapper;
+    public PillsServiceImpl(PillsRepository pillsRepository) {
+        this.pillsRepository = pillsRepository;
     }
 
     @Override
-    public List<PillsDto> getAll() {
-        return pillsMapper.selectAll();
+    public List<Pills> getAll() {
+        return pillsRepository.findAll();
     }
 
     @Override
-    public PillsDto getById(Long id) {
-        return pillsMapper.selectById(id);
+    public Optional<Pills> getById(Long id) {
+        return pillsRepository.findById(id);
     }
 
     @Override
-    public void create(PillsDto dto) {
-        pillsMapper.insert(dto);
+    public Pills create(Pills pills) {
+        return pillsRepository.save(pills);
     }
 
     @Override
-    public void update(PillsDto dto) {
-        pillsMapper.update(dto);
+    public Pills update(Pills pills) {
+        return pillsRepository.save(pills);
     }
 
     @Override
     public void delete(Long id) {
-        pillsMapper.delete(id);
+        pillsRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Pills> findByPillShapeId(Long pillShapeId) {
+        return pillsRepository.findByPillShapeId(pillShapeId);
+    }
+
+    @Override
+    public List<Pills> findByManufacturer(String manufacturer) {
+        return pillsRepository.findByManufacturer(manufacturer);
     }
 } 

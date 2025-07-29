@@ -1,9 +1,10 @@
 package com.github.seungjae97.alyak.alyakapiserver.service;
 
+import com.github.seungjae97.alyak.alyakapiserver.entity.Families;
 import com.github.seungjae97.alyak.alyakapiserver.repository.FamiliesRepository;
-import com.github.seungjae97.alyak.alyakapiserver.dto.FamiliesDto;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class FamiliesServiceImpl implements FamiliesService {
@@ -14,27 +15,27 @@ public class FamiliesServiceImpl implements FamiliesService {
     }
 
     @Override
-    public List<FamiliesDto> getAll() {
-        return familiesRepository.selectAll();
+    public List<Families> getAll() {
+        return familiesRepository.findAll();
     }
 
     @Override
-    public FamiliesDto getById(Long id) {
-        return familiesRepository.selectById(id);
+    public Optional<Families> getById(Long id) {
+        return familiesRepository.findById(id);
     }
 
     @Override
-    public void create(FamiliesDto dto) {
-        familiesRepository.insert(dto);
+    public Families create(Families families) {
+        return familiesRepository.save(families);
     }
 
     @Override
-    public void update(FamiliesDto dto) {
-        familiesRepository.update(dto);
+    public Families update(Families families) {
+        return familiesRepository.save(families);
     }
 
     @Override
     public void delete(Long id) {
-        familiesRepository.delete(id);
+        familiesRepository.deleteById(id);
     }
 } 
