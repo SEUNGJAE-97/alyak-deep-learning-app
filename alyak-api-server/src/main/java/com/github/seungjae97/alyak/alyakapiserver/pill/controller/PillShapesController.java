@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.pill.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.pill.entity.PillShapes;
 import com.github.seungjae97.alyak.alyakapiserver.pill.service.PillShapesService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,13 +12,10 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/pill-shapes")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class PillShapesController {
     
     private final PillShapesService pillShapesService;
-    
-    public PillShapesController(PillShapesService pillShapesService) {
-        this.pillShapesService = pillShapesService;
-    }
     
     @GetMapping
     public ResponseEntity<List<PillShapes>> getAllPillShapes() {

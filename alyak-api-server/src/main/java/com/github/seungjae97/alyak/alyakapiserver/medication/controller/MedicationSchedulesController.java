@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.medication.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.medication.entity.MedicationSchedules;
 import com.github.seungjae97.alyak.alyakapiserver.medication.service.MedicationSchedulesService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,17 +14,14 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/medication-schedules")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class MedicationSchedulesController {
     
     private final MedicationSchedulesService medicationSchedulesService;
     
-    public MedicationSchedulesController(MedicationSchedulesService medicationSchedulesService) {
-        this.medicationSchedulesService = medicationSchedulesService;
-    }
-    
-    @GetMapping
-    public ResponseEntity<List<MedicationSchedules>> getAllMedicationSchedules() {
-        List<MedicationSchedules> medicationSchedules = medicationSchedulesService.getAll();
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<MedicationSchedules>> getMedicationSchedulesByUserId(@PathVariable Long userId) {
+        List<MedicationSchedules> medicationSchedules = medicationSchedulesService.getByUserId(userId);
         return ResponseEntity.ok(medicationSchedules);
     }
     

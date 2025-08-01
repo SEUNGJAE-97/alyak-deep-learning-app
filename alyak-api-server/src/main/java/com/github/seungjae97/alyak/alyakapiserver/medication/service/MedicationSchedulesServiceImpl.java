@@ -18,8 +18,8 @@ public class MedicationSchedulesServiceImpl implements MedicationSchedulesServic
     }
     
     @Override
-    public List<MedicationSchedules> getAll() {
-        return medicationSchedulesRepository.findAll();
+    public List<MedicationSchedules> getByUserId(Long userId) {
+        return medicationSchedulesRepository.findByUserId(userId);
     }
     
     @Override

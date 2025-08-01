@@ -18,14 +18,14 @@ public interface FamiliesService {
      * family 생성
      * @param family : 가족
      * */
-    Families create(Families family);
+    Families createFamily(Families family);
     /**
      * 가족 정보 갱신
      * */
-    Families update(Families family);
+    Families updateFamily(Families family);
     /**
      * familyId로 가족 정보 삭제
      * @param familyId : 가족 id
      * */
-    void delete(Long familyId);
+    void deleteFamily(Long familyId);
 } 

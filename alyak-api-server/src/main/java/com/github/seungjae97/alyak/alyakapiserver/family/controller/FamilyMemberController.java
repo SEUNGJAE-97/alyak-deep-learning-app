@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.family.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.family.entity.FamilyMember;
 import com.github.seungjae97.alyak.alyakapiserver.family.service.FamilyMemberService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,13 +12,10 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/family-members")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class FamilyMemberController {
     
     private final FamilyMemberService familyMemberService;
-    
-    public FamilyMemberController(FamilyMemberService familyMemberService) {
-        this.familyMemberService = familyMemberService;
-    }
     
     @GetMapping("/{id}")
     public ResponseEntity<FamilyMember> getFamilyMemberById(@PathVariable Long id) {

@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.pill.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.pill.entity.Pills;
 import com.github.seungjae97.alyak.alyakapiserver.pill.service.PillsService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,13 +12,11 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/pills")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+
 public class PillsController {
     
     private final PillsService pillsService;
-    
-    public PillsController(PillsService pillsService) {
-        this.pillsService = pillsService;
-    }
     
     @GetMapping
     public ResponseEntity<List<Pills>> getAllPills() {

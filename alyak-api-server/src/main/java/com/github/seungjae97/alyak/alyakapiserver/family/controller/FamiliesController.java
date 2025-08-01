@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.family.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.family.entity.Families;
 import com.github.seungjae97.alyak.alyakapiserver.family.service.FamiliesService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,14 +12,11 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/families")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class FamiliesController {
     
     private final FamiliesService familiesService;
-    
-    public FamiliesController(FamiliesService familiesService) {
-        this.familiesService = familiesService;
-    }
-    
+
     @GetMapping
     public ResponseEntity<List<Families>> getAllFamilies() {
         List<Families> families = familiesService.getAll();
@@ -34,7 +32,7 @@ public class FamiliesController {
     
     @PostMapping
     public ResponseEntity<Families> createFamily(@RequestBody Families family) {
-        Families createdFamily = familiesService.create(family);
+        Families createdFamily = familiesService.createFamily(family);
         return ResponseEntity.ok(createdFamily);
     }
     
@@ -45,7 +43,7 @@ public class FamiliesController {
             return ResponseEntity.notFound().build();
         }
         family.setId(id);
-        Families updatedFamily = familiesService.update(family);
+        Families updatedFamily = familiesService.updateFamily(family);
         return ResponseEntity.ok(updatedFamily);
     }
     
@@ -55,7 +53,7 @@ public class FamiliesController {
         if (family.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        familiesService.delete(id);
+        familiesService.deleteFamily(id);
         return ResponseEntity.noContent().build();
     }
 } 

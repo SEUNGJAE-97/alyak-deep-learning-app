@@ -27,17 +27,17 @@ public class FamiliesServiceImpl implements FamiliesService {
     }
     
     @Override
-    public Families create(Families family) {
+    public Families createFamily(Families family) {
         return familiesRepository.save(family);
     }
     
     @Override
-    public Families update(Families family) {
+    public Families updateFamily(Families family) {
         return familiesRepository.save(family);
     }
     
     @Override
-    public void delete(Long familyId) {
+    public void deleteFamily(Long familyId) {
         familiesRepository.deleteById(familyId);
     }
 } 
