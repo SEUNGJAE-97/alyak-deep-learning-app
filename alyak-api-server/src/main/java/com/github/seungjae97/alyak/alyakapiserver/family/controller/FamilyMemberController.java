@@ -19,12 +19,6 @@ public class FamilyMemberController {
         this.familyMemberService = familyMemberService;
     }
     
-    @GetMapping
-    public ResponseEntity<List<FamilyMember>> getAllFamilyMembers() {
-        List<FamilyMember> familyMembers = familyMemberService.getAll();
-        return ResponseEntity.ok(familyMembers);
-    }
-    
     @GetMapping("/{id}")
     public ResponseEntity<FamilyMember> getFamilyMemberById(@PathVariable Long id) {
         Optional<FamilyMember> familyMember = familyMemberService.getById(id);

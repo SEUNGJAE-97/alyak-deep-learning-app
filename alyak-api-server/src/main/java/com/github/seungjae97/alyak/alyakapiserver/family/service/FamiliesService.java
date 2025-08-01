@@ -6,9 +6,26 @@ import java.util.List;
 import java.util.Optional;
 
 public interface FamiliesService {
+    /**
+     * 모든 가족 정보 조회
+     * */
     List<Families> getAll();
-    Optional<Families> getById(Long id);
+    /**
+     * @param familyId : familyId에 해당하는 Families 반환
+     * */
+    Optional<Families> getById(Long familyId);
+    /**
+     * family 생성
+     * @param family : 가족
+     * */
     Families create(Families family);
+    /**
+     * 가족 정보 갱신
+     * */
     Families update(Families family);
-    void delete(Long id);
+    /**
+     * familyId로 가족 정보 삭제
+     * @param familyId : 가족 id
+     * */
+    void delete(Long familyId);
 } 

@@ -22,8 +22,8 @@ public class FamiliesServiceImpl implements FamiliesService {
     }
     
     @Override
-    public Optional<Families> getById(Long id) {
-        return familiesRepository.findById(id);
+    public Optional<Families> getById(Long familyId) {
+        return familiesRepository.findById(familyId);
     }
     
     @Override
@@ -37,7 +37,7 @@ public class FamiliesServiceImpl implements FamiliesService {
     }
     
     @Override
-    public void delete(Long id) {
-        familiesRepository.deleteById(id);
+    public void delete(Long familyId) {
+        familiesRepository.deleteById(familyId);
     }
 } 

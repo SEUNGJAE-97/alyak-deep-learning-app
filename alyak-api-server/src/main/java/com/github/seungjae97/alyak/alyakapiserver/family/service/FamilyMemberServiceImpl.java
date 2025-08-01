@@ -17,11 +17,6 @@ public class FamilyMemberServiceImpl implements FamilyMemberService {
     }
     
     @Override
-    public List<FamilyMember> getAll() {
-        return familyMemberRepository.findAll();
-    }
-    
-    @Override
     public List<FamilyMember> getByFamilyId(Long familyId) {
         return familyMemberRepository.findByFamilyId(familyId);
     }
