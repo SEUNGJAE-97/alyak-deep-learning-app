@@ -19,8 +19,10 @@ dependencies {
     implementation("org.projectlombok:lombok")
     implementation("org.springframework.boot:spring-boot-starter-security:3.4.2")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
-    
-    // JWT 관련 의존성
+
+    // Redis
+    implementation("org.springframework.boot:spring-boot-starter-data-redis:3.5.3")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("com.auth0:java-jwt:4.4.0")
     
     runtimeOnly("org.springframework.boot:spring-boot-devtools")

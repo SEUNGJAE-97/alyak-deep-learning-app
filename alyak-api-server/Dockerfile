@@ -4,22 +4,24 @@ FROM openjdk:17-jdk-slim
 # Set working directory
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
-COPY mvnw .
-COPY .mvn .mvn
-COPY pom.xml .
+# Copy Gradle wrapper and build files
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle.kts .
+COPY settings.gradle.kts .
+COPY gradle.properties .
 
-# Make mvnw executable
-RUN chmod +x mvnw
+# Make gradlew executable
+RUN chmod +x gradlew
 
 # Download dependencies
-RUN ./mvnw dependency:go-offline -B
+RUN ./gradlew dependencies --no-daemon
 
 # Copy source code
 COPY src src
 
 # Build the application
-RUN ./mvnw clean package -DskipTests
+RUN ./gradlew build -x test --no-daemon
 
 # Create a new stage for runtime
 FROM openjdk:17-jdk-slim
@@ -28,7 +30,7 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Copy the built jar from the previous stage
-COPY --from=0 /app/target/*.jar app.jar
+COPY --from=0 /app/build/libs/*.jar app.jar
 
 # Expose port
 EXPOSE 8080
