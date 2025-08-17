@@ -2,9 +2,9 @@ package com.github.seungjae97.alyak.alyakapiserver.global.auth.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.JwtProperties;
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.JwtTokenProvider;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.LoginRequest;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.LoginResponse;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.SignupRequest;
+import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.LoginRequest;
+import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.SignupRequest;
+import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.LoginResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
