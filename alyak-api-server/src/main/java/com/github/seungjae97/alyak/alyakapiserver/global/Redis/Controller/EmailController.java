@@ -5,6 +5,7 @@ import com.github.seungjae97.alyak.alyakapiserver.global.Redis.Util.RedisUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,28 +23,18 @@ public class EmailController {
     @PostMapping("/send")
     @Operation(summary = "이메일 전송" , description = "입력한 이메일로 6자리의 인증코드를 전송한다.")
     public ResponseEntity<Void> sendEmail(@RequestBody String email) {
-        String normalized = normalizeEmail(email);
-        mailService.sendAuthEmail(normalized);
+        mailService.sendAuthEmail(email);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/verify")
     public ResponseEntity<Boolean> verifyEmailCode(@RequestBody Map<String, String> params) {
-        String email = normalizeEmail(params.get("email"));
+        String email = params.get("email");
         String code = params.get("code");
         boolean result = mailService.verifyAuthCode(email, code);
         if (result) {
             redisUtil.deleteData(email);
         }
         return ResponseEntity.ok(result);
-    }
-
-    private String normalizeEmail(String raw) {
-        if (raw == null) return null;
-        String trimmed = raw.trim();
-        if (trimmed.startsWith("\"") && trimmed.endsWith("\"") && trimmed.length() >= 2) {
-            trimmed = trimmed.substring(1, trimmed.length() - 1);
-        }
-        return trimmed.trim();
     }
 }
