@@ -25,21 +25,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
         String token = extractTokenFromRequest(request);
-        
+
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
             String role = jwtTokenProvider.getRoleFromToken(token);
-            
+
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 userId, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
             );
-            
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-        
+
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/api/auth/")
+                || path.startsWith("/api/email/")
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs")
+                || path.equals("/")
+                || path.startsWith("/api-docs");
     }
 
     private String extractTokenFromRequest(HttpServletRequest request) {

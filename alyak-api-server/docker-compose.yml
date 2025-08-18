@@ -61,8 +61,8 @@ services:
       # Email Configuration
       SPRING_MAIL_HOST: smtp.gmail.com
       SPRING_MAIL_PORT: 587
-      SPRING_MAIL_USERNAME: 21813633@yu.ac.kr
-      SPRING_MAIL_PASSWORD: yma-urL-Vd8
+      SPRING_MAIL_USERNAME: sjhahaha53@gmail.com
+      SPRING_MAIL_PASSWORD: zxdhpueaufcqzyft
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
       
