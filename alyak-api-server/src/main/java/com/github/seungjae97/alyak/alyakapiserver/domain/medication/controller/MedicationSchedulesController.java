@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.medication.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.entity.MedicationSchedules;
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.service.MedicationSchedulesService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import java.util.Optional;
 @RequestMapping("/api/medication-schedules")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@Tag(name = "약 복용 스케쥴", description = "알약 복용 스케쥴 관리 관련 API")
 public class MedicationSchedulesController {
     
     private final MedicationSchedulesService medicationSchedulesService;

@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.medication.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.entity.UserMedication;
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.service.UserMedicationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import java.util.Optional;
 @RequestMapping("/api/user-medications")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@Tag(name = "유저 복용 알약", description = "유저가 복용중인 알약의 API")
 public class UserMedicationController {
     
     private final UserMedicationService userMedicationService;
