@@ -1,24 +1,24 @@
--- Insert dummy users data
-INSERT INTO users (name, email, password, phone_number, gender, resident_registration_number)
-VALUES ('김철수', 'kim.chulsoo@email.com', 'password123', '010-1234-5678', 'M', '900101-1234567'),
-       ('이영희', 'lee.younghee@email.com', 'password123', '010-2345-6789', 'F', '920305-2345678'),
-       ('박민수', 'park.minsu@email.com', 'password123', '010-3456-7890', 'M', '880715-3456789'),
-       ('최수진', 'choi.sujin@email.com', 'password123', '010-4567-8901', 'F', '950822-4567890'),
-       ('정태호', 'jung.taeho@email.com', 'password123', '010-5678-9012', 'M', '870312-5678901'),
-       ('한미영', 'han.miyeong@email.com', 'password123', '010-6789-0123', 'F', '930628-6789012'),
-       ('송재현', 'song.jaehyun@email.com', 'password123', '010-7890-1234', 'M', '910419-7890123'),
-       ('윤소영', 'yoon.soyoung@email.com', 'password123', '010-8901-2345', 'F', '940711-8901234'),
-       ('임동현', 'lim.donghyun@email.com', 'password123', '010-9012-3456', 'M', '860925-9012345'),
-       ('강지은', 'kang.jieun@email.com', 'password123', '010-0123-4567', 'F', '960314-0123456'),
-       ('김민준', 'kim.minjun@email.com', 'password123', '010-1111-2222', 'M', '001215-1111111'),
-       ('이서연', 'lee.seoyeon@email.com', 'password123', '010-2222-3333', 'F', '020708-2222222'),
-       ('박준호', 'park.junho@email.com', 'password123', '010-3333-4444', 'M', '030321-3333333'),
-       ('최예은', 'choi.yeeun@email.com', 'password123', '010-4444-5555', 'F', '041112-4444444'),
-       ('정현우', 'jung.hyunwoo@email.com', 'password123', '010-5555-6666', 'M', '050603-5555555'),
-       ('한소희', 'han.sohee@email.com', 'password123', '010-6666-7777', 'F', '060929-6666666'),
-       ('송도현', 'song.dohyun@email.com', 'password123', '010-7777-8888', 'M', '070417-7777777'),
-       ('윤지원', 'yoon.jiwon@email.com', 'password123', '010-8888-9999', 'F', '080825-8888888'),
-       ('임승우', 'lim.seungwoo@email.com', 'password123', '010-9999-0000', 'M', '090512-9999999');
+-- Insert dummy users data (provider NOT NULL, role is ORDINAL in entity)
+INSERT INTO users (name, email, password, phone_number, gender, resident_registration_number, role, provider)
+VALUES ('김철수', 'kim.chulsoo@email.com', 'password123', '010-1234-5678', 'M', '900101-1234567', 0, 'LOCAL'),
+       ('이영희', 'lee.younghee@email.com', 'password123', '010-2345-6789', 'F', '920305-2345678', 0, 'LOCAL'),
+       ('박민수', 'park.minsu@email.com', 'password123', '010-3456-7890', 'M', '880715-3456789', 0, 'LOCAL'),
+       ('최수진', 'choi.sujin@email.com', 'password123', '010-4567-8901', 'F', '950822-4567890', 0, 'LOCAL'),
+       ('정태호', 'jung.taeho@email.com', 'password123', '010-5678-9012', 'M', '870312-5678901', 0, 'LOCAL'),
+       ('한미영', 'han.miyeong@email.com', 'password123', '010-6789-0123', 'F', '930628-6789012', 0, 'LOCAL'),
+       ('송재현', 'song.jaehyun@email.com', 'password123', '010-7890-1234', 'M', '910419-7890123', 0, 'LOCAL'),
+       ('윤소영', 'yoon.soyoung@email.com', 'password123', '010-8901-2345', 'F', '940711-8901234', 0, 'LOCAL'),
+       ('임동현', 'lim.donghyun@email.com', 'password123', '010-9012-3456', 'M', '860925-9012345', 0, 'LOCAL'),
+       ('강지은', 'kang.jieun@email.com', 'password123', '010-0123-4567', 'F', '960314-0123456', 0, 'LOCAL'),
+       ('김민준', 'kim.minjun@email.com', 'password123', '010-1111-2222', 'M', '001215-1111111', 0, 'LOCAL'),
+       ('이서연', 'lee.seoyeon@email.com', 'password123', '010-2222-3333', 'F', '020708-2222222', 0, 'LOCAL'),
+       ('박준호', 'park.junho@email.com', 'password123', '010-3333-4444', 'M', '030321-3333333', 0, 'LOCAL'),
+       ('최예은', 'choi.yeeun@email.com', 'password123', '010-4444-5555', 'F', '041112-4444444', 0, 'LOCAL'),
+       ('정현우', 'jung.hyunwoo@email.com', 'password123', '010-5555-6666', 'M', '050603-5555555', 0, 'LOCAL'),
+       ('한소희', 'han.sohee@email.com', 'password123', '010-6666-7777', 'F', '060929-6666666', 0, 'LOCAL'),
+       ('송도현', 'song.dohyun@email.com', 'password123', '010-7777-8888', 'M', '070417-7777777', 0, 'LOCAL'),
+       ('윤지원', 'yoon.jiwon@email.com', 'password123', '010-8888-9999', 'F', '080825-8888888', 0, 'LOCAL'),
+       ('임승우', 'lim.seungwoo@email.com', 'password123', '010-9999-0000', 'M', '090512-9999999', 0, 'LOCAL');
 
 -- Insert dummy families data
 INSERT INTO families (family_name, description)

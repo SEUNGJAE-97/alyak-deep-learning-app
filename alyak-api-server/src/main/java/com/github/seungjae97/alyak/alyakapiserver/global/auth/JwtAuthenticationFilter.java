@@ -1,5 +1,8 @@
 package com.github.seungjae97.alyak.alyakapiserver.global.auth;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
+import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.UserDetailsImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -29,13 +33,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
-            String role = jwtTokenProvider.getRoleFromToken(token);
+            User user = userRepository.findById(userId).orElse(null);
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                userId, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
-            );
+            if (user != null) {
+                var authorities = Collections.singletonList(
+                        new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+                );
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                var principal = new UserDetailsImpl(user);
+                var authentication = new UsernamePasswordAuthenticationToken(principal, null, authorities);
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);

@@ -21,23 +21,22 @@ public class UserController {
     public UserController(UserService userService) {
         this.userService = userService;
     }
-    
-    @GetMapping
+
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAll();
         return ResponseEntity.ok(users);
     }
-    
-    @GetMapping
+
+    @GetMapping("/me")
     public ResponseEntity<User> getUserById(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         Optional<User> user = userService.getById(userDetails.getUser().getId());
         return user.map(ResponseEntity::ok)
                   .orElse(ResponseEntity.notFound().build());
     }
-    
-    @GetMapping
-    public ResponseEntity<User> getUserByEmail(@AuthenticationPrincipal String email) {
-        Optional<User> user = userService.getByEmail(email);
+
+    @GetMapping("/email")
+    public ResponseEntity<User> getUserByEmail(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Optional<User> user = userService.getByEmail(userDetails.getUser().getEmail());
         return user.map(ResponseEntity::ok)
                   .orElse(ResponseEntity.notFound().build());
     }

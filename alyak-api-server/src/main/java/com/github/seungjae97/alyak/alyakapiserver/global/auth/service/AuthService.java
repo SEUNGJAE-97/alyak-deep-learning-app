@@ -10,4 +10,5 @@ public interface AuthService {
     void signup(SignupRequest signupRequest);
     void logout(String token);
     TokenResponse tempLogin();
+    TokenResponse reissue(String refreshToken);
 }

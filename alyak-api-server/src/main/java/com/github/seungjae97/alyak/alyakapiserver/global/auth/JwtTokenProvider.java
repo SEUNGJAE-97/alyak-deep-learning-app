@@ -1,67 +1,92 @@
 package com.github.seungjae97.alyak.alyakapiserver.global.auth;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
-import lombok.RequiredArgsConstructor;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
-@RequiredArgsConstructor
 public class JwtTokenProvider {
 
+    private final long accessTokenExpiration;
+    private final long refreshTokenExpiration;
+
     @Value("${jwt.secret}")
-    private String secretKey;
+    private String secret;
 
-    private final long EXPIRATION_TIME = 1000 * 60 * 60; // 1시간
+    private SecretKey getSigningKey() {
+        try {
+            return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        } catch (RuntimeException ignore) {
+            return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        }
+    }
 
-    /**
-     * @param userId : 유저 식별하는 userId
-     * @param role : 약사, 일반인, 가족 역할 정보를 갖는 role
-     * @return jwtToken
-     * */
-    public String generateToken(Long userId, User.Role role) {
+    public JwtTokenProvider(
+            @Value("${jwt.expiration-time}") long accessTokenExpiration,
+            @Value("${jwt.refresh-expiration-time:1209600000}") long refreshTokenExpiration
+    ){
+        this.accessTokenExpiration = accessTokenExpiration;
+        this.refreshTokenExpiration = refreshTokenExpiration;
+    }
+
+    public String generateToken(User user) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + EXPIRATION_TIME);
-
-        return JWT.create()
-                .withSubject(String.valueOf(userId))
-                .withClaim("role", role.ordinal())
-                .withIssuedAt(now)
-                .withExpiresAt(expiry)
-                .sign(Algorithm.HMAC256(secretKey));
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .claim("email", user.getEmail())
+                .claim("id", user.getId())
+                .claim("role", user.getRole().name())
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + accessTokenExpiration))
+                .signWith(getSigningKey())
+                .compact();
     }
 
-    /**
-     * 만료된 토큰에 대해서 갱신
-     * */
-    public String refreshToekn(Long userId, User.Role role){
-        return null;
+    public String generateRefreshToken(User user) {
+        Date now = new Date();
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .claim("id", user.getId())
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + refreshTokenExpiration))
+                .signWith(getSigningKey())
+                .compact();
     }
 
-    // 토큰 검증
     public boolean validateToken(String token) {
         try {
-            JWT.require(Algorithm.HMAC256(secretKey)).build().verify(token);
+            Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token);
             return true;
-        } catch (JWTVerificationException e) {
+        } catch (Exception e) {
             return false;
         }
     }
 
-    // 토큰에서 정보 추출
     public Long getUserIdFromToken(String token) {
-        DecodedJWT decodedJWT = JWT.require(Algorithm.HMAC256(secretKey)).build().verify(token);
-        return Long.valueOf(decodedJWT.getSubject());
+        Jws<Claims> jws = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token);
+        return jws.getPayload().get("id", Long.class);
     }
 
     public String getRoleFromToken(String token) {
-        DecodedJWT decodedJWT = JWT.require(Algorithm.HMAC256(secretKey)).build().verify(token);
-        return decodedJWT.getClaim("role").asString();
+        Jws<Claims> jws = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token);
+        return jws.getPayload().get("role", String.class);
     }
 }

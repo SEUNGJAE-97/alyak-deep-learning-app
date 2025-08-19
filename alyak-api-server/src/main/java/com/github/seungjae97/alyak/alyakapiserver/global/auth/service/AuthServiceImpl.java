@@ -33,7 +33,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("Invalid email or password");
         }
 
-        String token = jwtTokenProvider.generateToken(user.getId(), user.getRole());
+        String token = jwtTokenProvider.generateToken(user);
         
         return new LoginResponse(
             token,
@@ -69,11 +69,16 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public TokenResponse reissue(String refreshToken) {
+        throw new UnsupportedOperationException("reissue is not implemented yet");
+    }
+
+    @Override
     public TokenResponse tempLogin() {
         User user = userRepository.findById(1L).orElseThrow();
 
-        String accessToken = jwtTokenProvider.generateToken(user.getId(), user.getRole());
-        String refreshToken = jwtTokenProvider.refreshToekn(user.getId(), user.getRole());
+        String accessToken = jwtTokenProvider.generateToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
         return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
     }

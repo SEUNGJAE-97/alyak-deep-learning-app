@@ -1,6 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.global.auth.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.LoginRequest;
+import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.TokenRequest;
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.LoginResponse;
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.SignupRequest;
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.TokenResponse;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "유저", description = "인증 관련 API")
+@Tag(name = "01.Auth", description = "사용자 인증 관련 API")
 public class AuthController {
 
     private final AuthService authService;
@@ -39,6 +40,14 @@ public class AuthController {
         authService.logout(token);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/reissue")
+    @Operation(summary = "토큰 재발급", description = "refresh token을 통해 access token 재발급")
+    public ResponseEntity<TokenResponse> reissue(@RequestBody TokenRequest request) {
+        TokenResponse token = authService.reissue(request.getRefreshToken());
+        return ResponseEntity.ok(token);
+    }
+
 
     @PostMapping("/temp-login")
     public ResponseEntity<TokenResponse> tempLogin() {
