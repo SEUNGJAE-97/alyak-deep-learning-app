@@ -2,7 +2,10 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.user.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.service.UserService;
+import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.UserDetailsImpl;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,47 +28,47 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
     
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        Optional<User> user = userService.getById(id);
+    @GetMapping
+    public ResponseEntity<User> getUserById(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Optional<User> user = userService.getById(userDetails.getUser().getId());
         return user.map(ResponseEntity::ok)
                   .orElse(ResponseEntity.notFound().build());
     }
     
-    @GetMapping("/email/{email}")
-    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
+    @GetMapping
+    public ResponseEntity<User> getUserByEmail(@AuthenticationPrincipal String email) {
         Optional<User> user = userService.getByEmail(email);
         return user.map(ResponseEntity::ok)
                   .orElse(ResponseEntity.notFound().build());
     }
     
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        if (userService.existsByEmail(user.getEmail())) {
+    public ResponseEntity<User> createUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userService.existsByEmail(userDetails.getUser().getEmail())){
             return ResponseEntity.badRequest().build();
         }
-        User createdUser = userService.create(user);
+        User createdUser = userService.create(userDetails.getUser());
         return ResponseEntity.ok(createdUser);
     }
     
-    @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
-        Optional<User> existingUser = userService.getById(id);
+    @PutMapping
+    public ResponseEntity<User> updateUser(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody User user) {
+        Optional<User> existingUser = userService.getById(userDetails.getUser().getId());
         if (existingUser.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        user.setId(id);
+        user.setId(existingUser.get().getId());
         User updatedUser = userService.update(user);
         return ResponseEntity.ok(updatedUser);
     }
     
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        Optional<User> user = userService.getById(id);
+    @DeleteMapping
+    public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Optional<User> user = userService.getById(userDetails.getUser().getId());
         if (user.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        userService.delete(id);
+        userService.delete(user.get().getId());
         return ResponseEntity.noContent().build();
     }
 } 

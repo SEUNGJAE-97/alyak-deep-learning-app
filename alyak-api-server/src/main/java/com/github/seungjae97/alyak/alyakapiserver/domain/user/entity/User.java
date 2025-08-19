@@ -19,11 +19,11 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(unique = true, nullable = false)
     private String email;
-    
-    @Column(nullable = false)
+
+    @Column
     private String password;
     
     @Column(nullable = false)
@@ -37,9 +37,13 @@ public class User {
     
     @Column(name = "phone_number")
     private String phoneNumber;
-    
+
+    @Column
+    private Role role;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role;
+    private Provider provider;
     
     // 양방향 관계 설정
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -52,5 +56,15 @@ public class User {
     
     public enum Gender {
         M, F
+    }
+
+    public enum Provider {
+        LOCAL,
+        GOOGLE,
+        KAKAO
+    }
+
+    public enum Role {
+        Admin,
     }
 } 

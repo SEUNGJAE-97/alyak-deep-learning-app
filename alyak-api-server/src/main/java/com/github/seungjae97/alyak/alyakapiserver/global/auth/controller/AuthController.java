@@ -3,6 +3,7 @@ package com.github.seungjae97.alyak.alyakapiserver.global.auth.controller;
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.LoginRequest;
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.LoginResponse;
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.SignupRequest;
+import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.TokenResponse;
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,4 +39,16 @@ public class AuthController {
         authService.logout(token);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/temp-login")
+    public ResponseEntity<TokenResponse> tempLogin() {
+        try {
+            TokenResponse token = authService.tempLogin();
+            return ResponseEntity.ok(token);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
 }

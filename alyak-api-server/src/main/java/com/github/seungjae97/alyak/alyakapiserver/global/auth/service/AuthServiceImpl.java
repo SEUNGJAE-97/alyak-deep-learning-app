@@ -7,6 +7,7 @@ import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.Signup
 import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.LoginResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
+import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.TokenResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,7 +33,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("Invalid email or password");
         }
 
-        String token = jwtTokenProvider.createToken(user.getId(), user.getRole());
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getRole());
         
         return new LoginResponse(
             token,
@@ -54,7 +55,7 @@ public class AuthServiceImpl implements AuthService {
                 .password(passwordEncoder.encode(signupRequest.getPassword()))
                 .name(signupRequest.getName())
                 .phoneNumber(signupRequest.getPhoneNumber())
-                .role("USER")
+                .role(User.Role.Admin)
                 .build();
 
         userRepository.save(user);
@@ -65,5 +66,15 @@ public class AuthServiceImpl implements AuthService {
         // JWT는 stateless이므로 서버에서 토큰을 무효화할 수 없음
         // 클라이언트에서 토큰을 삭제하도록 안내
         // 필요시 블랙리스트 구현 가능
+    }
+
+    @Override
+    public TokenResponse tempLogin() {
+        User user = userRepository.findById(1L).orElseThrow();
+
+        String accessToken = jwtTokenProvider.generateToken(user.getId(), user.getRole());
+        String refreshToken = jwtTokenProvider.refreshToekn(user.getId(), user.getRole());
+
+        return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
     }
 }
