@@ -1,13 +1,13 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.auth.service;
+package com.github.seungjae97.alyak.alyakapiserver.domain.auth.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.JwtProperties;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.JwtTokenProvider;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.LoginRequest;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.SignupRequest;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.LoginResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.JwtProperties;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.JwtTokenProvider;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.LoginRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.SignupRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.LoginResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.TokenResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -79,7 +79,8 @@ public class AuthServiceImpl implements AuthService {
 
         String accessToken = jwtTokenProvider.generateToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+        String email = user.getEmail();
 
-        return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
+        return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).email(email).build();
     }
 }

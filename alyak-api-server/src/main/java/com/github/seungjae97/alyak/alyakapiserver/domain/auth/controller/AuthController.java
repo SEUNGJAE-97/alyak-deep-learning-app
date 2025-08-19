@@ -1,11 +1,11 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.auth.controller;
+package com.github.seungjae97.alyak.alyakapiserver.domain.auth.controller;
 
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.LoginRequest;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.TokenRequest;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.LoginResponse;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request.SignupRequest;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response.TokenResponse;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.service.AuthService;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.LoginRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.TokenRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.LoginResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.SignupRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Response;
+package com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import lombok.AllArgsConstructor;

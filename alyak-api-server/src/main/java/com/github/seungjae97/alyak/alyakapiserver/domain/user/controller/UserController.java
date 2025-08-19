@@ -2,10 +2,9 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.user.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.service.UserService;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.UserDetailsImpl;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.UserDetailsImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

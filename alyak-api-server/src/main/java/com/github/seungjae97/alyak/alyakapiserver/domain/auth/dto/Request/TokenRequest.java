@@ -1,4 +1,4 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.Request;
+package com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

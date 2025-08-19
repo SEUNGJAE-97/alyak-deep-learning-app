@@ -1,4 +1,4 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.auth;
+package com.github.seungjae97.alyak.alyakapiserver.domain.auth;
 
 import lombok.Getter;
 import lombok.Setter;

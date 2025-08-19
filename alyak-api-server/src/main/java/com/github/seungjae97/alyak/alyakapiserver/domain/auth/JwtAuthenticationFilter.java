@@ -1,8 +1,8 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.auth;
+package com.github.seungjae97.alyak.alyakapiserver.domain.auth;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
-import com.github.seungjae97.alyak.alyakapiserver.global.auth.dto.UserDetailsImpl;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.UserDetailsImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
