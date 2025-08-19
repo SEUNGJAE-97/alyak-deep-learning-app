@@ -20,6 +20,21 @@ services:
       timeout: 20s
       retries: 10
 
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: alyak-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - alyak-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 20s
+      retries: 10
+
   # Spring Boot Application
   alyak-api:
     build: .
@@ -27,6 +42,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # Database Configuration
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/alyak?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&useSSL=false
       SPRING_DATASOURCE_USERNAME: alyak_user
       SPRING_DATASOURCE_PASSWORD: alyak_password
@@ -35,8 +51,30 @@ services:
       SPRING_JPA_SHOW_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+      
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 
+      REDIS_DATABASE: 0
+      
+      # Email Configuration
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: sjhahaha53@gmail.com
+      SPRING_MAIL_PASSWORD: zxdhpueaufcqzyft
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
+      
+      # JWT Configuration
+      JWT_SECRET: your-super-secret-key-here-change-in-production
+      JWT_EXPIRATION_TIME: 3600000
+      JWT_HEADER: Authorization
+      JWT_PREFIX: Bearer 
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - alyak-network
@@ -44,6 +82,7 @@ services:
 
 volumes:
   mysql_data:
+  redis_data:
 
 networks:
   alyak-network:

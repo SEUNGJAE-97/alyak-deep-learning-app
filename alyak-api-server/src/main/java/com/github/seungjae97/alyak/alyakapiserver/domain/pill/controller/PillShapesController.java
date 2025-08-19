@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.pill.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillShapes;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.service.PillShapesService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import java.util.Optional;
 @RequestMapping("/api/pill-shapes")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@Tag(name = "유저", description = "인증 관련 API")
 public class PillShapesController {
     
     private final PillShapesService pillShapesService;
