@@ -70,7 +70,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public TokenResponse reissue(String refreshToken) {
-        throw new UnsupportedOperationException("reissue is not implemented yet");
+        if(!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new BadCredentialsException("Invalid refresh token");
+        }
+        Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+        User user = userRepository.findById(userId).orElseThrow();
+
+        String newAccess = jwtTokenProvider.generateToken(user);
+        String newRefresh = jwtTokenProvider.generateRefreshToken(user);
+
+        return TokenResponse.builder()
+                .accessToken(newAccess)
+                .refreshToken(newRefresh)
+                .email(user.getEmail())
+                .build();
     }
 
     @Override
