@@ -16,7 +16,7 @@ public class KakaoUserResponse {
     private Long id;
 
     @JsonProperty("connected_at")
-    private String connectedAt; // 필요 시 LocalDateTime 변환
+    private String connectedAt;
 
     @JsonProperty("kakao_account")
     private KakaoAccount kakaoAccount;
@@ -27,7 +27,7 @@ public class KakaoUserResponse {
     @AllArgsConstructor
     @Builder
     public static class KakaoAccount {
-        private String email; // 동의 필요
+        private String email;
         private Profile profile;
         @JsonProperty("is_email_valid")
         private Boolean isEmailValid;
