@@ -12,7 +12,7 @@ import org.springframework.util.MultiValueMap;
 @Builder
 @RequiredArgsConstructor
 public class KakaoAuthTokenRequest {
-    private final String authorization_code;
+    private final String grant_type;
     private final String client_id;
     private final String redirect_uri;
     private final String code;
@@ -20,7 +20,7 @@ public class KakaoAuthTokenRequest {
 
     public MultiValueMap<String, String> toMultiValueMap() {
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("grant_type", authorization_code);
+        map.add("grant_type", grant_type);
         map.add("client_id", client_id);
         map.add("redirect_uri", redirect_uri);
         map.add("code", code);

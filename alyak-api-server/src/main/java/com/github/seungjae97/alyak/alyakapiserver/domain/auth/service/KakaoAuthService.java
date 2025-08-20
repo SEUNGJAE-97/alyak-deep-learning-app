@@ -6,6 +6,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakoA
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.repository.KakaoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -19,13 +20,18 @@ import org.springframework.web.client.RestTemplate;
 public class KakaoAuthService {
 
     private final KakaoRepository kakaoRepository;
-    private final String clientId = "YOUR_REST_API_KEY";
     private final String baseAuthorizeUrl = "https://kauth.kakao.com/oauth/authorize";
     private final String baseTokenUrl = "https://kauth.kakao.com/oauth/token";
     @Autowired
     private RestTemplate restTemplate;
 
-    public String buildAuthorizationUrl(String redirectUri, String state) {
+    @Value("${REDIRECT_URI}")
+    private String redirectUri;
+
+    @Value("${KAKAO_REST_API_KEY}")
+    private String clientId;
+
+    public String buildAuthorizationUrl(String state) {
         KakaoAuthCodeRequest request = KakaoAuthCodeRequest.builder()
                 .clientId(clientId)
                 .redirectUri(redirectUri)
@@ -36,9 +42,9 @@ public class KakaoAuthService {
         return request.toUriString(baseAuthorizeUrl);
     }
 
-    public KakoAuthTokenResponse requestAccessToken(String code, String redirectUri){
+    public KakoAuthTokenResponse requestAccessToken(String code){
         KakaoAuthTokenRequest kakaoAuthTokenRequest = KakaoAuthTokenRequest.builder()
-                .authorization_code("authorization_code")
+                .grant_type("authorization_code")
                 .client_id(clientId)
                 .redirect_uri(redirectUri)
                 .code(code)
@@ -57,5 +63,11 @@ public class KakaoAuthService {
         // Redis에 토큰 저장 (만료시간 적용)
         kakaoRepository.saveAccessToken(clientId, response.getBody().getAccess_token(), Long.parseLong(response.getBody().getExpires_in()));
         return response.getBody();
+    }
+
+    public boolean validateState(String state) {
+        // 서버 세션 또는 DB에 저장된 state 값과 비교해서 검증
+        // 여기서는 예시로 항상 true 반환
+        return true;
     }
 }

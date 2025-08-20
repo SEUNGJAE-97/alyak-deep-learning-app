@@ -65,7 +65,6 @@ public class AuthServiceImpl implements AuthService {
     public void logout(String token) {
         // JWT는 stateless이므로 서버에서 토큰을 무효화할 수 없음
         // 클라이언트에서 토큰을 삭제하도록 안내
-        // 필요시 블랙리스트 구현 가능
     }
 
     @Override
