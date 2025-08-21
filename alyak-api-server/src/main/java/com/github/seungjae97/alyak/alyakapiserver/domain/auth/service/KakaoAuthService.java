@@ -8,6 +8,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.repository.KakaoRe
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -16,6 +17,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class KakaoAuthService {
 
@@ -32,6 +34,12 @@ public class KakaoAuthService {
     @Value("${KAKAO_REST_API_KEY}")
     private String clientId;
 
+    /**
+     * 서비스 서버 -> 카카오 서버
+     *
+     * @param state : uuid
+     * @return redirectUrl
+     */
     public String buildAuthorizationUrl(String state) {
         KakaoAuthCodeRequest request = KakaoAuthCodeRequest.builder()
                 .clientId(clientId)
@@ -43,13 +51,18 @@ public class KakaoAuthService {
         return request.toUriString(baseAuthorizeUrl);
     }
 
+    /**
+     * 서비스 서버 -> 카카오 서버
+     *
+     * @param code : 카카오 서버에서 주는 code
+     * @return token, refresh token 값 반환
+     */
     public KakoAuthTokenResponse requestAccessToken(String code) {
         KakaoAuthTokenRequest kakaoAuthTokenRequest = KakaoAuthTokenRequest.builder()
                 .grant_type("authorization_code")
                 .client_id(clientId)
                 .redirect_uri(redirectUri)
                 .code(code)
-                //.client_secret(clientSecret)
                 .build();
 
         HttpHeaders headers = new HttpHeaders();
@@ -63,6 +76,9 @@ public class KakaoAuthService {
 
         // Redis에 토큰 저장 (만료시간 적용)
         kakaoRepository.saveAccessToken(clientId, response.getBody().getAccess_token(), Long.parseLong(response.getBody().getExpires_in()));
+
+        //log.info(response.getBody().getAccess_token());
+
         return response.getBody();
     }
 

@@ -18,16 +18,11 @@ public class KakaoAuthController {
     private final KakaoAuthService kakaoAuthService;
 
     @PostMapping("/authorize")
-    public KakaoAuthCodeResponse getAuthorizationUrl(@RequestBody KakaoAuthCodeRequest request) {
+    public KakaoAuthCodeResponse getAuthorizationUrl() {
         String state = UUID.randomUUID().toString();
         String authorizationUrl = kakaoAuthService.buildAuthorizationUrl(state);
 
         return new KakaoAuthCodeResponse(authorizationUrl);
-    }
-
-    @PostMapping("/token")
-    public KakoAuthTokenResponse getAccessToken(@RequestBody KakaoAuthTokenRequest request) {
-        return kakaoAuthService.requestAccessToken(request.getCode());
     }
 
     @GetMapping("/callback")
@@ -35,7 +30,7 @@ public class KakaoAuthController {
             @RequestParam("code") String code,
             @RequestParam(value = "state", required = false) String state) {
 
-        // 1. state 검증 (토큰 요청 전 CSRF 방지용, 생략 가능하지만 권장)
+        // 1. state 검증
         boolean isValidState = kakaoAuthService.validateState(state);
         if (!isValidState) {
             return "Invalid state parameter";
@@ -43,6 +38,6 @@ public class KakaoAuthController {
 
         // 2. 받은 인가 코드(code)를 이용해 토큰 요청을 진행할 수 있도록 다음 처리 호출
         kakaoAuthService.requestAccessToken(code);
-        return "Authorization code received: " + code;
+        return "Authorization code received: " + code + "state : " + state;
     }
 }
