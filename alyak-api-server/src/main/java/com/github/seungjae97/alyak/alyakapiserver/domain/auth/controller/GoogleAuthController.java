@@ -4,9 +4,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.Kakao
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.GoogleAuthService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.KakaoAuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -27,4 +25,18 @@ public class GoogleAuthController {
 
         return new KakaoAuthCodeResponse(authorizationUrl);
     }
+
+    /**
+     * Google에서 콜백 (인가 코드 수신) → 인가 코드로 토큰 교환
+     * */
+    @GetMapping("/callback")
+    public String googleCallback(
+            @RequestParam String code,
+            @RequestParam String state
+    ){
+
+
+        return null;
+    }
+
 }
