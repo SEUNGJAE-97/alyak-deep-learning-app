@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.auth.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.KakaoAuthCodeRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.OAuthCodeRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.KakaoAuthTokenRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakaoUserResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakoAuthTokenResponse;
@@ -19,20 +19,26 @@ import org.springframework.web.client.RestTemplate;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class KakaoAuthService {
+public class KakaoAuthService implements OAuthService {
 
     private final KakaoRepository kakaoRepository;
     private final UserRepository userRepository;
-    private final String baseAuthorizeUrl = "https://kauth.kakao.com/oauth/authorize";
-    private final String baseTokenUrl = "https://kauth.kakao.com/oauth/token";
+
+    @Value("${KAKAO_AUTHORIZE_URL}")
+    private String kakaoAuthorUrl;
+
+    @Value("${KAKAO_TOKEN_URL}")
+    private String kakaoTokenUrl;
+
     @Autowired
     private RestTemplate restTemplate;
 
-    @Value("${REDIRECT_URI}")
-    private String redirectUri;
+    @Value("${KAKAO_REDIRECT_URI}")
+    private String kakaoRedirectUri;
+
 
     @Value("${KAKAO_REST_API_KEY}")
-    private String clientId;
+    private String kakaoClientId;
 
     /**
      * 서비스 서버 -> 카카오 서버
@@ -41,14 +47,14 @@ public class KakaoAuthService {
      * @return redirectUrl
      */
     public String buildAuthorizationUrl(String state) {
-        KakaoAuthCodeRequest request = KakaoAuthCodeRequest.builder()
-                .clientId(clientId)
-                .redirectUri(redirectUri)
+        OAuthCodeRequest builder = OAuthCodeRequest.builder()
+                .clientId(kakaoClientId)
+                .redirectUri(kakaoRedirectUri)
                 .responseType("code")
                 .state(state)
                 .build();
 
-        return request.toUriString(baseAuthorizeUrl);
+        return builder.toUriString(kakaoAuthorUrl);
     }
 
     /**
@@ -60,8 +66,8 @@ public class KakaoAuthService {
     public KakoAuthTokenResponse requestAccessToken(String code) {
         KakaoAuthTokenRequest kakaoAuthTokenRequest = KakaoAuthTokenRequest.builder()
                 .grant_type("authorization_code")
-                .client_id(clientId)
-                .redirect_uri(redirectUri)
+                .client_id(kakaoClientId)
+                .redirect_uri(kakaoRedirectUri)
                 .code(code)
                 .build();
 
@@ -72,10 +78,10 @@ public class KakaoAuthService {
                 new HttpEntity<>(kakaoAuthTokenRequest.toMultiValueMap(), headers);
 
         ResponseEntity<KakoAuthTokenResponse> response =
-                restTemplate.postForEntity(baseTokenUrl, request, KakoAuthTokenResponse.class);
+                restTemplate.postForEntity(kakaoTokenUrl, request, KakoAuthTokenResponse.class);
 
         // Redis에 토큰 저장 (만료시간 적용)
-        kakaoRepository.saveAccessToken(clientId, response.getBody().getAccess_token(), Long.parseLong(response.getBody().getExpires_in()));
+        kakaoRepository.saveAccessToken(kakaoClientId, response.getBody().getAccess_token(), Long.parseLong(response.getBody().getExpires_in()));
 
         //log.info(response.getBody().getAccess_token());
 
