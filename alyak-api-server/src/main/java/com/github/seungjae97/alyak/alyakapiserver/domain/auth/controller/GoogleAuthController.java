@@ -17,7 +17,7 @@ public class GoogleAuthController {
 
     /**
      * google 리다이렉트 url 호출하는 API
-     * */
+     */
     @PostMapping("/authorize")
     public KakaoAuthCodeResponse getAuthorizationUrl() {
         String state = UUID.randomUUID().toString();
@@ -28,13 +28,13 @@ public class GoogleAuthController {
 
     /**
      * Google에서 콜백 (인가 코드 수신) → 인가 코드로 토큰 교환
-     * */
+     */
     @GetMapping("/callback")
     public String googleCallback(
             @RequestParam String code,
             @RequestParam String state
-    ){
-
+    ) {
+        googleAuthService.requestAccessToken(code);
 
         return null;
     }
