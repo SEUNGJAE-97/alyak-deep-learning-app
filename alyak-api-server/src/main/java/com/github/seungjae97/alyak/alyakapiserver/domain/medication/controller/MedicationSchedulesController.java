@@ -16,7 +16,7 @@ import java.util.Optional;
 @RequestMapping("/api/medication-schedules")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-@Tag(name = "약 복용 스케쥴", description = "알약 복용 스케쥴 관리 관련 API")
+@Tag(name = "08. 약 복용 스케쥴", description = "알약 복용 스케쥴 관리 관련 API")
 public class MedicationSchedulesController {
     
     private final MedicationSchedulesService medicationSchedulesService;

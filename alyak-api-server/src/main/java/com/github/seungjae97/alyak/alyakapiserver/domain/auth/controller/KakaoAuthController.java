@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.auth.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakaoAuthCodeResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.KakaoAuthService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,6 +11,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/auth/kakao")
 @RequiredArgsConstructor
+@Tag(name = "03. 카카오 OAuth", description = "카카오 소셜 로그인 API")
 public class KakaoAuthController {
 
     private final KakaoAuthService kakaoAuthService;

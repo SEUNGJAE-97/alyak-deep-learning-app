@@ -15,7 +15,7 @@ import java.util.Optional;
 @RequestMapping("/api/families")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-@Tag(name = "가족", description = "가족 관리 API")
+@Tag(name = "06. 가족", description = "가족 관리 API")
 public class FamiliesController {
     
     private final FamiliesService familiesService;

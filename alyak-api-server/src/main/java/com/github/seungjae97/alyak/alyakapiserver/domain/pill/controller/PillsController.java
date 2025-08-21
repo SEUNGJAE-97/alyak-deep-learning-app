@@ -14,7 +14,7 @@ import java.util.Optional;
 @RequestMapping("/api/pills")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-@Tag(name = "알약 관리", description = "알약 관련 API")
+@Tag(name = "10. 알약 관리", description = "알약 관련 API")
 public class PillsController {
     
     private final PillsService pillsService;

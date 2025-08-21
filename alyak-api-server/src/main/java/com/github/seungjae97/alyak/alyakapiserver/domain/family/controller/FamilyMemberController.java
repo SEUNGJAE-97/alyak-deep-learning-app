@@ -15,7 +15,7 @@ import java.util.Optional;
 @RequestMapping("/api/family-members")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-@Tag(name = "Family Members", description = "가족 구성원 관리 API")
+@Tag(name = "07. 가족 구성원", description = "가족 구성원 관리 API")
 public class FamilyMemberController {
     
     private final FamilyMemberService familyMemberService;

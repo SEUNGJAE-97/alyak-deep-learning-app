@@ -11,7 +11,7 @@ import org.springframework.util.MultiValueMap;
 @Setter
 @Builder
 @RequiredArgsConstructor
-public class KakaoAuthTokenRequest {
+public class OAuthTokenRequest {
     private final String grant_type;
     private final String client_id;
     private final String redirect_uri;

@@ -3,6 +3,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.auth.controller;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakaoAuthCodeResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.GoogleAuthService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.KakaoAuthService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +12,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/auth/google")
 @RequiredArgsConstructor
+@Tag(name = "02.구글 OAuth", description = "구글 소셜 로그인 API")
 public class GoogleAuthController {
 
     private final GoogleAuthService googleAuthService;

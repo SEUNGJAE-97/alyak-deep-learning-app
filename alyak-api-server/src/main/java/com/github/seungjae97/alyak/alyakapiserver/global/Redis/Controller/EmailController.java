@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/email")
 @RequiredArgsConstructor
-@Tag(name = "이메일 인증", description = "이메일 인증 관련 API")
+@Tag(name = "04. 이메일 인증", description = "이메일 인증 관련 API")
 public class EmailController {
     private final RedisService mailService;
     private final RedisUtil redisUtil;

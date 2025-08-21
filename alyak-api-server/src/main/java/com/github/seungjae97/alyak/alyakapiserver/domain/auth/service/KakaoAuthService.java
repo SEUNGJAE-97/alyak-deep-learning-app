@@ -1,7 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.auth.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.OAuthCodeRequest;
-import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.KakaoAuthTokenRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.OAuthTokenRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakaoUserResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakoAuthTokenResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.repository.KakaoRepository;
@@ -64,7 +64,7 @@ public class KakaoAuthService implements OAuthService {
      * @return token, refresh token 값 반환
      */
     public KakoAuthTokenResponse requestAccessToken(String code) {
-        KakaoAuthTokenRequest kakaoAuthTokenRequest = KakaoAuthTokenRequest.builder()
+        OAuthTokenRequest oAuthTokenRequest = OAuthTokenRequest.builder()
                 .grant_type("authorization_code")
                 .client_id(kakaoClientId)
                 .redirect_uri(kakaoRedirectUri)
@@ -75,7 +75,7 @@ public class KakaoAuthService implements OAuthService {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         HttpEntity<MultiValueMap<String, String>> request =
-                new HttpEntity<>(kakaoAuthTokenRequest.toMultiValueMap(), headers);
+                new HttpEntity<>(oAuthTokenRequest.toMultiValueMap(), headers);
 
         ResponseEntity<KakoAuthTokenResponse> response =
                 restTemplate.postForEntity(kakaoTokenUrl, request, KakoAuthTokenResponse.class);

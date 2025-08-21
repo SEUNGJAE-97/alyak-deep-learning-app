@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.auth.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.KakaoAuthTokenRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.OAuthTokenRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.OAuthCodeRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakoAuthTokenResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +49,7 @@ public class GoogleAuthService implements OAuthService {
     * 서비스 서버 -> 구글 서버
     */
     public KakoAuthTokenResponse requestAccessToken(String code){
-        KakaoAuthTokenRequest kakaoAuthTokenRequest = KakaoAuthTokenRequest.builder()
+        OAuthTokenRequest oAuthTokenRequest = OAuthTokenRequest.builder()
                 .client_id(googleClientId)
                 .grant_type("authorization_code")
                 .redirect_uri(googleRedirectUri)
@@ -59,7 +59,7 @@ public class GoogleAuthService implements OAuthService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(kakaoAuthTokenRequest.toMultiValueMap(), headers);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(oAuthTokenRequest.toMultiValueMap(), headers);
 
         ResponseEntity<KakoAuthTokenResponse> response = restTemplate.postForEntity(
                 googleTokenUrl,
