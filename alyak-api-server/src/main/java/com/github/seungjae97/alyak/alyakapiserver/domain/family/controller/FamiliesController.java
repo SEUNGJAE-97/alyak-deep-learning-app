@@ -1,11 +1,13 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.family.controller;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.UserDetailsImpl;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Families;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.service.FamiliesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,10 +29,10 @@ public class FamiliesController {
         return ResponseEntity.ok(families);
     }
     
-    @GetMapping("/{id}")
-    @Operation(summary = "가족 조회", description = "ID로 특정 가족 정보를 조회합니다.")
-    public ResponseEntity<Families> getFamilyById(@PathVariable Long id) {
-        Optional<Families> family = familiesService.getById(id);
+    @GetMapping("/search")
+    @Operation(summary = "가족 조회", description = "유저 아이디로 특정 가족 정보를 조회합니다.")
+    public ResponseEntity<Families> getFamilyById(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Optional<Families> family = familiesService.getById(userDetails.getUser().getId());
         return family.map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
     }
@@ -43,7 +45,7 @@ public class FamiliesController {
     }
     
     @PutMapping("/{id}")
-    @Operation(summary = "가족 정보 수정", description = "기존 가족 정보를 수정합니다.")
+    @Operation(summary = "가족 정보 수정", description = "가족 아이디에 해당하는 가족의 정보를 수정합니다.")
     public ResponseEntity<Families> updateFamily(@PathVariable Long id, @RequestBody Families family) {
         Optional<Families> existingFamily = familiesService.getById(id);
         if (existingFamily.isEmpty()) {
