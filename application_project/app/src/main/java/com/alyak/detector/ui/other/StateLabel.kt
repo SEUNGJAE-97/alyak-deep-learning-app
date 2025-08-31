@@ -1,61 +1,49 @@
 package com.alyak.detector.ui.other
 
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.alyak.detector.R
 
 @Composable
-fun StateLabel(
-    value : String,
-    onValueChange : (String) -> Unit
+fun StatusBadge(
+    text: String,
+    backgroundColor: Color,
+    textColor: Color
 ) {
-    TextField(
-        value = value,
-        onValueChange = { newValue ->
-            if (newValue.all { it.isDigit() }) {
-                onValueChange(newValue)
-            }
-        },
+    Box(
         modifier = Modifier
-            .size(80.dp)
-            .border(
-                2.dp,
-                colorResource(R.color.primaryBlue),
-                RoundedCornerShape(12.dp)
-            ),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        textStyle = TextStyle(
+            .background(
+                color = backgroundColor,
+                shape = RoundedCornerShape(40.dp)
+            )
+            .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Text(
+            text = text,
+            color = textColor,
             fontSize = 22.sp,
-            textAlign = TextAlign.Center
-        ),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = colorResource(R.color.white),
-            unfocusedContainerColor = colorResource(R.color.white)
+            textAlign = TextAlign.Center,
+            modifier = Modifier.align(Alignment.Center)
         )
-    )
+    }
 }
 
 @Composable
 @Preview(showBackground = true)
 fun StateLabelPreview() {
-    var value by remember { mutableStateOf("") }
-    StateLabel(value = value, onValueChange = {value=it})
+    StatusBadge(
+        text = "정상",
+        backgroundColor = Color(0xFFD1FAE5), // 연한 초록
+        textColor = Color(0xFF10B981)       // 진한 초록
+    )
 }
