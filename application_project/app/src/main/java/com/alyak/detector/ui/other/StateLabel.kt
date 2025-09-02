@@ -26,12 +26,12 @@ fun StatusBadge(
                 color = backgroundColor,
                 shape = RoundedCornerShape(40.dp)
             )
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
         Text(
             text = text,
             color = textColor,
-            fontSize = 22.sp,
+            fontSize = 10.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.align(Alignment.Center)
         )
