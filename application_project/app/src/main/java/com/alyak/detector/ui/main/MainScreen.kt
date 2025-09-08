@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import com.alyak.detector.ui.other.BottomForm
 import com.alyak.detector.ui.other.DashboardCard
+import com.alyak.detector.ui.other.FloatingActionButton
 import com.alyak.detector.ui.other.HeaderForm
 
 @Composable
@@ -71,6 +72,9 @@ fun MainScreen(
     var selectedIndex by remember { mutableStateOf(0) }
 
     Scaffold(
+        topBar = {
+            HeaderForm()
+        },
         bottomBar = {
             BottomForm(
                 modifier = Modifier.fillMaxWidth(),
@@ -78,6 +82,9 @@ fun MainScreen(
                 selectedIndex = selectedIndex,
                 onItemSelected = { selectedIndex = it }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton()
         }
     ) { paddingValues ->
         Column(
@@ -90,9 +97,6 @@ fun MainScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
-            HeaderForm()
-            Spacer(modifier = Modifier.height(24.dp))
-
             NextMedicationCard()
             Spacer(modifier = Modifier.height(24.dp))
 
