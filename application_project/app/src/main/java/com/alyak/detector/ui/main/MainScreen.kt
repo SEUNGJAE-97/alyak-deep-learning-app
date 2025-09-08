@@ -36,64 +36,109 @@ import com.alyak.detector.ui.theme.BackgroundGradientStart
 import com.alyak.detector.ui.theme.CardBackground
 import com.alyak.detector.ui.theme.PrimaryGreen
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import com.alyak.detector.ui.other.BottomForm
+import com.alyak.detector.ui.other.DashboardCard
+import com.alyak.detector.ui.other.HeaderForm
 
 @Composable
 fun MainScreen(
     navController: NavController
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(BackgroundGradientStart, BackgroundGradientEnd)
-                )
+    val icons = listOf(
+        Icons.Filled.Home,
+        Icons.Filled.DateRange,
+        Icons.Filled.FavoriteBorder,
+        Icons.Filled.Settings
+    )
+    var selectedIndex by remember { mutableStateOf(0) }
+
+    Scaffold(
+        bottomBar = {
+            BottomForm(
+                modifier = Modifier.fillMaxWidth(),
+                icons = icons,
+                selectedIndex = selectedIndex,
+                onItemSelected = { selectedIndex = it }
             )
-    ) {
+        }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .background(
+                    Color.White
+                )
+                .padding(paddingValues)  // Scaffold가 바텀바 높이만큼 패딩 자동 적용
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
         ) {
+            HeaderForm()
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Logo
-            Text(
-                text = "Alyak",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Next Medication Card
             NextMedicationCard()
-
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Quick Action Buttons
-            QuickActionButtons(
-                onQrScanClick = {
-                    navController.navigate("CameraScreen")
+            DashboardButtonGrid(
+                // Dashboard
+                {
+                    DashboardCard(
+                        icon = Icons.Default.Map,
+                        iconBackgroundColor = Color(0xFFD6D8FB),
+                        title = "지도",
+                        subtitle = "주변 의료기관",
+                        onClick = { navController.navigate("MapScreen") }
+                    )
                 },
-                onPillSearchClick = {
-                    navController.navigate("pillSearch")
+                {
+                    DashboardCard(
+                        icon = Icons.Default.Description,
+                        iconBackgroundColor = Color(0xFFF3E8FE),
+                        title = "복용 이력",
+                        subtitle = "90%~",
+                        onClick = {}
+                    )
                 },
-                onMapSearchClick = {
-                    navController.navigate("MapScreen")
+                {
+                    DashboardCard(
+                        icon = Icons.Default.Search,
+                        iconBackgroundColor = Color(0xFFFFF2D8),
+                        title = "약 정보",
+                        subtitle = "검색 및 등록",
+                        onClick = { navController.navigate("pillSearch") }
+                    )
+                },
+                {
+                    DashboardCard(
+                        icon = Icons.Default.Person,
+                        iconBackgroundColor = Color(0xFFE6F3E7),
+                        title = "가족 캐스팅",
+                        subtitle = "가족 이력 관리",
+                        onClick = {}
+                    )
                 }
             )
-
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Medication History
             MedicationHistory()
-
             Spacer(modifier = Modifier.height(24.dp))
-
-            // Health Checklist
-            HealthChecklist()
         }
     }
 }
@@ -105,7 +150,7 @@ fun NextMedicationCard() {
             .fillMaxWidth()
             .height(120.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PrimaryGreen)
+        colors = CardDefaults.cardColors(containerColor = colorResource(R.color.primaryBlue))
     ) {
         Column(
             modifier = Modifier
@@ -135,73 +180,34 @@ fun NextMedicationCard() {
 }
 
 @Composable
-fun QuickActionButtons(
-    onQrScanClick: () -> Unit,
-    onPillSearchClick: () -> Unit,
-    onMapSearchClick: () -> Unit
+fun DashboardButtonGrid(
+    button1: @Composable () -> Unit,
+    button2: @Composable () -> Unit,
+    button3: @Composable () -> Unit,
+    button4: @Composable () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        QuickActionButton(
-            icon = painterResource(id = R.drawable.camera),
-            text = "알약 스캔",
-            modifier = Modifier.weight(1f),
-            onClick = onQrScanClick
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        QuickActionButton(
-            icon = painterResource(id = R.drawable.pill),
-            text = "알약 검색",
-            modifier = Modifier.weight(1f),
-            onClick = onPillSearchClick
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        QuickActionButton(
-            icon = painterResource(id = R.drawable.map),
-            text = "주변 약국",
-            modifier = Modifier.weight(1f),
-            onClick = onMapSearchClick
-        )
-    }
-}
-
-@Composable
-fun QuickActionButton(
-    icon: Painter,
-    text: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = modifier
-            .height(100.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Image(
-                painter = icon,
-                contentDescription = text,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = text,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            button1()
+            button2()
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            button3()
+            button4()
         }
     }
 }
+
 
 @Composable
 fun MedicationHistory() {
@@ -227,51 +233,6 @@ fun MedicationHistory() {
                 )
             }
         }
-    }
-}
-
-@Composable
-fun HealthChecklist() {
-    Column {
-        Text(
-            text = "건강 체크리스트",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBackground)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                ChecklistItem("두통")
-                Spacer(modifier = Modifier.height(8.dp))
-                ChecklistItem("피로감")
-                Spacer(modifier = Modifier.height(8.dp))
-                ChecklistItem("소화불량")
-            }
-        }
-    }
-}
-
-@Composable
-fun ChecklistItem(text: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "☐",
-            fontSize = 20.sp
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            fontSize = 14.sp
-        )
     }
 }
 
