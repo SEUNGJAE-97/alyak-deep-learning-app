@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import com.alyak.detector.R
-import kotlin.math.PI
 
 data class DonutSegment(val ratio: Float, val color: Color)
 
