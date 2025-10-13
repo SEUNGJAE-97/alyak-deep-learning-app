@@ -2,7 +2,6 @@ package com.alyak.detector.ui.family
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -198,6 +197,7 @@ fun HistoryScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.Bottom
                 ) {
+                    //TODO : 최근 7일 복약 패턴 그래프 데이터 입력 받아야함
                     val barDataList = listOf(
                         listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 5/30: 성공
                         listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 5/31: 성공
@@ -226,9 +226,21 @@ fun HistoryScreen(
                     }
                 }
 
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 17.dp, 2.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        "5/30",
+                    )
+                }
+
+
                 // 일정알림박스
                 ContentBox(
-                    Modifier.fillMaxWidth()
+                    Modifier
+                        .fillMaxWidth()
                         .height(110.dp)
                         .background(
                             brush = Brush.horizontalGradient(
@@ -237,13 +249,14 @@ fun HistoryScreen(
                                     Color(0xFFF9F7FB)
                                 )
                             ),
-                            shape = RoundedCornerShape(40.dp))
+                            shape = RoundedCornerShape(40.dp)
+                        )
                         .padding(20.dp)
                 ) {
                     Row(
                         Modifier.fillMaxSize(),
                         verticalAlignment = Alignment.CenterVertically
-                    ){
+                    ) {
 // 왼쪽: 아이콘 + 약 정보
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             // 체크 동그라미
