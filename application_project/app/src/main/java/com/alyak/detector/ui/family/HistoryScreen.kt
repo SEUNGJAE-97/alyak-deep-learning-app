@@ -217,131 +217,60 @@ fun HistoryScreen(
                         ) // 6/5: 지연+성공
                     )
 
-                    barDataList.forEach { segments ->
-                        ChartBar(
-                            segments = segments,
-                            modifier = Modifier
-                                .padding(horizontal = 2.dp)
+                    val barDataWithDates = listOf(
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "5/30"),
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "5/31"),
+                        Pair(
+                            listOf(
+                                BarSegment(0.4f, colorResource(R.color.RealRed)),
+                                BarSegment(0.6f, colorResource(R.color.primaryBlue))
+                            ), "6/1"
+                        ),
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "6/2"),
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "6/3"),
+                        Pair(
+                            listOf(
+                                BarSegment(0.2f, colorResource(R.color.RealRed)),
+                                BarSegment(0.8f, colorResource(R.color.primaryBlue))
+                            ), "6/4"
+                        ),
+                        Pair(
+                            listOf(
+                                BarSegment(0.4f, colorResource(R.color.Orange)),
+                                BarSegment(0.6f, colorResource(R.color.primaryBlue))
+                            ), "6/5"
                         )
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 17.dp, 2.dp)
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        "5/30",
                     )
-                }
 
-
-                // 일정알림박스
-                ContentBox(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(110.dp)
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFFF4F3FA),
-                                    Color(0xFFF9F7FB)
-                                )
-                            ),
-                            shape = RoundedCornerShape(40.dp)
-                        )
-                        .padding(20.dp)
-                ) {
                     Row(
-                        Modifier.fillMaxSize(),
-                        verticalAlignment = Alignment.CenterVertically
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.Bottom
                     ) {
-// 왼쪽: 아이콘 + 약 정보
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            // 체크 동그라미
-                            Box(
-                                Modifier
-                                    .size(56.dp)
-                                    .background(Color.White, shape = CircleShape)
-                                    .border(2.dp, Color(0xFF7262FD), shape = CircleShape),
-                                contentAlignment = Alignment.Center
+                        barDataWithDates.forEach { (segments, date) ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(horizontal = 2.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = Color(0xFF7262FD),
-                                    modifier = Modifier.size(32.dp)
+                                ChartBar(
+                                    segments = segments,
+                                    modifier = Modifier
+                                        .height(100.dp)
+                                        .width(20.dp)
                                 )
-                            }
-                            Spacer(Modifier.width(16.dp))
-                            // 텍스트 정보
-                            Column {
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "다음 복용 예정",
-                                    fontSize = 14.sp,
-                                    color = Color.Black.copy(alpha = 0.7f)
-                                )
-                                Text(
-                                    "오늘 저녁 7시",
-                                    fontSize = 22.sp,
-                                    color = Color.Black,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                                Text(
-                                    "고혈압약 아모잘탄",
-                                    fontSize = 16.sp,
-                                    color = Color.Black,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    "1정, 식후 30분",
+                                    date,
                                     fontSize = 12.sp,
                                     color = Color.Gray
                                 )
                             }
                         }
-
-                        Spacer(modifier = Modifier.weight(1f))
-                        // 오른쪽: 남은 시간/버튼
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.padding(start = 12.dp)
-                        ) {
-                            Text(
-                                "남은 시간",
-                                fontSize = 14.sp,
-                                color = Color.Black.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                "3시간 20분",
-                                fontSize = 22.sp,
-                                color = Color(0xFF4E4BFB),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            // 알림 설정 버튼
-                            Button(
-                                onClick = { /*TODO*/ },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                                elevation = ButtonDefaults.buttonElevation(0.dp),
-                                shape = RoundedCornerShape(20.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Alarm,   // 필요시 custom 아이콘
-                                    contentDescription = null,
-                                    tint = Color(0xFF4E4BFB),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text("알림 설정", color = Color(0xFF4E4BFB), fontSize = 13.sp)
-                            }
-                        }
                     }
                 }
+                ScheduleBox()
             }
         }
     }
