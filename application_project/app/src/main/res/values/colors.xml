@@ -37,4 +37,8 @@
     <color name="googleGray">#F2F2F2</color>
     <!--light gray-->
     <color name="lightGray">#BCBCBC</color>
+    <!--light pink-->
+    <color name="lightPink">#F8E8F2</color>
+    <!--lightPurple-->
+    <color name="lightPurple">#E8E8F9</color>
 </resources>

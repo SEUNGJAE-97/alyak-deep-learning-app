@@ -1,14 +1,11 @@
 package com.alyak.detector.ui.family;
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -26,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
@@ -48,41 +44,58 @@ fun ScheduleBox(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .height(150.dp)
             .background(
                 brush = Brush.horizontalGradient(
-                    listOf(colorResource(R.color.primaryBlue), colorResource(R.color.pink))
+                    listOf(colorResource(R.color.lightPurple), colorResource(R.color.lightPink))
                 ),
                 shape = RoundedCornerShape(24.dp)
             )
-            .shadow(4.dp, RoundedCornerShape(24.dp), clip = false)
             .padding(20.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(70.dp)
-                    .background(Color.White, CircleShape)
-                    .border(2.dp, Color(0xFF7262FD), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = Color(0xFF7262FD),
-                    modifier = Modifier.size(34.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text("다음 복용 예정", fontSize = 17.sp, color = Color.Black.copy(alpha = 0.75f))
-                Text(doseTime, fontSize = 25.sp, fontWeight = FontWeight.Bold)
-                Text(medicine, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                Text(detail, fontSize = 12.sp, color = Color.Gray)
+                Text("다음 복용 예정", fontSize = 15.sp, color = Color.Black.copy(alpha = 0.75f))
+                Text(doseTime, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .padding(4.dp)
+                            .background(Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color(0xFF7262FD),
+                            modifier = Modifier.size(40.dp)
+                        )
+
+                    }
+                    Column {
+                        Text(medicine, fontSize = 16.sp, fontWeight = FontWeight.Normal)
+                        Text(
+                            detail,
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.black),
+                            fontWeight = FontWeight.Thin
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.weight(1f))
             Column(horizontalAlignment = Alignment.End) {
                 Text("남은 시간", fontSize = 13.sp, color = Color.Black.copy(alpha = 0.7f))
-                Text(timeLeft, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7262FD))
+                Text(
+                    timeLeft,
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF7262FD)
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = onAlarmClick,
@@ -104,7 +117,6 @@ fun ScheduleBox(
         }
     }
 }
-
 
 
 @Composable
