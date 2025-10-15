@@ -201,11 +201,11 @@ fun HistoryScreen(
                         listOf(
                             BarSegment(0.2f, colorResource(R.color.RealRed)),
                             BarSegment(0.8f, colorResource(R.color.primaryBlue))
-                        ), // 6/4: 미복용+성공
+                        ), // 6/4: 미복용+완료
                         listOf(
                             BarSegment(0.4f, colorResource(R.color.Orange)),
                             BarSegment(0.6f, colorResource(R.color.primaryBlue))
-                        ) // 6/5: 지연+성공
+                        ) // 6/5: 지연+완료
                     )
 
                     val barDataWithDates = listOf(
@@ -264,7 +264,9 @@ fun HistoryScreen(
                 ScheduleBox()
 
                 // 복약 기록 박스
+                Spacer(modifier = Modifier.height(10.dp))
 
+                HistoryBox()
             }
         }
     }
