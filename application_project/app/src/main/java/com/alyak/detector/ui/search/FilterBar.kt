@@ -1,7 +1,6 @@
 package com.alyak.detector.ui.search
 
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -10,7 +9,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.colorResource
@@ -24,7 +22,8 @@ fun <E : Enum<E>> FilterBar(
     entries: List<E>,
     labelSelector: (E) -> String,
     iconSelector: @Composable (E) -> Painter,
-    onItemClick: (E) -> Unit = {}
+    onItemClick: (E) -> Unit = {},
+    modifier: Modifier = Modifier.height(80.dp)
 ) {
     Row(
         modifier = Modifier
@@ -57,6 +56,7 @@ fun FilterBarPrev() {
         entries = PillShapeType.entries,
         labelSelector = { it.label },
         iconSelector = { rememberVectorPainter(it.icon) },
-        onItemClick = {}
+        onItemClick = {},
+        modifier = Modifier
     )
 }

@@ -2,8 +2,10 @@ package com.alyak.detector.ui.search
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,20 +59,38 @@ fun PillSearchScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
                 .background(
                     colorResource(R.color.white)
                 )
-                .padding(paddingValues)  // Scaffold가 바텀바 높이만큼 패딩 자동 적용
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
+            Spacer(Modifier.height(20.dp))
             //외형 , 색상 등등 버튼
             // 가로로 스크롤 되도록 3줄
+            FilterBar(
+                PillShapeType.entries,
+                { it.label },
+                { rememberVectorPainter(it.icon) },
+                {/*TODO : 단순 색상 변경 및 상태를 저장 해둬야함*/ }
+            )
+            FilterBar(
+                PillShapeType.entries,
+                { it.label },
+                { rememberVectorPainter(it.icon) },
+                {/*TODO : 단순 색상 변경 및 상태를 저장 해둬야함*/ }
+            )
+            FilterBar(
+                PillShapeType.entries,
+                { it.label },
+                { rememberVectorPainter(it.icon) },
+                {/*TODO : 단순 색상 변경 및 상태를 저장 해둬야함*/ }
+            )
             // 빠른 검색 ( 두통약, 소화제, 해열제....)
+            QuickSearch()
             //최근 검색
         }
-
-
     }
 }
 

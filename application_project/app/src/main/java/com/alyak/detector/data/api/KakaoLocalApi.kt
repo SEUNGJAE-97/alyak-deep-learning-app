@@ -1,6 +1,6 @@
 package com.alyak.detector.data.api
 
-import com.alyak.detector.data.dto.KakaoPlaceResponse
+import com.alyak.detector.data.dto.map.KakaoPlaceResponse
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Header

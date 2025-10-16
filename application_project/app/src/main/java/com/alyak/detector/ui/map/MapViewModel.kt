@@ -3,8 +3,8 @@ package com.alyak.detector.ui.map
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alyak.detector.data.dto.KakaoPlaceDto
-import com.alyak.detector.data.dto.LocationDto
+import com.alyak.detector.data.dto.map.KakaoPlaceDto
+import com.alyak.detector.data.dto.map.LocationDto
 import com.alyak.detector.data.repository.FusedLocationRepo
 import com.alyak.detector.data.repository.KakaoPlaceRepo
 import dagger.hilt.android.lifecycle.HiltViewModel

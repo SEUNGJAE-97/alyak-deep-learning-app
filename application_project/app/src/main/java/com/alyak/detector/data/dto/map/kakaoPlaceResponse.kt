@@ -1,4 +1,4 @@
-package com.alyak.detector.data.dto
+package com.alyak.detector.data.dto.map
 
 data class KakaoPlaceResponse(
     val meta: Meta,
