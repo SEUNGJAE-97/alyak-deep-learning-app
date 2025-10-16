@@ -108,7 +108,9 @@ fun FindPasswordForm(
                     containerColor = colorResource(R.color.primaryBlue),
                     modifier = Modifier.size(80.dp),
                     shape = RoundedCornerShape(50.dp),
-                    imageSize = 40.dp
+                    imageSize = 40.dp,
+                    contentDescription = null,
+                    contentColor = colorResource(R.color.white)
                 )
             }
         }
