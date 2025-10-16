@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.search
+package com.alyak.detector.data.dto.pill
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Circle

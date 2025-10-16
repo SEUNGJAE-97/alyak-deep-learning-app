@@ -10,14 +10,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 import com.alyak.detector.data.dto.pill.Pill
+import com.alyak.detector.data.dto.pill.PillCategory
 import com.alyak.detector.ui.other.PillInfoBox
 
 @Composable
@@ -44,9 +45,9 @@ fun QuickSearch() {
             }
 
             FilterBar(
-                entries = PillShapeType.entries,
-                labelSelector = { it.label },
-                iconSelector = { rememberVectorPainter(it.icon) },
+                entries = PillCategory.entries,
+                labelSelector = { it.name },
+                iconSelector = { painterResource(it.image) },
                 onItemClick = { },
             )
 
