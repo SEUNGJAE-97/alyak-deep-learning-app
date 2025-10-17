@@ -75,17 +75,17 @@ fun MainScreen(
         topBar = {
             HeaderForm()
         },
-        bottomBar = {
-            BottomForm(
-                modifier = Modifier.fillMaxWidth(),
-                icons = icons,
-                selectedIndex = selectedIndex,
-                onItemSelected = { selectedIndex = it }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton()
-        }
+            bottomBar = {
+                BottomForm(
+                    modifier = Modifier.fillMaxWidth(),
+                    icons = icons,
+                    selectedIndex = selectedIndex,
+                    onItemSelected = { selectedIndex = it }
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton()
+            }
     ) { paddingValues ->
         Column(
             modifier = Modifier
