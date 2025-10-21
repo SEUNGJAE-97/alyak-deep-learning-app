@@ -1,5 +1,7 @@
 package com.alyak.detector.data.dto.pill.PillDetail
 
+import com.alyak.detector.data.dto.MealTime
+
 /**
  * 약 상세 정보를 담는 DTO 클래스.
  *
@@ -49,7 +51,7 @@ data class MedicineInfoDTO(
  */
 data class DosageInfoDTO(
     val dosageText: String,
-    val dosageTimes: List<String>
+    val dosageTimes: List<MealTime>
 )
 
 /**

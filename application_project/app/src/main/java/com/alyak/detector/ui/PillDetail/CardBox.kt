@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
@@ -56,6 +58,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
+import com.alyak.detector.data.dto.MealTime
 import com.alyak.detector.data.dto.pill.PillDetail.AdditionalInfoDTO
 import com.alyak.detector.data.dto.pill.PillDetail.AlertInfoDTO
 import com.alyak.detector.data.dto.pill.PillDetail.DosageInfoDTO
@@ -219,7 +222,7 @@ fun FullPillDetailScreenPreview() {
         ),
         dosageInfo = DosageInfoDTO(
             dosageText = "하루 3회, 식후 30분 내 복용",
-            dosageTimes = listOf("아침", "점심", "저녁")
+            dosageTimes = listOf(MealTime.MORNING, MealTime.LUNCH, MealTime.DINNER)
         ),
         effectsInfo = EffectsInfoDTO(
             tags = listOf("해열", "진통"),
@@ -264,7 +267,7 @@ fun FullPillDetailScreenPreview() {
                     Modifier
                         .size(60.dp)
                         .background(colorResource(R.color.white))
-                        .border(2.dp, colorResource(R.color.lightGray), CircleShape),
+                        .border(2.dp, colorResource(R.color.white), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -322,17 +325,57 @@ fun FullPillDetailScreenPreview() {
                 title = "용법 및 용량"
             ) {
                 Column {
-                    Text(medicineDetail.dosageInfo.dosageText, fontSize = 15.sp)
-                    Spacer(Modifier.height(10.dp))
-                    Row {
+                    Row(
+                        modifier = Modifier.padding(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(
                             Icons.Default.Schedule,
                             contentDescription = null,
-                            tint = Color(0xFF7262FD)
+                            tint = colorResource(R.color.primaryBlue),
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(medicineDetail.dosageInfo.dosageText, fontSize = 15.sp)
+                        Spacer(Modifier.height(10.dp))
+                    }
+                    Row(
+                        modifier = Modifier.padding(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CalendarMonth,
+                            contentDescription = null,
+                            tint = colorResource(R.color.primaryBlue),
+                            modifier = Modifier.padding(end = 8.dp)
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("복용 시간대: ${medicineDetail.dosageInfo.dosageTimes.joinToString(", ")}")
+                        medicineDetail.dosageInfo.dosageTimes.forEach { mealTime ->
+
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        colorResource(mealTime.backgroundColor),
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = mealTime.icon,
+                                    contentDescription = mealTime.name,
+                                    tint = colorResource(mealTime.tint),
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                )
+                            }
+                        }
                         Spacer(Modifier.width(18.dp))
+
+                    }
+                    Row(
+                        modifier = Modifier.padding(4.dp)
+                    ) {
                         Icon(
                             Icons.Default.WaterDrop,
                             contentDescription = null,
