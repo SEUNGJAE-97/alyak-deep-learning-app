@@ -1,21 +1,60 @@
 package com.alyak.detector.ui.PillDetail
 
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ReportProblem
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 import com.alyak.detector.data.dto.pill.PillDetail.AdditionalInfoDTO
 import com.alyak.detector.data.dto.pill.PillDetail.AlertInfoDTO
@@ -78,13 +117,54 @@ fun TitledSection(
 fun TagList(tags: List<String>) {
     Row(Modifier.horizontalScroll(rememberScrollState())) {
         tags.forEach { tag ->
-            StatusBadge(tag, colorResource(R.color.primaryBlue).copy(alpha = 0.5f), colorResource(R.color.primaryBlue))
+            StatusBadge(
+                tag,
+                colorResource(R.color.primaryBlue).copy(alpha = 0.5f),
+                colorResource(R.color.primaryBlue)
+            )
             Spacer(Modifier.width(6.dp))
         }
     }
 }
 
-// 경고 박스
+/**
+ * 복용 알림 등록, 이력 확인 버튼
+ * */
+@Composable
+fun FunctionButtonRow() {
+    Column(Modifier.fillMaxWidth()) {
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7262FD)),
+            onClick = { }
+        ) {
+            Icon(Icons.Default.Notifications, contentDescription = null, Modifier.size(20.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("복약 알림 등록", color = Color.White)
+        }
+        Spacer(Modifier.height(6.dp))
+        OutlinedButton(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            onClick = { }
+        ) {
+            Icon(
+                Icons.Default.CheckCircle,
+                contentDescription = null,
+                Modifier.size(20.dp),
+                tint = Color(0xFF7262FD)
+            )
+            Spacer(Modifier.width(6.dp))
+            Text("복용 이력 확인", color = Color(0xFF7262FD))
+        }
+    }
+}
+
+/**
+ * @param title 주의 사항
+ * @param items 주의 사항 세부 정보 (알레르기 반응 주의, 과다 복용 금지)
+ * */
 @Composable
 fun AlertBox(
     title: String,
@@ -110,34 +190,7 @@ fun AlertBox(
     }
 }
 
-// 버튼 Row 스타일 (맞춤 기능)
-@Composable
-fun FunctionButtonRow() {
-    Column(Modifier.fillMaxWidth()) {
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7262FD)),
-            onClick = { }
-        ) {
-            Icon(Icons.Default.Notifications, contentDescription = null, Modifier.size(20.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("복약 알림 등록", color = Color.White)
-        }
-        Spacer(Modifier.height(6.dp))
-        OutlinedButton(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            onClick = { }
-        ) {
-            Icon(Icons.Default.CheckCircle, contentDescription = null, Modifier.size(20.dp), tint = Color(0xFF7262FD))
-            Spacer(Modifier.width(6.dp))
-            Text("복용 이력 확인", color = Color(0xFF7262FD))
-        }
-    }
-}
-
-// 메모 입력 박스
+// TODO : 삭제고려
 @Composable
 fun MemoInputBox() {
     var value by remember { mutableStateOf("") }
@@ -161,7 +214,8 @@ fun FullPillDetailScreenPreview() {
             subName = "아세트 아미노펜",
             manufacturer = "한국제약",
             code = "TYL500",
-            category = "일반의약품"
+            category = "일반의약품",
+            img = R.drawable.pill
         ),
         dosageInfo = DosageInfoDTO(
             dosageText = "하루 3회, 식후 30분 내 복용",
@@ -206,21 +260,21 @@ fun FullPillDetailScreenPreview() {
         //  약 정보 카드
         CardBox {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // 약 모양 예시
                 Box(
                     Modifier
                         .size(60.dp)
-                        .background(Color(0xFFF5F5F5), CircleShape)
-                        .border(2.dp, Color(0xFFD1D1EA), CircleShape),
+                        .background(colorResource(R.color.white))
+                        .border(2.dp, colorResource(R.color.lightGray), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Default.Circle,
-                        contentDescription = null,
-                        tint = Color(0xFFC7C7D6),
-                        modifier = Modifier.size(38.dp)
+                    Image(
+                        painter = painterResource(medicineDetail.medicineInfo.img),
+                        contentDescription = medicineDetail.medicineInfo.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
                 }
+
                 Spacer(Modifier.width(20.dp))
 
                 Column {
@@ -229,7 +283,11 @@ fun FullPillDetailScreenPreview() {
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
-                    Text("(${medicineDetail.medicineInfo.subName})", fontSize = 14.sp, color = Color.DarkGray)
+                    Text(
+                        "(${medicineDetail.medicineInfo.subName})",
+                        fontSize = 14.sp,
+                        color = Color.DarkGray
+                    )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "제조사: ${medicineDetail.medicineInfo.manufacturer}",
@@ -267,11 +325,19 @@ fun FullPillDetailScreenPreview() {
                     Text(medicineDetail.dosageInfo.dosageText, fontSize = 15.sp)
                     Spacer(Modifier.height(10.dp))
                     Row {
-                        Icon(Icons.Default.Schedule, contentDescription = null, tint = Color(0xFF7262FD))
+                        Icon(
+                            Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Color(0xFF7262FD)
+                        )
                         Spacer(Modifier.width(4.dp))
                         Text("복용 시간대: ${medicineDetail.dosageInfo.dosageTimes.joinToString(", ")}")
                         Spacer(Modifier.width(18.dp))
-                        Icon(Icons.Default.WaterDrop, contentDescription = null, tint = Color(0xFF7262FD))
+                        Icon(
+                            Icons.Default.WaterDrop,
+                            contentDescription = null,
+                            tint = Color(0xFF7262FD)
+                        )
                         Spacer(Modifier.width(4.dp))
                         Text("충분한 물과 함께 복용")
                     }

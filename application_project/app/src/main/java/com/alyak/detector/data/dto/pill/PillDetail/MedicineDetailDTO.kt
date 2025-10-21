@@ -37,7 +37,8 @@ data class MedicineInfoDTO(
     val subName: String,
     val manufacturer: String,
     val code: String,
-    val category: String
+    val category: String,
+    val img: Int
 )
 
 /**
