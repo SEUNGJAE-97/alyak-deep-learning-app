@@ -1,6 +1,7 @@
 package com.alyak.detector.data.dto.pill.PillDetail
 
 import com.alyak.detector.data.dto.MealTime
+import com.alyak.detector.data.dto.common.SpecialCautionType
 
 /**
  * 약 상세 정보를 담는 DTO 클래스.
@@ -84,7 +85,7 @@ data class AlertInfoDTO(
  */
 data class SpecialCautionDTO(
     val title: String,
-    val tags: List<String>,
+    val tags: List<SpecialCautionType>,
     val extraText: String? = null
 )
 

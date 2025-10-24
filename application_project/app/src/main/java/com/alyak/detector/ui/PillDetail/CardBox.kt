@@ -22,7 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -49,16 +48,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 import com.alyak.detector.data.dto.MealTime
+import com.alyak.detector.data.dto.common.SpecialCautionType
 import com.alyak.detector.data.dto.pill.PillDetail.AdditionalInfoDTO
 import com.alyak.detector.data.dto.pill.PillDetail.AlertInfoDTO
 import com.alyak.detector.data.dto.pill.PillDetail.DosageInfoDTO
@@ -117,11 +119,16 @@ fun TitledSection(
  *@param tags : StatusBadge에 tags를 담아 출력
  * */
 @Composable
-fun TagList(tags: List<String>) {
+fun <T> TagList(
+    tags: List<T>,
+    labelMapper: @Composable (T) -> Pair<String, Painter?>
+) {
     Row(Modifier.horizontalScroll(rememberScrollState())) {
         tags.forEach { tag ->
+            val (text, icon) = labelMapper(tag)
             StatusBadge(
-                tag,
+                text,
+                icon,
                 colorResource(R.color.primaryBlue).copy(alpha = 0.5f),
                 colorResource(R.color.primaryBlue)
             )
@@ -209,7 +216,7 @@ fun MemoInputBox() {
 }
 
 @Composable
-@Preview(showBackground = true)
+@Preview(showBackground = true, heightDp = 2000)
 fun FullPillDetailScreenPreview() {
     val medicineDetail = MedicineDetailDTO(
         medicineInfo = MedicineInfoDTO(
@@ -234,7 +241,7 @@ fun FullPillDetailScreenPreview() {
         ),
         specialCaution = SpecialCautionDTO(
             title = "특별 주의 대상",
-            tags = listOf("임산부", "어린이"),
+            tags = listOf(SpecialCautionType.PREGNANT, SpecialCautionType.DRIVER),
             extraText = "운전 시 주의가 필요"
         ),
         sideEffects = SideEffectsDTO(
@@ -394,7 +401,10 @@ fun FullPillDetailScreenPreview() {
                 icon = Icons.Default.Favorite,
                 title = "효능 및 효과"
             ) {
-                TagList(medicineDetail.effectsInfo.tags)
+                TagList(
+                    medicineDetail.effectsInfo.tags,
+                    { tag -> Pair(tag, null) }
+                )
                 Spacer(Modifier.height(8.dp))
                 Text(
                     medicineDetail.effectsInfo.description,
@@ -415,20 +425,11 @@ fun FullPillDetailScreenPreview() {
         //  특별 주의 대상
         CardBox {
             TitledSection(Icons.Default.Person, medicineDetail.specialCaution.title) {
-                TagList(medicineDetail.specialCaution.tags)
+                TagList(
+                    medicineDetail.specialCaution.tags,
+                    { tag -> Pair(stringResource(tag.labelResId), painterResource(tag.iconResId)) })
                 Spacer(Modifier.height(8.dp))
-                if (!medicineDetail.specialCaution.extraText.isNullOrEmpty()) {
-                    Row {
-                        Icon(
-                            Icons.Default.DirectionsCar,
-                            contentDescription = null,
-                            Modifier.size(16.dp),
-                            tint = Color(0xFF7262FD)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(medicineDetail.specialCaution.extraText)
-                    }
-                }
+
             }
         }
 
