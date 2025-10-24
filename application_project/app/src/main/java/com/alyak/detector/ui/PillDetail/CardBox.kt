@@ -441,8 +441,10 @@ fun FullPillDetailScreenPreview() {
                     Spacer(Modifier.height(6.dp))
                     Button(
                         onClick = { /* TODO: 더보기 기능 */ },
-                        modifier = Modifier.align(Alignment.End),
-                        shape = RoundedCornerShape(50),
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(24),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F5F9))
                     ) {
                         Text("더 많은 주의사항 보기", color = Color(0xFF7262FD), fontSize = 13.sp)
@@ -462,6 +464,15 @@ fun FullPillDetailScreenPreview() {
                                 "포장 단위: ${medicineDetail.additionalInfo.packaging}",
                         fontSize = 14.sp
                     )
+                    Row {
+                        StatusBadge(
+                            text,
+                            icon,
+                            colorResource(R.color.primaryBlue).copy(alpha = 0.5f),
+                            colorResource(R.color.primaryBlue)
+                        )
+                    }
+
                 }
             }
         }
