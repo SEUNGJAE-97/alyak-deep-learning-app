@@ -60,7 +60,7 @@ fun HospitalInfo(
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
-                StatusBadge("영업중", Color(0xFFD1FAE5), Color(0xFF10B981))
+                StatusBadge("영업중", null,Color(0xFFD1FAE5), Color(0xFF10B981))
             }
 
             Spacer(Modifier.height(6.dp))

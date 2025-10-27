@@ -62,7 +62,7 @@ fun DoseStatusItem(
         }
 
         Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()){
-            StatusBadge(Status, colorResource(R.color.primaryBlue), colorResource(R.color.white))
+            StatusBadge(Status, null, colorResource(R.color.primaryBlue), colorResource(R.color.white))
 
             Icon(
                 imageVector = Icons.Default.KeyboardArrowRight,

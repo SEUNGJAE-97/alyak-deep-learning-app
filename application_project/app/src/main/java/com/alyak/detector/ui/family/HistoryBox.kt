@@ -65,6 +65,7 @@ fun HistoryBox(
             Text("오늘 (2025. 10. 14)", fontSize = 20.sp, modifier = Modifier.padding(10.dp))
             StatusBadge(
                 "목요일",
+                null,
                 colorResource(R.color.primaryBlue).copy(alpha = 0.6f),
                 colorResource(R.color.primaryBlue)
             )

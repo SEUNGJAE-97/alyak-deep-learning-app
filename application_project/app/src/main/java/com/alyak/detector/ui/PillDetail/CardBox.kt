@@ -70,6 +70,7 @@ import com.alyak.detector.data.dto.pill.PillDetail.MedicineInfoDTO
 import com.alyak.detector.data.dto.pill.PillDetail.MemoDTO
 import com.alyak.detector.data.dto.pill.PillDetail.SideEffectsDTO
 import com.alyak.detector.data.dto.pill.PillDetail.SpecialCautionDTO
+import com.alyak.detector.ui.other.AdditionalInfoSection
 import com.alyak.detector.ui.other.StatusBadge
 import com.alyak.detector.ui.theme.CardBackground
 
@@ -456,24 +457,9 @@ fun FullPillDetailScreenPreview() {
         //  추가 정보
         CardBox {
             TitledSection(Icons.Default.Info, "추가 정보") {
-                Column {
-                    Text(
-                        "보관방법: ${medicineDetail.additionalInfo.storageMethod}\n" +
-                                "유효기간: ${medicineDetail.additionalInfo.expiration}\n" +
-                                "제형: ${medicineDetail.additionalInfo.formulation}\n" +
-                                "포장 단위: ${medicineDetail.additionalInfo.packaging}",
-                        fontSize = 14.sp
-                    )
-                    Row {
-                        StatusBadge(
-                            text,
-                            icon,
-                            colorResource(R.color.primaryBlue).copy(alpha = 0.5f),
-                            colorResource(R.color.primaryBlue)
-                        )
-                    }
-
-                }
+                AdditionalInfoSection(
+                    medicineDetail.additionalInfo
+                )
             }
         }
 
