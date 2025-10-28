@@ -47,7 +47,7 @@ fun PillDetailScreen() {
             )
         },
         floatingActionButton = {
-            FloatingActionButton()
+//            FloatingActionButton()
         }
     ) { paddingValues ->
         Column(

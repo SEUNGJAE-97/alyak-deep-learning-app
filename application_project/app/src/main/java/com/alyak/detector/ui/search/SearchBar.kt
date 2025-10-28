@@ -42,7 +42,7 @@ fun SearchBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(50.dp)
             .background(colorResource(R.color.white), shape = RoundedCornerShape(24.dp))
             .shadow(2.dp, shape = RoundedCornerShape(24.dp))
             .padding(horizontal = 8.dp),

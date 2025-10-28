@@ -54,7 +54,7 @@ fun PillSearchScreen() {
             )
         },
         floatingActionButton = {
-            FloatingActionButton()
+//            FloatingActionButton()
         }
     ) { paddingValues ->
         Column(

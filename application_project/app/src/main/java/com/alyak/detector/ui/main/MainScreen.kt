@@ -83,9 +83,9 @@ fun MainScreen(
                     onItemSelected = { selectedIndex = it }
                 )
             },
-            floatingActionButton = {
-                FloatingActionButton()
-            }
+//            floatingActionButton = {
+//                FloatingActionButton()
+//            }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -141,7 +141,6 @@ fun MainScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            MedicationHistory()
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -212,33 +211,6 @@ fun DashboardButtonGrid(
     }
 }
 
-
-@Composable
-fun MedicationHistory() {
-    Column {
-        Text(
-            text = "오늘의 복용 기록",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBackground)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "✅ 타이레놀 500mg  오전 9:00",
-                    fontSize = 14.sp
-                )
-            }
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
