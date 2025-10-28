@@ -1,8 +1,9 @@
 package com.alyak.detector.ui.other
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -61,13 +62,21 @@ fun AdditionalInfoBox(
 @Composable
 fun AdditionalInfoSection(info: AdditionalInfoDTO) {
     Column {
-        Row(modifier = Modifier.padding(vertical = 8.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             AdditionalInfoBox(
+                modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.ic_storage),
                 label = "보관 방법",
                 value = info.storageMethod
             )
             AdditionalInfoBox(
+                modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.ic_expiration),
                 label = "유효기간",
                 value = info.expiration
@@ -77,11 +86,13 @@ fun AdditionalInfoSection(info: AdditionalInfoDTO) {
             modifier = Modifier.padding(vertical = 8.dp)
         ) {
             AdditionalInfoBox(
+                modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.ic_formulation),
                 label = "제형",
                 value = info.formulation
             )
             AdditionalInfoBox(
+                modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.ic_packaging),
                 label = "포장 단위",
                 value = info.packaging

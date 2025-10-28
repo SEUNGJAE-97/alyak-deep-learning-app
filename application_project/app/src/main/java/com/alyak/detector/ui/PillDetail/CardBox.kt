@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -147,27 +148,55 @@ fun FunctionButtonRow() {
         Button(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7262FD)),
+            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.primaryBlue)),
             onClick = { }
         ) {
-            Icon(Icons.Default.Notifications, contentDescription = null, Modifier.size(20.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("복약 알림 등록", color = Color.White)
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Notifications,
+                    contentDescription = null,
+                    Modifier.size(20.dp),
+                    tint = colorResource(R.color.white)
+                )
+                Spacer(Modifier.width(12.dp))
+                Text("복약 알림 등록", color = Color.White, modifier = Modifier.weight(1f))
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp),
+                    tint = colorResource(R.color.white)
+                )
+            }
+
         }
         Spacer(Modifier.height(6.dp))
         OutlinedButton(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            onClick = { }
+            onClick = { },
         ) {
-            Icon(
-                Icons.Default.CheckCircle,
-                contentDescription = null,
-                Modifier.size(20.dp),
-                tint = Color(0xFF7262FD)
-            )
-            Spacer(Modifier.width(6.dp))
-            Text("복용 이력 확인", color = Color(0xFF7262FD))
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Icon(
+                    painterResource(R.drawable.history),
+                    contentDescription = null,
+                    Modifier.size(20.dp),
+                    tint = colorResource(R.color.primaryBlue)
+                )
+                Spacer(Modifier.width(12.dp))
+                Text("복용 이력 확인", color = colorResource(R.color.primaryBlue), modifier = Modifier.weight(1f))
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp),
+                    tint = colorResource(R.color.primaryBlue)
+                )
+            }
         }
     }
 }
