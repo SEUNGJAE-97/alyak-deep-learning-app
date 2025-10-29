@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.alyak.detector.ui.other.BottomForm
 import com.alyak.detector.ui.other.FloatingActionButton
 import com.alyak.detector.ui.other.HeaderForm
+import com.alyak.detector.ui.other.MultiFloatingActionButton
 
 @Composable
 fun PillDetailScreen() {
@@ -47,7 +48,7 @@ fun PillDetailScreen() {
             )
         },
         floatingActionButton = {
-//            FloatingActionButton()
+            MultiFloatingActionButton()
         }
     ) { paddingValues ->
         Column(

@@ -29,6 +29,7 @@ import com.alyak.detector.R
 import com.alyak.detector.data.dto.pill.PillShapeType
 import com.alyak.detector.ui.other.BottomForm
 import com.alyak.detector.ui.other.FloatingActionButton
+import com.alyak.detector.ui.other.MultiFloatingActionButton
 
 @Composable
 fun PillSearchScreen() {
@@ -54,7 +55,7 @@ fun PillSearchScreen() {
             )
         },
         floatingActionButton = {
-//            FloatingActionButton()
+            MultiFloatingActionButton()
         }
     ) { paddingValues ->
         Column(

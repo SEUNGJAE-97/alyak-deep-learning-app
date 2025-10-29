@@ -1,67 +1,53 @@
 package com.alyak.detector.ui.main
 
-
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.alyak.detector.R
-import com.alyak.detector.ui.theme.BackgroundGradientEnd
-import com.alyak.detector.ui.theme.BackgroundGradientStart
-import com.alyak.detector.ui.theme.CardBackground
-import com.alyak.detector.ui.theme.PrimaryGreen
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.alyak.detector.R
+import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.other.BottomForm
-import com.alyak.detector.ui.other.DashboardCard
-import com.alyak.detector.ui.other.FloatingActionButton
 import com.alyak.detector.ui.other.HeaderForm
+import com.alyak.detector.ui.other.MultiFloatingActionButton
 
 @Composable
 fun MainScreen(
-    navController: NavController
+    navController: NavController,
+    modifier: Modifier = Modifier.background(Color.White)
 ) {
     val icons = listOf(
         Icons.Filled.Home,
@@ -75,147 +61,227 @@ fun MainScreen(
         topBar = {
             HeaderForm()
         },
-            bottomBar = {
-                BottomForm(
-                    modifier = Modifier.fillMaxWidth(),
-                    icons = icons,
-                    selectedIndex = selectedIndex,
-                    onItemSelected = { selectedIndex = it }
-                )
-            },
-//            floatingActionButton = {
-//                FloatingActionButton()
-//            }
+        bottomBar = {
+            BottomForm(
+                modifier = Modifier.fillMaxWidth(),
+                icons = icons,
+                selectedIndex = selectedIndex,
+                onItemSelected = { selectedIndex = it }
+            )
+        },
+        floatingActionButton = {
+            MultiFloatingActionButton()
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Color.White
-                )
-                .padding(paddingValues)  // Scaffold가 바텀바 높이만큼 패딩 자동 적용
+                .fillMaxWidth()
+                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
         ) {
-            NextMedicationCard()
-            Spacer(modifier = Modifier.height(24.dp))
+            // 가족 리스트
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                modifier = Modifier.padding(16.dp)
+            ) {
+                FamilyMemberBtn(role = "할머니", name = "김싸피", isSelected = true)
+                FamilyMemberBtn(role = "할아버지", name = "하싸피", isSelected = false)
+                FamilyMemberBtn(role = "아버지", name = "하하하", isSelected = false)
+            }
+            // 컨텐츠 박스
+            ContentBox(
+                Modifier
+                    .padding(10.dp)
+                    .shadow(3.dp, RoundedCornerShape(40.dp))
+            ) {
 
-            DashboardButtonGrid(
-                // Dashboard
-                {
-                    DashboardCard(
-                        icon = Icons.Default.Map,
-                        iconBackgroundColor = Color(0xFFD6D8FB),
-                        title = "지도",
-                        subtitle = "주변 의료기관",
-                        onClick = { navController.navigate("MapScreen") }
+                Text(
+                    "이번 주 복약 현황",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
+                )
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    DonutChart(
+                        segments = listOf(
+                            DonutSegment(0.55f, colorResource(R.color.primaryBlue)),   // 파랑
+                            DonutSegment(0.15f, Color(0xFFD6D9DE)),   // 회색(연함)
+                            DonutSegment(0.13f, colorResource(R.color.Orange)),   // 주황
+                            DonutSegment(0.17f, colorResource(R.color.RealRed))    // 빨강
+                        ),
+                        modifier = Modifier
+                            .size(180.dp)
+                            .padding(20.dp)
                     )
-                },
-                {
-                    DashboardCard(
-                        icon = Icons.Default.Description,
-                        iconBackgroundColor = Color(0xFFF3E8FE),
-                        title = "복용 이력",
-                        subtitle = "90%~",
-                        onClick = {}
-                    )
-                },
-                {
-                    DashboardCard(
-                        icon = Icons.Default.Search,
-                        iconBackgroundColor = Color(0xFFFFF2D8),
-                        title = "약 정보",
-                        subtitle = "검색 및 등록",
-                        onClick = { navController.navigate("pillSearch") }
-                    )
-                },
-                {
-                    DashboardCard(
-                        icon = Icons.Default.Person,
-                        iconBackgroundColor = Color(0xFFE6F3E7),
-                        title = "가족 캐스팅",
-                        subtitle = "가족 이력 관리",
-                        onClick = {}
-                    )
+
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        Text(
+                            "78%",
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colorResource(R.color.primaryBlue)
+                        )
+                        Text("복약 성공률", fontSize = 12.sp, color = Color.Gray)
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier
+                                    .size(10.dp)
+                                    .background(colorResource(R.color.primaryBlue), CircleShape)
+                            )
+                            Text(
+                                "복용 완료: 18",
+                                fontSize = 13.sp,
+                                modifier = Modifier.padding(start = 6.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier
+                                    .size(10.dp)
+                                    .background(colorResource(R.color.RealRed), CircleShape)
+                            )
+                            Text(
+                                "미복용: 3",
+                                fontSize = 13.sp,
+                                modifier = Modifier.padding(start = 6.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier
+                                    .size(10.dp)
+                                    .background(colorResource(R.color.Orange), CircleShape)
+                            )
+                            Text(
+                                "지연 복용: 2",
+                                fontSize = 13.sp,
+                                modifier = Modifier.padding(start = 6.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier
+                                    .size(10.dp)
+                                    .background(Color(0xFFD6D9DE), CircleShape)
+                            )
+                            Text(
+                                "예정: 5",
+                                fontSize = 13.sp,
+                                modifier = Modifier.padding(start = 6.dp)
+                            )
+                        }
+                    }
                 }
-            )
-            Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+                // 최근 7일 복약 패턴 영역
+                Text(
+                    "최근 7일 복약 패턴",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    //TODO : 최근 7일 복약 패턴 그래프 데이터 입력 받아야함
+                    val barDataList = listOf(
+                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 5/30: 성공
+                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 5/31: 성공
+                        listOf(
+                            BarSegment(0.4f, colorResource(R.color.RealRed)),
+                            BarSegment(0.6f, colorResource(R.color.primaryBlue))
+                        ), // 6/1: 미복용+성공
+                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 6/2: 성공
+                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 6/3: 성공
+                        listOf(
+                            BarSegment(0.2f, colorResource(R.color.RealRed)),
+                            BarSegment(0.8f, colorResource(R.color.primaryBlue))
+                        ), // 6/4: 미복용+완료
+                        listOf(
+                            BarSegment(0.4f, colorResource(R.color.Orange)),
+                            BarSegment(0.6f, colorResource(R.color.primaryBlue))
+                        ) // 6/5: 지연+완료
+                    )
+
+                    val barDataWithDates = listOf(
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "5/30"),
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "5/31"),
+                        Pair(
+                            listOf(
+                                BarSegment(0.4f, colorResource(R.color.RealRed)),
+                                BarSegment(0.6f, colorResource(R.color.primaryBlue))
+                            ), "6/1"
+                        ),
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "6/2"),
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "6/3"),
+                        Pair(
+                            listOf(
+                                BarSegment(0.2f, colorResource(R.color.RealRed)),
+                                BarSegment(0.8f, colorResource(R.color.primaryBlue))
+                            ), "6/4"
+                        ),
+                        Pair(
+                            listOf(
+                                BarSegment(0.4f, colorResource(R.color.Orange)),
+                                BarSegment(0.6f, colorResource(R.color.primaryBlue))
+                            ), "6/5"
+                        )
+                    )
+
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        barDataWithDates.forEach { (segments, date) ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(horizontal = 2.dp)
+                            ) {
+                                ChartBar(
+                                    segments = segments,
+                                    modifier = Modifier
+                                        .height(100.dp)
+                                        .width(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    date,
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+                ScheduleBox()
+
+                // 복약 기록 박스
+                Spacer(modifier = Modifier.height(10.dp))
+
+                HistoryBox()
+            }
         }
     }
 }
+
 
 @Composable
-fun NextMedicationCard() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = colorResource(R.color.primaryBlue))
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "다음 복용 알림",
-                color = CardBackground,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "타이레놀 500mg",
-                color = CardBackground,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "오후 1:00",
-                color = CardBackground,
-                fontSize = 14.sp
-            )
-        }
-    }
-}
-
-@Composable
-fun DashboardButtonGrid(
-    button1: @Composable () -> Unit,
-    button2: @Composable () -> Unit,
-    button3: @Composable () -> Unit,
-    button4: @Composable () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            button1()
-            button2()
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            button3()
-            button4()
-        }
-    }
-}
-
-
 @Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    MainScreen(
-        navController = rememberNavController()
-    )
+fun HistoryScreenPrev() {
+    MainScreen(navController = rememberNavController())
 }

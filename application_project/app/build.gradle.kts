@@ -49,7 +49,7 @@ android {
 
 dependencies {
     // vector img
-    implementation("com.android.support:appcompat-v7:23.2.0")
+    implementation(libs.androidx.appcompat.v171)
     // retrofit
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
