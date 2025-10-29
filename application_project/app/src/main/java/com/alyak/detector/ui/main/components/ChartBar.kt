@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.main
+package com.alyak.detector.ui.main.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*

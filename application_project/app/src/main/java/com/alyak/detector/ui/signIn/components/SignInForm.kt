@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.signIn
+package com.alyak.detector.ui.signIn.components
 
 import android.widget.Toast
 import androidx.compose.foundation.clickable

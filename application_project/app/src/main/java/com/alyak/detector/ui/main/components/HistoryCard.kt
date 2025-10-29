@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.main
+package com.alyak.detector.ui.main.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -25,7 +25,7 @@ import com.alyak.detector.ui.components.PeriodToggle
 import com.alyak.detector.ui.components.StatusBadge
 
 @Composable
-fun HistoryBox(
+fun HistoryCard(
     modifier: Modifier = Modifier.fillMaxWidth()
 ) {
     Column {
@@ -87,7 +87,7 @@ fun HistoryBox(
                         shape = RoundedCornerShape(20.dp)
                     )
             ) {
-                DoseStatusItem(item.first, item.second, item.third)
+                DoseStatusCard(item.first, item.second, item.third)
             }
         }
     }
@@ -97,6 +97,6 @@ fun HistoryBox(
 
 @Composable
 @Preview(showBackground = true)
-fun HistoryBoxPrev() {
-    HistoryBox(Modifier)
+fun HistoryCardPrev() {
+    HistoryCard(Modifier)
 }

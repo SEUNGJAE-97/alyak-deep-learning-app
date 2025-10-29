@@ -29,6 +29,9 @@ import com.alyak.detector.R
 import com.alyak.detector.data.dto.pill.PillShapeType
 import com.alyak.detector.ui.components.BottomForm
 import com.alyak.detector.ui.components.MultiFloatingActionButton
+import com.alyak.detector.ui.search.components.SearchBar
+import com.alyak.detector.ui.search.components.FilterBar
+import com.alyak.detector.ui.search.components.QuickSearch
 
 @Composable
 fun PillSearchScreen() {

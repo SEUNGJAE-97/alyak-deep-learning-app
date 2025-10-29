@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.main
+package com.alyak.detector.ui.main.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,7 +29,7 @@ import com.alyak.detector.R
 import com.alyak.detector.ui.components.StatusBadge
 
 @Composable
-fun DoseStatusItem(
+fun DoseStatusCard(
     Timing: String,
     Status: String,
     Dose: String
@@ -75,8 +75,8 @@ fun DoseStatusItem(
 
 @Composable
 @Preview(showBackground = true)
-fun DoseStatusPrev() {
-    DoseStatusItem(
+fun DoseStatusCardPrev() {
+    DoseStatusCard(
         Timing = "아침",
         Status = "정상",
         Dose = "혈압약, 당뇨약"

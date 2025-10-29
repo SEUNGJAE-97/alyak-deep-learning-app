@@ -43,6 +43,12 @@ import com.alyak.detector.ui.components.BottomForm
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.HeaderForm
 import com.alyak.detector.ui.components.MultiFloatingActionButton
+import com.alyak.detector.ui.main.components.FamilyMemberButton
+import com.alyak.detector.ui.main.components.DonutChart
+import com.alyak.detector.ui.main.components.DonutSegment
+import com.alyak.detector.ui.main.components.ChartBar
+import com.alyak.detector.ui.main.components.BarSegment
+import com.alyak.detector.ui.main.components.HistoryCard
 
 @Composable
 fun MainScreen(
@@ -84,9 +90,9 @@ fun MainScreen(
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
                 modifier = Modifier.padding(16.dp)
             ) {
-                FamilyMemberBtn(role = "할머니", name = "김싸피", isSelected = true)
-                FamilyMemberBtn(role = "할아버지", name = "하싸피", isSelected = false)
-                FamilyMemberBtn(role = "아버지", name = "하하하", isSelected = false)
+                FamilyMemberButton(role = "할머니", name = "김싸피", isSelected = true)
+                FamilyMemberButton(role = "할아버지", name = "하싸피", isSelected = false)
+                FamilyMemberButton(role = "아버지", name = "하하하", isSelected = false)
             }
             // 컨텐츠 박스
             ContentBox(
@@ -268,12 +274,12 @@ fun MainScreen(
                         }
                     }
                 }
-                ScheduleBox()
+                ScheduleCard()
 
                 // 복약 기록 박스
                 Spacer(modifier = Modifier.height(10.dp))
 
-                HistoryBox()
+                HistoryCard()
             }
         }
     }

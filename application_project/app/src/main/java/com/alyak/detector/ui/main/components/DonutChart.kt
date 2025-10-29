@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.main
+package com.alyak.detector.ui.main.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview

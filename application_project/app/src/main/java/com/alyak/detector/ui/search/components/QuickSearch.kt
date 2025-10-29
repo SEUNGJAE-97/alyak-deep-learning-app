@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.search
+package com.alyak.detector.ui.search.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 import com.alyak.detector.data.dto.pill.Pill
 import com.alyak.detector.data.dto.pill.PillCategory
-import com.alyak.detector.ui.other.PillInfoBox
+import com.alyak.detector.ui.search.components.PillInfoBox
 
 @Composable
 fun QuickSearch() {

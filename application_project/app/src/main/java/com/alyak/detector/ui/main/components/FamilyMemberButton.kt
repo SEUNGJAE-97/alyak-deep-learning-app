@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.main
+package com.alyak.detector.ui.main.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun FamilyMemberBtn(
+fun FamilyMemberButton(
     modifier: Modifier = Modifier,
     role: String,
     name: String,
@@ -82,8 +82,8 @@ fun FamilyMemberPrev(){
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         modifier = Modifier.padding(16.dp)
     ) {
-        FamilyMemberBtn(role = "할머니", name = "김순자", isSelected = true)
-        FamilyMemberBtn(role = "할아버지", name = "하이고", isSelected = false)
-        FamilyMemberBtn(role = "아버지", name = "하태영", isSelected = false)
+        FamilyMemberButton(role = "할머니", name = "김순자", isSelected = true)
+        FamilyMemberButton(role = "할아버지", name = "하이고", isSelected = false)
+        FamilyMemberButton(role = "아버지", name = "하태영", isSelected = false)
     }
 }

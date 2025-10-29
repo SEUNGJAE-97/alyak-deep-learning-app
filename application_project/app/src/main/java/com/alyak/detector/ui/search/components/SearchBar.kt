@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.search
+package com.alyak.detector.ui.search.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

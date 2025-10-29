@@ -28,8 +28,9 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
 import com.alyak.detector.ui.signIn.components.FindPasswordForm
+import com.alyak.detector.ui.signIn.components.SignInForm
 import com.alyak.detector.ui.signIn.state.ContentState
-import com.alyak.detector.ui.signUp.SignUpForm
+import com.alyak.detector.ui.signUp.components.SignUpForm
 import com.alyak.detector.ui.signUp.SignUpViewModel
 
 @Composable
