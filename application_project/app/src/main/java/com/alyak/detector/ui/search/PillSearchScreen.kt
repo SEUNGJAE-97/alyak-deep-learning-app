@@ -27,9 +27,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.alyak.detector.R
 import com.alyak.detector.data.dto.pill.PillShapeType
-import com.alyak.detector.ui.other.BottomForm
-import com.alyak.detector.ui.other.FloatingActionButton
-import com.alyak.detector.ui.other.MultiFloatingActionButton
+import com.alyak.detector.ui.components.BottomForm
+import com.alyak.detector.ui.components.MultiFloatingActionButton
 
 @Composable
 fun PillSearchScreen() {

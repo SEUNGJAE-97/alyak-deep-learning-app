@@ -39,10 +39,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
+import com.alyak.detector.ui.components.BottomForm
 import com.alyak.detector.ui.components.ContentBox
-import com.alyak.detector.ui.other.BottomForm
-import com.alyak.detector.ui.other.HeaderForm
-import com.alyak.detector.ui.other.MultiFloatingActionButton
+import com.alyak.detector.ui.components.HeaderForm
+import com.alyak.detector.ui.components.MultiFloatingActionButton
 
 @Composable
 fun MainScreen(

@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.other
+package com.alyak.detector.ui.main
 
 import android.graphics.drawable.Icon
 import androidx.compose.foundation.background

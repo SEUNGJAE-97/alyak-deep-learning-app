@@ -21,9 +21,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
-import com.alyak.detector.ui.other.DoseStatusItem
-import com.alyak.detector.ui.other.PeriodToggle
-import com.alyak.detector.ui.other.StatusBadge
+import com.alyak.detector.ui.components.PeriodToggle
+import com.alyak.detector.ui.components.StatusBadge
 
 @Composable
 fun HistoryBox(

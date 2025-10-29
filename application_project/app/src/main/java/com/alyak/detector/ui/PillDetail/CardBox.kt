@@ -71,8 +71,8 @@ import com.alyak.detector.data.dto.pill.PillDetail.MedicineInfoDTO
 import com.alyak.detector.data.dto.pill.PillDetail.MemoDTO
 import com.alyak.detector.data.dto.pill.PillDetail.SideEffectsDTO
 import com.alyak.detector.data.dto.pill.PillDetail.SpecialCautionDTO
+import com.alyak.detector.ui.components.StatusBadge
 import com.alyak.detector.ui.other.AdditionalInfoSection
-import com.alyak.detector.ui.other.StatusBadge
 import com.alyak.detector.ui.theme.CardBackground
 
 @Composable

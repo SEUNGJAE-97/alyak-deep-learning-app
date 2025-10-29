@@ -20,10 +20,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.alyak.detector.ui.other.BottomForm
-import com.alyak.detector.ui.other.FloatingActionButton
-import com.alyak.detector.ui.other.HeaderForm
-import com.alyak.detector.ui.other.MultiFloatingActionButton
+import com.alyak.detector.ui.components.BottomForm
+import com.alyak.detector.ui.components.HeaderForm
+import com.alyak.detector.ui.components.MultiFloatingActionButton
 
 @Composable
 fun PillDetailScreen() {

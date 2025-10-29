@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.other
+package com.alyak.detector.ui.signIn.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
