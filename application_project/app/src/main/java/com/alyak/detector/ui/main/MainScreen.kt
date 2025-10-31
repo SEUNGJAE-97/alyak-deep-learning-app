@@ -36,7 +36,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
@@ -54,8 +53,7 @@ import com.alyak.detector.ui.main.components.HistoryCard
 @Composable
 fun MainScreen(
     navController: NavController,
-    modifier: Modifier = Modifier.background(Color.White),
-    mainViewModel: MainViewModel = viewModel()
+    modifier: Modifier = Modifier.background(Color.White)
 ) {
     val icons = listOf(
         Icons.Filled.Home,
@@ -63,8 +61,7 @@ fun MainScreen(
         Icons.Filled.FavoriteBorder,
         Icons.Filled.Settings
     )
-    var selectedIndex = mainViewModel.selectedIndex
-    val familyMembers = mainViewModel.familyMembers
+    var selectedIndex by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -88,19 +85,16 @@ fun MainScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
+            // 가족 리스트
             Row(
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
                 modifier = Modifier.padding(16.dp)
             ) {
-                familyMembers.forEach{ member->
-                    FamilyMemberButton(
-                        role = member.role,
-                        name = member.name,
-                        isSelected = member.isSelected,
-                        onClick = { mainViewModel.selectMember(member.role)}
-                    )
-                }
+                FamilyMemberButton(role = "할머니", name = "김싸피", isSelected = true)
+                FamilyMemberButton(role = "할아버지", name = "하싸피", isSelected = false)
+                FamilyMemberButton(role = "아버지", name = "하하하", isSelected = false)
             }
+            // 컨텐츠 박스
             ContentBox(
                 Modifier
                     .padding(10.dp)
@@ -119,7 +113,12 @@ fun MainScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     DonutChart(
-                        segments = mainViewModel.donutSegmentData.map { DonutSegment(it.ratio, Color(it.color)) },
+                        segments = listOf(
+                            DonutSegment(0.55f, colorResource(R.color.primaryBlue)),   // 파랑
+                            DonutSegment(0.15f, Color(0xFFD6D9DE)),   // 회색(연함)
+                            DonutSegment(0.13f, colorResource(R.color.Orange)),   // 주황
+                            DonutSegment(0.17f, colorResource(R.color.RealRed))    // 빨강
+                        ),
                         modifier = Modifier
                             .size(180.dp)
                             .padding(20.dp)
@@ -130,7 +129,7 @@ fun MainScreen(
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
                         Text(
-                            "${mainViewModel.successRate}%",
+                            "78%",
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
                             color = colorResource(R.color.primaryBlue)
@@ -144,7 +143,7 @@ fun MainScreen(
                                     .background(colorResource(R.color.primaryBlue), CircleShape)
                             )
                             Text(
-                                "복용 완료: ${mainViewModel.completeCount}",
+                                "복용 완료: 18",
                                 fontSize = 13.sp,
                                 modifier = Modifier.padding(start = 6.dp)
                             )
@@ -156,7 +155,7 @@ fun MainScreen(
                                     .background(colorResource(R.color.RealRed), CircleShape)
                             )
                             Text(
-                                "미복용: ${mainViewModel.missedCount}",
+                                "미복용: 3",
                                 fontSize = 13.sp,
                                 modifier = Modifier.padding(start = 6.dp)
                             )
@@ -168,7 +167,7 @@ fun MainScreen(
                                     .background(colorResource(R.color.Orange), CircleShape)
                             )
                             Text(
-                                "지연 복용: ${mainViewModel.delayedCount}",
+                                "지연 복용: 2",
                                 fontSize = 13.sp,
                                 modifier = Modifier.padding(start = 6.dp)
                             )
@@ -180,7 +179,7 @@ fun MainScreen(
                                     .background(Color(0xFFD6D9DE), CircleShape)
                             )
                             Text(
-                                "예정: ${mainViewModel.scheduledCount}",
+                                "예정: 5",
                                 fontSize = 13.sp,
                                 modifier = Modifier.padding(start = 6.dp)
                             )
@@ -202,6 +201,51 @@ fun MainScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.Bottom
                 ) {
+                    //TODO : 최근 7일 복약 패턴 그래프 데이터 입력 받아야함
+                    val barDataList = listOf(
+                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 5/30: 성공
+                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 5/31: 성공
+                        listOf(
+                            BarSegment(0.4f, colorResource(R.color.RealRed)),
+                            BarSegment(0.6f, colorResource(R.color.primaryBlue))
+                        ), // 6/1: 미복용+성공
+                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 6/2: 성공
+                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 6/3: 성공
+                        listOf(
+                            BarSegment(0.2f, colorResource(R.color.RealRed)),
+                            BarSegment(0.8f, colorResource(R.color.primaryBlue))
+                        ), // 6/4: 미복용+완료
+                        listOf(
+                            BarSegment(0.4f, colorResource(R.color.Orange)),
+                            BarSegment(0.6f, colorResource(R.color.primaryBlue))
+                        ) // 6/5: 지연+완료
+                    )
+
+                    val barDataWithDates = listOf(
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "5/30"),
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "5/31"),
+                        Pair(
+                            listOf(
+                                BarSegment(0.4f, colorResource(R.color.RealRed)),
+                                BarSegment(0.6f, colorResource(R.color.primaryBlue))
+                            ), "6/1"
+                        ),
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "6/2"),
+                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "6/3"),
+                        Pair(
+                            listOf(
+                                BarSegment(0.2f, colorResource(R.color.RealRed)),
+                                BarSegment(0.8f, colorResource(R.color.primaryBlue))
+                            ), "6/4"
+                        ),
+                        Pair(
+                            listOf(
+                                BarSegment(0.4f, colorResource(R.color.Orange)),
+                                BarSegment(0.6f, colorResource(R.color.primaryBlue))
+                            ), "6/5"
+                        )
+                    )
+
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -209,13 +253,13 @@ fun MainScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.Bottom
                     ) {
-                        mainViewModel.barDataWithDates.forEach { (segments, date) ->
+                        barDataWithDates.forEach { (segments, date) ->
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.padding(horizontal = 2.dp)
                             ) {
                                 ChartBar(
-                                    segments = segments.map { BarSegment(it.ratio, Color(it.color)) },
+                                    segments = segments,
                                     modifier = Modifier
                                         .height(100.dp)
                                         .width(20.dp)
