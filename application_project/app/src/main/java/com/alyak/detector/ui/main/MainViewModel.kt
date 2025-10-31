@@ -1,53 +1,36 @@
 package com.alyak.detector.ui.main
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SnapshotMutationPolicy
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.alyak.detector.R
-import com.alyak.detector.ui.main.components.BarSegment
-import com.alyak.detector.ui.main.components.DonutSegment
+import com.alyak.detector.data.family.model.FamilyMember
+import com.alyak.detector.data.family.repository.FamilyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.scopes.ViewModelScoped
 import jakarta.inject.Inject
 import kotlinx.coroutines.launch
-
-data class FamilyMember(val role: String, val name: String, val isSelected: Boolean)
 
 // 색상값용 데이터 클래스 추가
 data class DonutSegmentData(val ratio: Float, val color: Int)
 data class BarSegmentData(val ratio: Float, val color: Int)
 
 @HiltViewModel
-class MainViewModel @Inject constructor() : ViewModel() {
-    val familyMembers: SnapshotStateList<FamilyMember> = mutableStateListOf()
-    var selectedIndex by mutableIntStateOf(0)
-        private set
-
-    // UI에서 변환할 데이터(색상은 Int)
-    var donutSegmentData by mutableStateOf<List<DonutSegmentData>>(emptyList())
-        private set
-    var barDataWithDates by mutableStateOf<List<Pair<List<BarSegmentData>, String>>>(emptyList())
-        private set
-    var successRate by mutableIntStateOf(0)
-        private set
-    var completeCount by mutableIntStateOf(0)
-        private set
-    var missedCount by mutableIntStateOf(0)
-        private set
-    var delayedCount by mutableIntStateOf(0)
-        private set
-    var scheduledCount by mutableIntStateOf(0)
-        private set
+class MainViewModel @Inject constructor(
+    private val familyRepository : FamilyRepository
+) : ViewModel() {
+    private val familyMembers: SnapshotStateList<FamilyMember> = mutableStateListOf()
+    private var selectedIndex by mutableIntStateOf(0)
+    private var donutSegmentData by mutableStateOf<List<DonutSegmentData>>(emptyList())
+    private var barDataWithDates by mutableStateOf<List<Pair<List<BarSegmentData>, String>>>(emptyList())
+    private var successRate by mutableIntStateOf(0)
+    private var completeCount by mutableIntStateOf(0)
+    private var missedCount by mutableIntStateOf(0)
+    private var delayedCount by mutableIntStateOf(0)
+    private var scheduledCount by mutableIntStateOf(0)
 
     init {
         fetchFamilyMembers()
@@ -67,13 +50,13 @@ class MainViewModel @Inject constructor() : ViewModel() {
     private fun fetchFamilyMembers() {
         //TODO : API 호출
         viewModelScope.launch {
-            val fetchedMembers = listOf(
-                FamilyMember("할머니", "김싸피", true),
-                FamilyMember("할아버지", "하싸피", false),
-                FamilyMember("아버지", "하하하", false)
-            )
-            familyMembers.clear()
-            familyMembers.addAll(fetchedMembers)
+            try{
+                val fetchedMembers = familyRepository.fetchMembers()
+                familyMembers.clear()
+                familyMembers.addAll(fetchedMembers)
+            }catch (e: Exception){
+                e.stackTrace
+            }
         }
     }
 
@@ -85,11 +68,11 @@ class MainViewModel @Inject constructor() : ViewModel() {
             DonutSegmentData(0.13f, 0xFFFFA626.toInt()), // Orange
             DonutSegmentData(0.17f, 0xFFFF5656.toInt())  // RealRed
         )
-        successRate = 78
-        completeCount = 18
-        missedCount = 3
-        delayedCount = 2
-        scheduledCount = 5
+        successRate = familyMembers[selectedIndex].stats.successRate
+        completeCount = familyMembers[selectedIndex].stats.completeCount
+        missedCount = familyMembers[selectedIndex].stats.missedCount
+        delayedCount = familyMembers[selectedIndex].stats.delayedCount
+        scheduledCount = familyMembers[selectedIndex].stats.scheduledCount
 
         barDataWithDates = listOf(
             Pair(listOf(BarSegmentData(1f, 0xFF5864D9.toInt())), "5/30"),
