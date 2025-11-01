@@ -40,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
+import com.alyak.detector.data.family.repository.FamilyRepository
 import com.alyak.detector.ui.components.BottomForm
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.HeaderForm
@@ -274,5 +275,7 @@ fun MainScreen(
 @Composable
 @Preview(showBackground = true, heightDp = 2000)
 fun HistoryScreenPrev() {
-    MainScreen(navController = rememberNavController())
+    MainScreen(
+        navController = rememberNavController()
+    )
 }

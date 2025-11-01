@@ -1,10 +1,13 @@
 package com.alyak.detector.data.family.model
 
+import java.util.Date
+
 data class FamilyMember(
     val role: String,
     val name: String,
     val isSelected: Boolean,
-    val stats: MemberStats    // 기본값 없음
+    val stats: MemberStats,
+    val dailyMedicationStat: DailyMedicationStat
 )
 
 data class MemberStats(
@@ -13,4 +16,11 @@ data class MemberStats(
     val missedCount: Int,
     val delayedCount: Int,
     val scheduledCount: Int
+)
+
+data class DailyMedicationStat(
+    val date: Date,
+    val successRatio: Float,
+    val delayedRatio: Float,
+    val missedRatio: Float
 )
