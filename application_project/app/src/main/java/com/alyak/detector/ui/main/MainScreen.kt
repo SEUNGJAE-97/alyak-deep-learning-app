@@ -24,7 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
@@ -49,19 +50,23 @@ import com.alyak.detector.ui.main.components.DonutSegment
 import com.alyak.detector.ui.main.components.ChartBar
 import com.alyak.detector.ui.main.components.BarSegment
 import com.alyak.detector.ui.main.components.HistoryCard
+import com.alyak.detector.ui.main.components.StatusRow
 
 @Composable
 fun MainScreen(
     navController: NavController,
-    modifier: Modifier = Modifier.background(Color.White)
+    modifier: Modifier = Modifier.background(Color.White),
+    viewModel: MainViewModel = hiltViewModel()
 ) {
+    val familyMembers = viewModel.familyMembers
+    var selectedIndex by remember { mutableIntStateOf(viewModel.selectedIndex) }
+
     val icons = listOf(
         Icons.Filled.Home,
         Icons.Filled.DateRange,
         Icons.Filled.FavoriteBorder,
         Icons.Filled.Settings
     )
-    var selectedIndex by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -72,7 +77,10 @@ fun MainScreen(
                 modifier = Modifier.fillMaxWidth(),
                 icons = icons,
                 selectedIndex = selectedIndex,
-                onItemSelected = { selectedIndex = it }
+                onItemSelected = { index ->
+                    selectedIndex = index
+                    viewModel.onItemSelected(index)
+                }
             )
         },
         floatingActionButton = {
@@ -90,9 +98,13 @@ fun MainScreen(
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
                 modifier = Modifier.padding(16.dp)
             ) {
-                FamilyMemberButton(role = "할머니", name = "김싸피", isSelected = true)
-                FamilyMemberButton(role = "할아버지", name = "하싸피", isSelected = false)
-                FamilyMemberButton(role = "아버지", name = "하하하", isSelected = false)
+                familyMembers.forEach { member ->
+                    FamilyMemberButton(
+                        role = member.role,
+                        name = member.name,
+                        isSelected = member.isSelected
+                    )
+                }
             }
             // 컨텐츠 박스
             ContentBox(
@@ -129,61 +141,34 @@ fun MainScreen(
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
                         Text(
-                            "78%",
+                            "${familyMembers[selectedIndex].stats.successRate}",
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
                             color = colorResource(R.color.primaryBlue)
                         )
                         Text("복약 성공률", fontSize = 12.sp, color = Color.Gray)
                         Spacer(Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier
-                                    .size(10.dp)
-                                    .background(colorResource(R.color.primaryBlue), CircleShape)
-                            )
-                            Text(
-                                "복용 완료: 18",
-                                fontSize = 13.sp,
-                                modifier = Modifier.padding(start = 6.dp)
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier
-                                    .size(10.dp)
-                                    .background(colorResource(R.color.RealRed), CircleShape)
-                            )
-                            Text(
-                                "미복용: 3",
-                                fontSize = 13.sp,
-                                modifier = Modifier.padding(start = 6.dp)
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier
-                                    .size(10.dp)
-                                    .background(colorResource(R.color.Orange), CircleShape)
-                            )
-                            Text(
-                                "지연 복용: 2",
-                                fontSize = 13.sp,
-                                modifier = Modifier.padding(start = 6.dp)
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier
-                                    .size(10.dp)
-                                    .background(Color(0xFFD6D9DE), CircleShape)
-                            )
-                            Text(
-                                "예정: 5",
-                                fontSize = 13.sp,
-                                modifier = Modifier.padding(start = 6.dp)
-                            )
-                        }
+
+                        StatusRow(
+                            color = colorResource(R.color.primaryBlue),
+                            label = "복용 완료",
+                            count = familyMembers[selectedIndex].stats.completeCount
+                        )
+                        StatusRow(
+                            color = colorResource(R.color.RealRed),
+                            label = "미복용",
+                            count = familyMembers[selectedIndex].stats.missedCount
+                        )
+                        StatusRow(
+                            color = colorResource(R.color.Orange),
+                            label = "지연 복용",
+                            count = familyMembers[selectedIndex].stats.delayedCount
+                        )
+                        StatusRow(
+                            color = Color(0xFFD6D9DE),
+                            label = "예정",
+                            count = familyMembers[selectedIndex].stats.scheduledCount
+                        )
                     }
                 }
 
@@ -287,7 +272,7 @@ fun MainScreen(
 
 
 @Composable
-@Preview(showBackground = true)
+@Preview(showBackground = true, heightDp = 2000)
 fun HistoryScreenPrev() {
     MainScreen(navController = rememberNavController())
 }

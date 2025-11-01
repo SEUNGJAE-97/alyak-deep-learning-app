@@ -22,8 +22,10 @@ data class BarSegmentData(val ratio: Float, val color: Int)
 class MainViewModel @Inject constructor(
     private val familyRepository : FamilyRepository
 ) : ViewModel() {
-    private val familyMembers: SnapshotStateList<FamilyMember> = mutableStateListOf()
-    private var selectedIndex by mutableIntStateOf(0)
+    private val _familyMembers: SnapshotStateList<FamilyMember> = mutableStateListOf()
+    val familyMembers: List<FamilyMember> get() = _familyMembers
+    private var _selectedIndex by mutableIntStateOf(0)
+    val selectedIndex: Int get() = _selectedIndex
     private var donutSegmentData by mutableStateOf<List<DonutSegmentData>>(emptyList())
     private var barDataWithDates by mutableStateOf<List<Pair<List<BarSegmentData>, String>>>(emptyList())
     private var successRate by mutableIntStateOf(0)
@@ -38,13 +40,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onItemSelected(index: Int) {
-        selectedIndex = index
-    }
-
-    fun selectMember(selectedRole: String) {
-//        familyMembers.replaceAll { member ->
-//            member.copy(isSelected = member.role == selectedRole)
-//        }
+        _selectedIndex = index
     }
 
     private fun fetchFamilyMembers() {
@@ -52,8 +48,8 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             try{
                 val fetchedMembers = familyRepository.fetchMembers()
-                familyMembers.clear()
-                familyMembers.addAll(fetchedMembers)
+                _familyMembers.clear()
+                _familyMembers.addAll(fetchedMembers)
             }catch (e: Exception){
                 e.stackTrace
             }
