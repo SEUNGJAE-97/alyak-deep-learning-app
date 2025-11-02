@@ -7,7 +7,7 @@ data class FamilyMember(
     val name: String,
     val isSelected: Boolean,
     val stats: MemberStats,
-    val dailyMedicationStat: DailyMedicationStat
+    val weeklyMedicationStats: List<DailyMedicationStat> // 주간 데이터 (최근 7일)
 )
 
 data class MemberStats(

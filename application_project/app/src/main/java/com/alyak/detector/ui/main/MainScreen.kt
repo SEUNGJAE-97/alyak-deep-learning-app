@@ -52,6 +52,7 @@ import com.alyak.detector.ui.main.components.ChartBar
 import com.alyak.detector.ui.main.components.BarSegment
 import com.alyak.detector.ui.main.components.HistoryCard
 import com.alyak.detector.ui.main.components.StatusRow
+import com.alyak.detector.ui.main.components.dailyStatToBarSegments
 
 @Composable
 fun MainScreen(
@@ -61,7 +62,9 @@ fun MainScreen(
 ) {
     val familyMembers = viewModel.familyMembers
     var selectedIndex by remember { mutableIntStateOf(viewModel.selectedIndex) }
-
+    val selectedMemberStats = viewModel.selectedMemberStats
+    val dateFormatter = viewModel.dateFormatter
+    val totalRatio = viewModel._totalCount
     val icons = listOf(
         Icons.Filled.Home,
         Icons.Filled.DateRange,
@@ -127,10 +130,10 @@ fun MainScreen(
                 ) {
                     DonutChart(
                         segments = listOf(
-                            DonutSegment(0.55f, colorResource(R.color.primaryBlue)),   // 파랑
-                            DonutSegment(0.15f, Color(0xFFD6D9DE)),   // 회색(연함)
-                            DonutSegment(0.13f, colorResource(R.color.Orange)),   // 주황
-                            DonutSegment(0.17f, colorResource(R.color.RealRed))    // 빨강
+                            DonutSegment(familyMembers[selectedIndex].stats.successRate/totalRatio.toFloat(), colorResource(R.color.primaryBlue)),
+                            DonutSegment(familyMembers[selectedIndex].stats.scheduledCount/totalRatio.toFloat(), colorResource(R.color.lightGray)),
+                            DonutSegment(familyMembers[selectedIndex].stats.delayedCount/totalRatio.toFloat(), colorResource(R.color.Orange)),
+                            DonutSegment(familyMembers[selectedIndex].stats.missedCount/totalRatio.toFloat(), colorResource(R.color.RealRed))
                         ),
                         modifier = Modifier
                             .size(180.dp)
@@ -187,76 +190,25 @@ fun MainScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    //TODO : 최근 7일 복약 패턴 그래프 데이터 입력 받아야함
-                    val barDataList = listOf(
-                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 5/30: 성공
-                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 5/31: 성공
-                        listOf(
-                            BarSegment(0.4f, colorResource(R.color.RealRed)),
-                            BarSegment(0.6f, colorResource(R.color.primaryBlue))
-                        ), // 6/1: 미복용+성공
-                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 6/2: 성공
-                        listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), // 6/3: 성공
-                        listOf(
-                            BarSegment(0.2f, colorResource(R.color.RealRed)),
-                            BarSegment(0.8f, colorResource(R.color.primaryBlue))
-                        ), // 6/4: 미복용+완료
-                        listOf(
-                            BarSegment(0.4f, colorResource(R.color.Orange)),
-                            BarSegment(0.6f, colorResource(R.color.primaryBlue))
-                        ) // 6/5: 지연+완료
-                    )
-
-                    val barDataWithDates = listOf(
-                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "5/30"),
-                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "5/31"),
-                        Pair(
-                            listOf(
-                                BarSegment(0.4f, colorResource(R.color.RealRed)),
-                                BarSegment(0.6f, colorResource(R.color.primaryBlue))
-                            ), "6/1"
-                        ),
-                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "6/2"),
-                        Pair(listOf(BarSegment(1f, colorResource(R.color.primaryBlue))), "6/3"),
-                        Pair(
-                            listOf(
-                                BarSegment(0.2f, colorResource(R.color.RealRed)),
-                                BarSegment(0.8f, colorResource(R.color.primaryBlue))
-                            ), "6/4"
-                        ),
-                        Pair(
-                            listOf(
-                                BarSegment(0.4f, colorResource(R.color.Orange)),
-                                BarSegment(0.6f, colorResource(R.color.primaryBlue))
-                            ), "6/5"
-                        )
-                    )
-
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        barDataWithDates.forEach { (segments, date) ->
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(horizontal = 2.dp)
-                            ) {
-                                ChartBar(
-                                    segments = segments,
-                                    modifier = Modifier
-                                        .height(100.dp)
-                                        .width(20.dp)
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    date,
-                                    fontSize = 12.sp,
-                                    color = Color.Gray
-                                )
-                            }
+                    selectedMemberStats.forEach { stat ->
+                        val segments = dailyStatToBarSegments(stat)
+                        val dateString = dateFormatter.format(stat.date)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 2.dp)
+                        ) {
+                            ChartBar(
+                                segments = segments,
+                                modifier = Modifier
+                                    .height(100.dp)
+                                    .width(20.dp)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                dateString,
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
                         }
                     }
                 }
