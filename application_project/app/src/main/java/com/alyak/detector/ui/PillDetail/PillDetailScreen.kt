@@ -1,7 +1,5 @@
 package com.alyak.detector.ui.PillDetail
 
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,11 +13,12 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.alyak.detector.ui.PillDetail.components.CardBox
 import com.alyak.detector.ui.components.BottomForm
 import com.alyak.detector.ui.components.HeaderForm
 import com.alyak.detector.ui.components.MultiFloatingActionButton
@@ -32,7 +31,7 @@ fun PillDetailScreen() {
         Icons.Filled.FavoriteBorder,
         Icons.Filled.Settings
     )
-    var selectedIndex by remember { mutableStateOf(0) }
+    var selectedIndex by remember { mutableIntStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -57,6 +56,7 @@ fun PillDetailScreen() {
                 .verticalScroll(rememberScrollState())
         ) {
             //
+            CardBox {  }
         }
     }
 }

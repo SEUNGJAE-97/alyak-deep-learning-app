@@ -157,7 +157,10 @@ fun SignInForm(
             CustomButton(
                 text = "카카오 로그인",
                 textColor = colorResource(R.color.black),
-                onClick = {},
+                onClick = {
+                    //TODO : 카카오 로그인
+
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(5f),

@@ -3,14 +3,13 @@ package com.alyak.detector.ui.main
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alyak.detector.data.family.model.DailyMedicationStat
 import com.alyak.detector.data.family.model.FamilyMember
-import com.alyak.detector.data.family.repository.FamilyRepository
+import com.alyak.detector.data.family.repository.FamilyRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.launch
@@ -19,7 +18,7 @@ import java.util.Locale
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val familyRepository: FamilyRepository
+    private val familyRepo: FamilyRepo
 ) : ViewModel() {
 
     private val _familyMembers: SnapshotStateList<FamilyMember> = mutableStateListOf()
@@ -55,7 +54,7 @@ class MainViewModel @Inject constructor(
         //TODO : API 호출
         viewModelScope.launch {
             try {
-                val fetchedMembers = familyRepository.fetchMembers()
+                val fetchedMembers = familyRepo.fetchMembers()
                 _familyMembers.clear()
                 _familyMembers.addAll(fetchedMembers)
                 loadUserChartData()

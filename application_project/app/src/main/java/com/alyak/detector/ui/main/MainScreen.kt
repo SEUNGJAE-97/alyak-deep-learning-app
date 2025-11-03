@@ -2,7 +2,6 @@ package com.alyak.detector.ui.main
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -40,7 +38,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
-import com.alyak.detector.data.family.repository.FamilyRepository
 import com.alyak.detector.ui.components.BottomForm
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.HeaderForm
@@ -49,7 +46,6 @@ import com.alyak.detector.ui.main.components.FamilyMemberButton
 import com.alyak.detector.ui.main.components.DonutChart
 import com.alyak.detector.ui.main.components.DonutSegment
 import com.alyak.detector.ui.main.components.ChartBar
-import com.alyak.detector.ui.main.components.BarSegment
 import com.alyak.detector.ui.main.components.HistoryCard
 import com.alyak.detector.ui.main.components.StatusRow
 import com.alyak.detector.ui.main.components.dailyStatToBarSegments

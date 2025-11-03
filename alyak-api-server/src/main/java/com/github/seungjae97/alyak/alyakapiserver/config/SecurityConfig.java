@@ -34,9 +34,8 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // 공개 엔드포인트 (인증 불필요)
+                        // 공개 엔드포인트
                         .requestMatchers(
-                                "/",
                                 "/api/auth/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -44,9 +43,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/actuator/**",
                                 "/api/email/**",
-                                "/auth/kakao/**"
+                                "/auth/kakao/**",
+                                "/api/families"
                         ).permitAll()
-                        // 나머지 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
