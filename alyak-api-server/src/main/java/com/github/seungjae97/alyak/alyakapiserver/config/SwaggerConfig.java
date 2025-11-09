@@ -33,8 +33,7 @@ public class SwaggerConfig {
                                 .description("JWT 토큰을 입력하세요")))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .servers(List.of(
-                        new Server().url("http://localhost:8080").description("Local Server"),
-                        new Server().url("https://api.alyak.com").description("Production Server")
+                        new Server().url("http://localhost:8080").description("Local Server")
                 ));
     }
 } 

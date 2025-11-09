@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.other
+package com.alyak.detector.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border

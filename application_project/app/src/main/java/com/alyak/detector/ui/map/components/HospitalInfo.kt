@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.other
+package com.alyak.detector.ui.map.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
+import com.alyak.detector.ui.components.StatusBadge
 
 @Composable
 fun HospitalInfo(
@@ -60,7 +61,7 @@ fun HospitalInfo(
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
-                StatusBadge("영업중", Color(0xFFD1FAE5), Color(0xFF10B981))
+                StatusBadge("영업중", null,Color(0xFFD1FAE5), Color(0xFF10B981))
             }
 
             Spacer(Modifier.height(6.dp))

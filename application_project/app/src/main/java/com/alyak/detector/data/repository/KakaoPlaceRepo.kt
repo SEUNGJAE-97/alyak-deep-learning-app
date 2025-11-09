@@ -2,7 +2,7 @@ package com.alyak.detector.data.repository
 
 import android.util.Log
 import com.alyak.detector.data.api.KakaoLocalApi
-import com.alyak.detector.data.dto.KakaoPlaceDto
+import com.alyak.detector.data.dto.map.KakaoPlaceDto
 import javax.inject.Inject
 
 class KakaoPlaceRepo @Inject constructor(

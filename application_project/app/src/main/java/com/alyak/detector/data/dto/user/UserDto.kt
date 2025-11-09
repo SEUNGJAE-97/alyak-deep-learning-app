@@ -1,4 +1,4 @@
-package com.alyak.detector.data.dto
+package com.alyak.detector.data.dto.user
 
 data class UserDto(
     val email: String,

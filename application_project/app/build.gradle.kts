@@ -16,7 +16,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
+        vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             abiFilters.add("arm64-v8a")
@@ -48,15 +48,17 @@ android {
 }
 
 dependencies {
+    // vector img
+    implementation(libs.androidx.appcompat.v171)
     // retrofit
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     // kakao map
     implementation(libs.v2.all)
-    implementation (libs.android)
-    implementation ("com.kakao.maps.open:android:2.12.8")
+    implementation(libs.android)
+    implementation("com.kakao.maps.open:android:2.12.8")
     // location
-    implementation ("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
     // camera
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)

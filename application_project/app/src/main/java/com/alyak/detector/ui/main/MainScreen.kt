@@ -1,283 +1,228 @@
 package com.alyak.detector.ui.main
 
-
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
-import com.alyak.detector.ui.theme.BackgroundGradientEnd
-import com.alyak.detector.ui.theme.BackgroundGradientStart
-import com.alyak.detector.ui.theme.CardBackground
-import com.alyak.detector.ui.theme.PrimaryGreen
-import androidx.compose.foundation.Image
+import com.alyak.detector.ui.components.BottomForm
+import com.alyak.detector.ui.components.ContentBox
+import com.alyak.detector.ui.components.HeaderForm
+import com.alyak.detector.ui.components.MultiFloatingActionButton
+import com.alyak.detector.ui.main.components.FamilyMemberButton
+import com.alyak.detector.ui.main.components.DonutChart
+import com.alyak.detector.ui.main.components.DonutSegment
+import com.alyak.detector.ui.main.components.ChartBar
+import com.alyak.detector.ui.main.components.HistoryCard
+import com.alyak.detector.ui.main.components.StatusRow
+import com.alyak.detector.ui.main.components.dailyStatToBarSegments
 
 @Composable
 fun MainScreen(
-    navController: NavController
+    navController: NavController,
+    modifier: Modifier = Modifier.background(Color.White),
+    viewModel: MainViewModel = hiltViewModel()
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(BackgroundGradientStart, BackgroundGradientEnd)
-                )
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            Spacer(modifier = Modifier.height(24.dp))
+    val familyMembers = viewModel.familyMembers
+    var selectedIndex by remember { mutableIntStateOf(viewModel.selectedIndex) }
+    val selectedMemberStats = viewModel.selectedMemberStats
+    val dateFormatter = viewModel.dateFormatter
+    val totalRatio = viewModel._totalCount
+    val icons = listOf(
+        Icons.Filled.Home,
+        Icons.Filled.DateRange,
+        Icons.Filled.FavoriteBorder,
+        Icons.Filled.Settings
+    )
 
-            // Logo
-            Text(
-                text = "Alyak",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Next Medication Card
-            NextMedicationCard()
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Quick Action Buttons
-            QuickActionButtons(
-                onQrScanClick = {
-                    navController.navigate("CameraScreen")
-                },
-                onPillSearchClick = {
-                    navController.navigate("pillSearch")
-                },
-                onMapSearchClick = {
-                    navController.navigate("MapScreen")
+    Scaffold(
+        topBar = {
+            HeaderForm()
+        },
+        bottomBar = {
+            BottomForm(
+                modifier = Modifier.fillMaxWidth(),
+                icons = icons,
+                selectedIndex = selectedIndex,
+                onItemSelected = { index ->
+                    selectedIndex = index
+                    viewModel.onItemSelected(index)
                 }
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Medication History
-            MedicationHistory()
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Health Checklist
-            HealthChecklist()
+        },
+        floatingActionButton = {
+            MultiFloatingActionButton()
         }
-    }
-}
-
-@Composable
-fun NextMedicationCard() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PrimaryGreen)
-    ) {
+    ) { paddingValues ->
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .fillMaxWidth()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
         ) {
-            Text(
-                text = "다음 복용 알림",
-                color = CardBackground,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "타이레놀 500mg",
-                color = CardBackground,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "오후 1:00",
-                color = CardBackground,
-                fontSize = 14.sp
-            )
-        }
-    }
-}
-
-@Composable
-fun QuickActionButtons(
-    onQrScanClick: () -> Unit,
-    onPillSearchClick: () -> Unit,
-    onMapSearchClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        QuickActionButton(
-            icon = painterResource(id = R.drawable.camera),
-            text = "알약 스캔",
-            modifier = Modifier.weight(1f),
-            onClick = onQrScanClick
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        QuickActionButton(
-            icon = painterResource(id = R.drawable.pill),
-            text = "알약 검색",
-            modifier = Modifier.weight(1f),
-            onClick = onPillSearchClick
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        QuickActionButton(
-            icon = painterResource(id = R.drawable.map),
-            text = "주변 약국",
-            modifier = Modifier.weight(1f),
-            onClick = onMapSearchClick
-        )
-    }
-}
-
-@Composable
-fun QuickActionButton(
-    icon: Painter,
-    text: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = modifier
-            .height(100.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Image(
-                painter = icon,
-                contentDescription = text,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = text,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-    }
-}
-
-@Composable
-fun MedicationHistory() {
-    Column {
-        Text(
-            text = "오늘의 복용 기록",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBackground)
-        ) {
-            Column(
+            // 가족 리스트
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
                 modifier = Modifier.padding(16.dp)
             ) {
+                familyMembers.forEach { member ->
+                    FamilyMemberButton(
+                        role = member.role,
+                        name = member.name,
+                        isSelected = member.isSelected
+                    )
+                }
+            }
+            // 컨텐츠 박스
+            ContentBox(
+                Modifier
+                    .padding(10.dp)
+                    .shadow(3.dp, RoundedCornerShape(40.dp))
+            ) {
+
                 Text(
-                    text = "✅ 타이레놀 500mg  오전 9:00",
-                    fontSize = 14.sp
+                    "이번 주 복약 현황",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
                 )
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    DonutChart(
+                        segments = listOf(
+                            DonutSegment(familyMembers[selectedIndex].stats.successRate/totalRatio.toFloat(), colorResource(R.color.primaryBlue)),
+                            DonutSegment(familyMembers[selectedIndex].stats.scheduledCount/totalRatio.toFloat(), colorResource(R.color.lightGray)),
+                            DonutSegment(familyMembers[selectedIndex].stats.delayedCount/totalRatio.toFloat(), colorResource(R.color.Orange)),
+                            DonutSegment(familyMembers[selectedIndex].stats.missedCount/totalRatio.toFloat(), colorResource(R.color.RealRed))
+                        ),
+                        modifier = Modifier
+                            .size(180.dp)
+                            .padding(20.dp)
+                    )
+
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        Text(
+                            "${familyMembers[selectedIndex].stats.successRate}",
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colorResource(R.color.primaryBlue)
+                        )
+                        Text("복약 성공률", fontSize = 12.sp, color = Color.Gray)
+                        Spacer(Modifier.height(8.dp))
+
+                        StatusRow(
+                            color = colorResource(R.color.primaryBlue),
+                            label = "복용 완료",
+                            count = familyMembers[selectedIndex].stats.completeCount
+                        )
+                        StatusRow(
+                            color = colorResource(R.color.RealRed),
+                            label = "미복용",
+                            count = familyMembers[selectedIndex].stats.missedCount
+                        )
+                        StatusRow(
+                            color = colorResource(R.color.Orange),
+                            label = "지연 복용",
+                            count = familyMembers[selectedIndex].stats.delayedCount
+                        )
+                        StatusRow(
+                            color = Color(0xFFD6D9DE),
+                            label = "예정",
+                            count = familyMembers[selectedIndex].stats.scheduledCount
+                        )
+                    }
+                }
+
+                // 최근 7일 복약 패턴 영역
+                Text(
+                    "최근 7일 복약 패턴",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    selectedMemberStats.forEach { stat ->
+                        val segments = dailyStatToBarSegments(stat)
+                        val dateString = dateFormatter.format(stat.date)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 2.dp)
+                        ) {
+                            ChartBar(
+                                segments = segments,
+                                modifier = Modifier
+                                    .height(100.dp)
+                                    .width(20.dp)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                dateString,
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
+                ScheduleCard()
+
+                // 복약 기록 박스
+                Spacer(modifier = Modifier.height(10.dp))
+
+                HistoryCard()
             }
         }
     }
 }
 
-@Composable
-fun HealthChecklist() {
-    Column {
-        Text(
-            text = "건강 체크리스트",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBackground)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                ChecklistItem("두통")
-                Spacer(modifier = Modifier.height(8.dp))
-                ChecklistItem("피로감")
-                Spacer(modifier = Modifier.height(8.dp))
-                ChecklistItem("소화불량")
-            }
-        }
-    }
-}
 
 @Composable
-fun ChecklistItem(text: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "☐",
-            fontSize = 20.sp
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            fontSize = 14.sp
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
+@Preview(showBackground = true, heightDp = 2000)
+fun HistoryScreenPrev() {
     MainScreen(
         navController = rememberNavController()
     )

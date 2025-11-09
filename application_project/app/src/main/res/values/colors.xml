@@ -27,10 +27,18 @@
     <color name="pink">#EFB0EE</color>
     <!--primary blue-->
     <color name="primaryBlue">#4F46E5</color>
+    <!--RealRed-->
+    <color name="RealRed">#ef4444</color>
+    <!--Orange-->
+    <color name="Orange">#f59e0c</color>
     <!--kakao color-->
     <color name="kakaoYellow">#FFD437</color>
     <!--google color-->
     <color name="googleGray">#F2F2F2</color>
     <!--light gray-->
     <color name="lightGray">#BCBCBC</color>
+    <!--light pink-->
+    <color name="lightPink">#F8E8F2</color>
+    <!--lightPurple-->
+    <color name="lightPurple">#E8E8F9</color>
 </resources>
