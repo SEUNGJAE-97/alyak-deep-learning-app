@@ -5,16 +5,25 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.OAuthT
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakaoUserResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakoAuthTokenResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.repository.KakaoRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Provider;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.ProviderId;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Role;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.ProviderRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -22,7 +31,10 @@ import org.springframework.web.client.RestTemplate;
 public class KakaoAuthService implements OAuthService {
 
     private final KakaoRepository kakaoRepository;
+    private final ProviderRepository providerRepository;
+    private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${KAKAO_AUTHORIZE_URL}")
     private String kakaoAuthorUrl;
@@ -109,13 +121,24 @@ public class KakaoAuthService implements OAuthService {
         if (userRepository.existsByEmail(userInfo.getKakaoAccount().getEmail())) {
             return false;
         }
+        Role role = roleRepository.findById(0L)
+                .orElseThrow(() -> new IllegalArgumentException("역할 정보 없음"));
+
         //신규 가입 처리
         User newUser = User.builder()
                 .email(userInfo.getKakaoAccount().getEmail())
-                .id(userInfo.getId())
                 .name(userInfo.getKakaoAccount().getProfile().getNickname())
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .role(role)
                 .build();
         userRepository.save(newUser);
+
+        ProviderId providerId = new ProviderId("KAKAO", newUser.getId());
+        Provider provider = Provider.builder()
+                .id(providerId)
+                .user(newUser)
+                .build();
+        providerRepository.save(provider);
         return true;
     }
 

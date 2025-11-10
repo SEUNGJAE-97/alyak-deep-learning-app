@@ -1,6 +1,8 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.auth;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Provider;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.ProviderRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.UserDetailsImpl;
 import jakarta.servlet.FilterChain;
@@ -25,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
     private final UserRepository userRepository;
+    private final ProviderRepository providerRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -34,10 +37,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
             User user = userRepository.findById(userId).orElse(null);
-
+            Provider provider = providerRepository.findById(userId).orElse(null);
             if (user != null) {
                 var authorities = Collections.singletonList(
-                        new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+                        new SimpleGrantedAuthority("ROLE_" + provider.getUser().getName())
                 );
 
                 var principal = new UserDetailsImpl(user);

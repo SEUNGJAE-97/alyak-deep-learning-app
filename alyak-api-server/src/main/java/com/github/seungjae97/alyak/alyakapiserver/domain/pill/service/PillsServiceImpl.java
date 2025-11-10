@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pills;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository.PillsRepository;
 import org.springframework.stereotype.Service;
 
@@ -17,27 +17,27 @@ public class PillsServiceImpl implements PillsService {
     }
     
     @Override
-    public List<Pills> getAll() {
+    public List<Pill> getAll() {
         return pillsRepository.findAll();
     }
     
     @Override
-    public List<Pills> getByPillShapeId(Long pillShapeId) {
+    public List<Pill> getByPillShapeId(Long pillShapeId) {
         return pillsRepository.findByPillShapeId(pillShapeId);
     }
     
     @Override
-    public Optional<Pills> getById(Long id) {
+    public Optional<Pill> getById(Long id) {
         return pillsRepository.findById(id);
     }
     
     @Override
-    public Pills create(Pills pill) {
+    public Pill create(Pill pill) {
         return pillsRepository.save(pill);
     }
     
     @Override
-    public Pills update(Pills pill) {
+    public Pill update(Pill pill) {
         return pillsRepository.save(pill);
     }
     

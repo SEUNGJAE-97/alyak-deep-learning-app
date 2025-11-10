@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.controller;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pills;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.service.PillsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,44 +20,43 @@ public class PillsController {
     private final PillsService pillsService;
     
     @GetMapping
-    public ResponseEntity<List<Pills>> getAllPills() {
-        List<Pills> pills = pillsService.getAll();
+    public ResponseEntity<List<Pill>> getAllPills() {
+        List<Pill> pills = pillsService.getAll();
         return ResponseEntity.ok(pills);
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Pills> getPillById(@PathVariable Long id) {
-        Optional<Pills> pill = pillsService.getById(id);
+    public ResponseEntity<Pill> getPillById(@PathVariable Long id) {
+        Optional<Pill> pill = pillsService.getById(id);
         return pill.map(ResponseEntity::ok)
                   .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/shape/{pillShapeId}")
-    public ResponseEntity<List<Pills>> getPillsByShapeId(@PathVariable Long pillShapeId) {
-        List<Pills> pills = pillsService.getByPillShapeId(pillShapeId);
+    public ResponseEntity<List<Pill>> getPillsByShapeId(@PathVariable Long pillShapeId) {
+        List<Pill> pills = pillsService.getByPillShapeId(pillShapeId);
         return ResponseEntity.ok(pills);
     }
     
     @PostMapping
-    public ResponseEntity<Pills> createPill(@RequestBody Pills pill) {
-        Pills createdPill = pillsService.create(pill);
+    public ResponseEntity<Pill> createPill(@RequestBody Pill pill) {
+        Pill createdPill = pillsService.create(pill);
         return ResponseEntity.ok(createdPill);
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Pills> updatePill(@PathVariable Long id, @RequestBody Pills pill) {
-        Optional<Pills> existingPill = pillsService.getById(id);
+    public ResponseEntity<Pill> updatePill(@PathVariable Long id, @RequestBody Pill pill) {
+        Optional<Pill> existingPill = pillsService.getById(id);
         if (existingPill.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        pill.setId(id);
-        Pills updatedPill = pillsService.update(pill);
+        Pill updatedPill = pillsService.update(pill);
         return ResponseEntity.ok(updatedPill);
     }
     
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePill(@PathVariable Long id) {
-        Optional<Pills> pill = pillsService.getById(id);
+        Optional<Pill> pill = pillsService.getById(id);
         if (pill.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

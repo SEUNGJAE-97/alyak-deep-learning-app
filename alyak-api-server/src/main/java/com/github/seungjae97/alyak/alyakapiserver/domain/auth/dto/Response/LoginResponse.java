@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,5 +13,5 @@ public class LoginResponse {
     private String tokenType;
     private Long expiresIn;
     private Long userId;
-    private User.Role role;
+    private Role role;
 }

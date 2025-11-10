@@ -1,14 +1,14 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillShapes;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillShape;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface PillShapesService {
-    List<PillShapes> getAll();
-    Optional<PillShapes> getById(Long id);
-    PillShapes create(PillShapes pillShape);
-    PillShapes update(PillShapes pillShape);
+    List<PillShape> getAll();
+    Optional<PillShape> getById(Long id);
+    PillShape create(PillShape pillShape);
+    PillShape update(PillShape pillShape);
     void delete(Long id);
 } 

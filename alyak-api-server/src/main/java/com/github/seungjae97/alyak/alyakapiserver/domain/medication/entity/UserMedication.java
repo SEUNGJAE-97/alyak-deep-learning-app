@@ -1,7 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.medication.entity;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pills;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +27,7 @@ public class UserMedication {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pill_id", nullable = false)
-    private Pills pill;
+    private Pill pill;
     
     @Column(nullable = false)
     private Integer dosage;
@@ -40,5 +40,5 @@ public class UserMedication {
     
     // 양방향 관계 설정
     @OneToMany(mappedBy = "userMedication", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<MedicationSchedules> medicationSchedules = new ArrayList<>();
+    private List<MedicationSchedule> medicationSchedules = new ArrayList<>();
 } 

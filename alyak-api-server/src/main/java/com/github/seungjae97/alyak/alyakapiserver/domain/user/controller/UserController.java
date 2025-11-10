@@ -1,5 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.user.controller;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.dto.UserUpdateRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.service.UserService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.UserDetailsImpl;
@@ -50,18 +51,18 @@ public class UserController {
         User createdUser = userService.create(userDetails.getUser());
         return ResponseEntity.ok(createdUser);
     }
-    
+
     @PutMapping
-    public ResponseEntity<User> updateUser(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody User user) {
+    public ResponseEntity<User> updateUser(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody UserUpdateRequest request) {
         Optional<User> existingUser = userService.getById(userDetails.getUser().getId());
         if (existingUser.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        user.setId(existingUser.get().getId());
-        User updatedUser = userService.update(user);
+        User updatedUser = userService.update(existingUser.get().getId(), request);
         return ResponseEntity.ok(updatedUser);
     }
-    
+
+
     @DeleteMapping
     public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         Optional<User> user = userService.getById(userDetails.getUser().getId());

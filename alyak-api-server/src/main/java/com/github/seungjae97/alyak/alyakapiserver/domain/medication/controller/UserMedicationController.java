@@ -50,7 +50,6 @@ public class UserMedicationController {
         if (existingUserMedication.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        userMedication.setId(id);
         UserMedication updatedUserMedication = userMedicationService.update(userMedication);
         return ResponseEntity.ok(updatedUserMedication);
     }

@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.medication.repository;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.medication.entity.MedicationSchedules;
+import com.github.seungjae97.alyak.alyakapiserver.domain.medication.entity.MedicationSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface MedicationSchedulesRepository extends JpaRepository<MedicationSchedules, Long> {
-    List<MedicationSchedules> findByUserMedicationId(Long userMedicationId);
-    List<MedicationSchedules> findByScheduledTimeBetween(LocalDateTime start, LocalDateTime end);
+public interface MedicationSchedulesRepository extends JpaRepository<MedicationSchedule, Long> {
+    List<MedicationSchedule> findByUserMedicationId(Long userMedicationId);
+    List<MedicationSchedule> findByScheduledTimeBetween(LocalDateTime start, LocalDateTime end);
     
     /**
      * 특정 사용자의 모든 알약 스케줄 조회
@@ -20,5 +20,5 @@ public interface MedicationSchedulesRepository extends JpaRepository<MedicationS
      * @return 해당 사용자의 알약 스케줄 목록
      */
     @Query("SELECT ms FROM MedicationSchedules ms JOIN ms.userMedication um WHERE um.user.id = :userId")
-    List<MedicationSchedules> findByUserId(@Param("userId") Long userId);
+    List<MedicationSchedule> findByUserId(@Param("userId") Long userId);
 } 

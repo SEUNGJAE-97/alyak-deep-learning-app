@@ -2,29 +2,26 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.family.entity;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "family_members")
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 public class FamilyMember {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
+
+    @EmbeddedId
+    private FamilyMemberId id;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "family_id", nullable = false)
-    private Families family;
-    
+    @MapsId("familyId")
+    @JoinColumn(name = "family_id")
+    private Family family;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @MapsId("userId")
+    @JoinColumn(name = "user_id")
     private User user;
-    
-    @Column(nullable = false)
-    private String relationship;
-} 
+}

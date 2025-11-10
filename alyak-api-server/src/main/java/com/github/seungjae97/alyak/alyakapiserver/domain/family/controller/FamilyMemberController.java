@@ -49,7 +49,6 @@ public class FamilyMemberController {
         if (existingFamilyMember.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        familyMember.setId(id);
         FamilyMember updatedFamilyMember = familyMemberService.update(familyMember);
         return ResponseEntity.ok(updatedFamilyMember);
     }

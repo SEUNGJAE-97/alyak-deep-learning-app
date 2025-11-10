@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.family.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Families;
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Family;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.repository.FamiliesRepository;
 import org.springframework.stereotype.Service;
 
@@ -17,22 +17,22 @@ public class FamiliesServiceImpl implements FamiliesService {
     }
     
     @Override
-    public List<Families> getAll() {
+    public List<Family> getAll() {
         return familiesRepository.findAll();
     }
     
     @Override
-    public Optional<Families> getById(Long familyId) {
+    public Optional<Family> getById(Long familyId) {
         return familiesRepository.findById(familyId);
     }
     
     @Override
-    public Families createFamily(Families family) {
+    public Family createFamily(Family family) {
         return familiesRepository.save(family);
     }
     
     @Override
-    public Families updateFamily(Families family) {
+    public Family updateFamily(Family family) {
         return familiesRepository.save(family);
     }
     

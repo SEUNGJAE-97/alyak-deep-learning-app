@@ -1,7 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.family.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.UserDetailsImpl;
-import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Families;
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Family;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.service.FamiliesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,42 +24,41 @@ public class FamiliesController {
 
     @GetMapping
     @Operation(summary = "모든 가족 조회", description = "등록된 모든 가족 정보를 조회합니다.")
-    public ResponseEntity<List<Families>> getAllFamilies() {
-        List<Families> families = familiesService.getAll();
+    public ResponseEntity<List<Family>> getAllFamilies() {
+        List<Family> families = familiesService.getAll();
         return ResponseEntity.ok(families);
     }
     
     @GetMapping("/search")
     @Operation(summary = "가족 조회", description = "유저 아이디로 특정 가족 정보를 조회합니다.")
-    public ResponseEntity<Families> getFamilyById(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        Optional<Families> family = familiesService.getById(userDetails.getUser().getId());
+    public ResponseEntity<Family> getFamilyById(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Optional<Family> family = familiesService.getById(userDetails.getUser().getId());
         return family.map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
     }
     
     @PostMapping
     @Operation(summary = "가족 생성", description = "새로운 가족을 생성합니다.")
-    public ResponseEntity<Families> createFamily(@RequestBody Families family) {
-        Families createdFamily = familiesService.createFamily(family);
+    public ResponseEntity<Family> createFamily(@RequestBody Family family) {
+        Family createdFamily = familiesService.createFamily(family);
         return ResponseEntity.ok(createdFamily);
     }
     
     @PutMapping("/{id}")
     @Operation(summary = "가족 정보 수정", description = "가족 아이디에 해당하는 가족의 정보를 수정합니다.")
-    public ResponseEntity<Families> updateFamily(@PathVariable Long id, @RequestBody Families family) {
-        Optional<Families> existingFamily = familiesService.getById(id);
+    public ResponseEntity<Family> updateFamily(@PathVariable Long id, @RequestBody Family family) {
+        Optional<Family> existingFamily = familiesService.getById(id);
         if (existingFamily.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        family.setId(id);
-        Families updatedFamily = familiesService.updateFamily(family);
+        Family updatedFamily = familiesService.updateFamily(family);
         return ResponseEntity.ok(updatedFamily);
     }
     
     @DeleteMapping("/{id}")
     @Operation(summary = "가족 삭제", description = "가족을 삭제합니다.")
     public ResponseEntity<Void> deleteFamily(@PathVariable Long id) {
-        Optional<Families> family = familiesService.getById(id);
+        Optional<Family> family = familiesService.getById(id);
         if (family.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

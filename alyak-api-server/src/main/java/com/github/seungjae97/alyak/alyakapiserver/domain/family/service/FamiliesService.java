@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.family.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Families;
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Family;
 
 import java.util.List;
 import java.util.Optional;
@@ -9,20 +9,20 @@ public interface FamiliesService {
     /**
      * 모든 가족 정보 조회
      * */
-    List<Families> getAll();
+    List<Family> getAll();
     /**
      * @param familyId : familyId에 해당하는 Families 반환
      * */
-    Optional<Families> getById(Long familyId);
+    Optional<Family> getById(Long familyId);
     /**
      * family 생성
      * @param family : 가족
      * */
-    Families createFamily(Families family);
+    Family createFamily(Family family);
     /**
      * 가족 정보 갱신
      * */
-    Families updateFamily(Families family);
+    Family updateFamily(Family family);
     /**
      * familyId로 가족 정보 삭제
      * @param familyId : 가족 id
