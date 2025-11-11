@@ -42,11 +42,14 @@ spring:
       hibernate:
         format_sql: ${SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL:true}
         dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.MySQL8Dialect}
+    # Ensure data.sql runs AFTER Hibernate creates tables
+    defer-datasource-initialization: true
 
-  # SQL initialization is disabled - use migration scripts or application startup for data initialization
+  # SQL initialization configuration
   sql:
     init:
-      mode: never
+      mode: always
+      continue-on-error: true
 
 # Server Configuration
 server:
@@ -67,3 +70,12 @@ jwt:
   expiration-time: ${JWT_EXPIRATION_TIME:3600000}
   header: ${JWT_HEADER:Authorization}
   prefix: ${JWT_PREFIX:Bearer }
+
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web.filter: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
+    com.github.seungjae97.alyak.alyakapiserver.domain.auth: DEBUG
+    com.github.seungjae97.alyak.alyakapiserver.config: DEBUG

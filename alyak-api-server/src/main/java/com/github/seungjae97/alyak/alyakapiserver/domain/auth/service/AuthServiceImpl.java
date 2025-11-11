@@ -8,6 +8,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.Login
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Role;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRole;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRoleId;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
@@ -74,7 +75,11 @@ public class AuthServiceImpl implements AuthService {
         Role defaultRole = roleRepository.findById(2)
                 .orElseThrow(() -> new IllegalArgumentException("Default role not found"));
         
+        // UserRoleId를 명시적으로 생성 (@MapsId를 사용하려면 id가 먼저 존재해야 함)
+        UserRoleId userRoleId = new UserRoleId(user.getId(), defaultRole.getId());
+        
         UserRole userRole = UserRole.builder()
+                .id(userRoleId)
                 .user(user)
                 .role(defaultRole)
                 .build();

@@ -10,6 +10,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.ProviderId;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Role;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRole;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRoleId;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.ProviderRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
@@ -135,7 +136,11 @@ public class KakaoAuthService implements OAuthService {
         Role defaultRole = roleRepository.findById(2)
                 .orElseThrow(() -> new IllegalArgumentException("기본 역할 정보 없음"));
         
+        // UserRoleId를 명시적으로 생성 (@MapsId를 사용하려면 id가 먼저 존재해야 함)
+        UserRoleId userRoleId = new UserRoleId(newUser.getId(), defaultRole.getId());
+        
         UserRole userRole = UserRole.builder()
+                .id(userRoleId)
                 .user(newUser)
                 .role(defaultRole)
                 .build();
