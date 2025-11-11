@@ -13,6 +13,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRep
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
+import com.github.seungjae97.alyak.alyakapiserver.global.Redis.Util.RedisUtil;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.GlobalExceptionHandler;
@@ -35,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
+    private final RedisUtil redisUtil;
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
@@ -46,17 +48,31 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtTokenProvider.generateToken(user);
 
         return new LoginResponse(
-            token,
-            jwtProperties.getExpirationTime(),
-            user.getId()
+                token,
+                jwtProperties.getExpirationTime(),
+                user.getId()
         );
     }
 
     @Override
+    @Transactional
     public void signup(SignupRequest signupRequest) {
-        if (userRepository.existsByEmail(signupRequest.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+
+        String email = signupRequest.getEmail();
+        boolean isVerified = redisUtil.existData("verified:" + email);
+
+        if (!isVerified) {
+            boolean hasAuthCode = redisUtil.existData(email);
+
+            if (hasAuthCode) {
+                throw new BusinessException(BusinessError.EMAIL_NOT_VERIFIED);
+            } else {
+                throw new BusinessException(BusinessError.EMAIL_VERIFICATION_EXPIRED);
+            }
         }
+
+        if (userRepository.existsByEmail(signupRequest.getEmail()))
+            throw new BusinessException(BusinessError.EMAIL_ALREADY_EXISTS);
 
         User user = User.builder()
                 .email(signupRequest.getEmail())
@@ -65,20 +81,18 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         user = userRepository.save(user);
-        
-        // 기본 역할 부여 (USER 역할, role_id = 2)
+
         Role defaultRole = roleRepository.findById(2)
                 .orElseThrow(() -> new IllegalArgumentException("Default role not found"));
-        
-        // UserRoleId를 명시적으로 생성 (@MapsId를 사용하려면 id가 먼저 존재해야 함)
+
         UserRoleId userRoleId = new UserRoleId(user.getId(), defaultRole.getId());
-        
+
         UserRole userRole = UserRole.builder()
                 .id(userRoleId)
                 .user(user)
                 .role(defaultRole)
                 .build();
-        
+
         userRoleRepository.save(userRole);
     }
 
@@ -90,7 +104,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public TokenResponse reissue(String refreshToken) {
-        if(!jwtTokenProvider.validateToken(refreshToken)) {
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new BadCredentialsException("Invalid refresh token");
         }
         Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);

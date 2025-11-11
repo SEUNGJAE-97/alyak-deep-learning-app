@@ -34,6 +34,7 @@ public class EmailController {
         boolean result = mailService.verifyAuthCode(email, code);
         if (result) {
             redisUtil.deleteData(email);
+            redisUtil.setDataExpire("verified:" + email, "verified", 600);
         }
         return ResponseEntity.ok(result);
     }
