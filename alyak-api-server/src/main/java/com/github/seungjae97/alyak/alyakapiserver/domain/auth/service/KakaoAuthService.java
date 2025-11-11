@@ -9,9 +9,11 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Provider;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.ProviderId;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Role;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRole;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.ProviderRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -34,6 +35,7 @@ public class KakaoAuthService implements OAuthService {
     private final ProviderRepository providerRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${KAKAO_AUTHORIZE_URL}")
@@ -121,17 +123,23 @@ public class KakaoAuthService implements OAuthService {
         if (userRepository.existsByEmail(userInfo.getKakaoAccount().getEmail())) {
             return false;
         }
-        Role role = roleRepository.findById(0L)
-                .orElseThrow(() -> new IllegalArgumentException("역할 정보 없음"));
-
         //신규 가입 처리
         User newUser = User.builder()
                 .email(userInfo.getKakaoAccount().getEmail())
                 .name(userInfo.getKakaoAccount().getProfile().getNickname())
                 .password(passwordEncoder.encode(UUID.randomUUID().toString()))
-                .role(role)
                 .build();
-        userRepository.save(newUser);
+        newUser = userRepository.save(newUser);
+
+        // 기본 역할 부여 (USER 역할, role_id = 2)
+        Role defaultRole = roleRepository.findById(2)
+                .orElseThrow(() -> new IllegalArgumentException("기본 역할 정보 없음"));
+        
+        UserRole userRole = UserRole.builder()
+                .user(newUser)
+                .role(defaultRole)
+                .build();
+        userRoleRepository.save(userRole);
 
         ProviderId providerId = new ProviderId("KAKAO", newUser.getId());
         Provider provider = Provider.builder()

@@ -42,14 +42,11 @@ spring:
       hibernate:
         format_sql: ${SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL:true}
         dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.MySQL8Dialect}
-    # Ensure data.sql runs AFTER Hibernate creates tables
-    defer-datasource-initialization: true
 
-  # Ensure SQL init runs for non-embedded DBs and tolerate re-runs
+  # SQL initialization is disabled - use migration scripts or application startup for data initialization
   sql:
     init:
-      mode: always
-      continue-on-error: true
+      mode: never
 
 # Server Configuration
 server:

@@ -5,8 +5,12 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.JwtTokenProvider;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.LoginRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.SignupRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.LoginResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Role;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRole;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -14,12 +18,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
@@ -35,12 +43,16 @@ public class AuthServiceImpl implements AuthService {
 
         String token = jwtTokenProvider.generateToken(user);
         
+        // 사용자의 첫 번째 역할을 가져옴 (여러 역할이 있을 수 있음)
+        List<UserRole> userRoles = userRoleRepository.findByUser_Id(user.getId());
+        Role role = userRoles.isEmpty() ? null : userRoles.get(0).getRole();
+        
         return new LoginResponse(
             token,
             jwtProperties.getPrefix().trim(),
             jwtProperties.getExpirationTime(),
             user.getId(),
-            user.getRole()
+            role
         );
     }
 
@@ -56,7 +68,18 @@ public class AuthServiceImpl implements AuthService {
                 .name(signupRequest.getName())
                 .build();
 
-        userRepository.save(user);
+        user = userRepository.save(user);
+        
+        // 기본 역할 부여 (USER 역할, role_id = 2)
+        Role defaultRole = roleRepository.findById(2)
+                .orElseThrow(() -> new IllegalArgumentException("Default role not found"));
+        
+        UserRole userRole = UserRole.builder()
+                .user(user)
+                .role(defaultRole)
+                .build();
+        
+        userRoleRepository.save(userRole);
     }
 
     @Override
