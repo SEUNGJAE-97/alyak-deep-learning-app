@@ -43,8 +43,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String token = jwtTokenProvider.generateToken(user);
-        
-        // 사용자의 첫 번째 역할을 가져옴 (여러 역할이 있을 수 있음)
+
         List<UserRole> userRoles = userRoleRepository.findByUser_Id(user.getId());
         Role role = userRoles.isEmpty() ? null : userRoles.get(0).getRole();
         
