@@ -13,6 +13,9 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRep
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.GlobalExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,24 +38,17 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Invalid email or password");
-        }
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .filter(u -> passwordEncoder.matches(loginRequest.getPassword(), u.getPassword()))
+                .orElseThrow(() -> new BusinessException(BusinessError.INVALID_LOGIN));
 
         String token = jwtTokenProvider.generateToken(user);
 
-        List<UserRole> userRoles = userRoleRepository.findByUser_Id(user.getId());
-        Role role = userRoles.isEmpty() ? null : userRoles.get(0).getRole();
-        
         return new LoginResponse(
             token,
-            jwtProperties.getPrefix().trim(),
             jwtProperties.getExpirationTime(),
-            user.getId(),
-            role
+            user.getId()
         );
     }
 

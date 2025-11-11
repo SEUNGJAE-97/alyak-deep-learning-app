@@ -12,7 +12,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ErrorResponse businessExceptionHandler(BusinessException exception) {
         BusinessError businessError = exception.getBusinessError();
-        log.warn("[{}] : {}", businessError.name(), businessError.getMessage());
         exception.printStackTrace();
         return ErrorResponse
                 .builder(exception, businessError.getHttpStatus(), businessError.getMessage())
