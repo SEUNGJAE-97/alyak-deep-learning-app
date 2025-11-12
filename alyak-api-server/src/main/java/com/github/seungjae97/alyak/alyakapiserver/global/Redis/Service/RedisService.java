@@ -2,11 +2,13 @@ package com.github.seungjae97.alyak.alyakapiserver.global.Redis.Service;
 
 import com.github.seungjae97.alyak.alyakapiserver.global.Redis.Util.RedisUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RedisService {
@@ -42,6 +44,7 @@ public class RedisService {
     //3. 인증 번호 검증
     public boolean verifyAuthCode(String email, String code) {
         String savedCode = redisUtil.getData(email);
-        return savedCode != null && savedCode.equals(code);
+        if (savedCode == null) return false;
+        return savedCode.equals(code);
     }
 }

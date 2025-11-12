@@ -16,14 +16,11 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.Token
 import com.github.seungjae97.alyak.alyakapiserver.global.Redis.Util.RedisUtil;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
-import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.GlobalExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -59,6 +56,11 @@ public class AuthServiceImpl implements AuthService {
     public void signup(SignupRequest signupRequest) {
 
         String email = signupRequest.getEmail();
+        
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException(BusinessError.EMAIL_ALREADY_EXISTS);
+        }
+        
         boolean isVerified = redisUtil.existData("verified:" + email);
 
         if (!isVerified) {
@@ -70,9 +72,6 @@ public class AuthServiceImpl implements AuthService {
                 throw new BusinessException(BusinessError.EMAIL_VERIFICATION_EXPIRED);
             }
         }
-
-        if (userRepository.existsByEmail(signupRequest.getEmail()))
-            throw new BusinessException(BusinessError.EMAIL_ALREADY_EXISTS);
 
         User user = User.builder()
                 .email(signupRequest.getEmail())
