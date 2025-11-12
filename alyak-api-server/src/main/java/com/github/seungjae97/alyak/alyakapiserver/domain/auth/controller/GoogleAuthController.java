@@ -1,10 +1,14 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.auth.controller;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.GoogleUserResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakaoAuthCodeResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakoAuthTokenResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.GoogleAuthService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.KakaoAuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -32,13 +36,15 @@ public class GoogleAuthController {
      * Google에서 콜백 (인가 코드 수신) → 인가 코드로 토큰 교환
      */
     @GetMapping("/callback")
-    public String googleCallback(
+    public ResponseEntity<TokenResponse> googleCallback(
             @RequestParam String code,
             @RequestParam String state
     ) {
-        googleAuthService.requestAccessToken(code);
+        KakoAuthTokenResponse tokenResponse = googleAuthService.requestAccessToken(code);
+        GoogleUserResponse userInfo = googleAuthService.requestUserInfo(tokenResponse.getAccess_token());
+        TokenResponse jwtToken = googleAuthService.saveOrUpdateUser(userInfo);
 
-        return null;
+        return ResponseEntity.ok(jwtToken);
     }
 
 }

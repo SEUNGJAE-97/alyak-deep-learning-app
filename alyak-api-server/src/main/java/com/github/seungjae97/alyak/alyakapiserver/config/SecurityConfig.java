@@ -44,6 +44,7 @@ public class SecurityConfig {
                                 "/actuator/**",
                                 "/api/email/**",
                                 "/auth/kakao/**",
+                                "/auth/google/**",
                                 "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
