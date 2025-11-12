@@ -53,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void signup(SignupRequest signupRequest) {
+    public TokenResponse signup(SignupRequest signupRequest) {
 
         String email = signupRequest.getEmail();
         
@@ -93,6 +93,10 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         userRoleRepository.save(userRole);
+        String token = jwtTokenProvider.generateToken(user);
+        String RefreshToken = jwtTokenProvider.generateToken(user);
+
+        return new TokenResponse(token, RefreshToken, user.getEmail());
     }
 
     @Override

@@ -29,9 +29,9 @@ public class AuthController {
 
     @PostMapping("/signup")
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
-    public ResponseEntity<Void> signup(@RequestBody SignupRequest signupRequest) {
-        authService.signup(signupRequest);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<TokenResponse> signup(@RequestBody SignupRequest signupRequest) {
+        TokenResponse response = authService.signup(signupRequest);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/logout")
