@@ -56,21 +56,24 @@ public class AuthServiceImpl implements AuthService {
     public TokenResponse signup(SignupRequest signupRequest) {
 
         String email = signupRequest.getEmail();
-        
+
         if (userRepository.existsByEmail(email)) {
             throw new BusinessException(BusinessError.EMAIL_ALREADY_EXISTS);
         }
-        
+
         boolean isVerified = redisUtil.existData("verified:" + email);
-
         if (!isVerified) {
-            boolean hasAuthCode = redisUtil.existData(email);
-
-            if (hasAuthCode) {
-                throw new BusinessException(BusinessError.EMAIL_NOT_VERIFIED);
-            } else {
-                throw new BusinessException(BusinessError.EMAIL_VERIFICATION_EXPIRED);
+            boolean verificationRequested = redisUtil.existData("auth_request:" + email);
+            if (!verificationRequested) {
+                throw new BusinessException(BusinessError.EMAIL_VERIFICATION_REQUEST_NEEDED);
             }
+
+            boolean hasAuthCode = redisUtil.existData(email);
+            if (hasAuthCode) {
+                throw new BusinessException(BusinessError.EMAIL_VERIFICATION_PENDING);
+            }
+
+            throw new BusinessException(BusinessError.EMAIL_VERIFICATION_EXPIRED);
         }
 
         User user = User.builder()
@@ -93,10 +96,18 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         userRoleRepository.save(userRole);
-        String token = jwtTokenProvider.generateToken(user);
-        String RefreshToken = jwtTokenProvider.generateToken(user);
 
-        return new TokenResponse(token, RefreshToken, user.getEmail());
+        redisUtil.deleteData("verified:" + email);
+        redisUtil.deleteData("auth_request:" + email);
+
+        String accessToken = jwtTokenProvider.generateToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .email(user.getEmail())
+                .build();
     }
 
     @Override

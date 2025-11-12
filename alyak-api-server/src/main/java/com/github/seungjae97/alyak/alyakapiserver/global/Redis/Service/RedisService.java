@@ -39,12 +39,19 @@ public class RedisService {
         message.setSubject("이메일 인증번호 안내");
         message.setText("인증번호는 " + code + " 입니다.");
         mailSender.send(message);
-        redisUtil.setDataExpire(toEmail, code, 300);
+        redisUtil.setDataExpire("auth_request:" + toEmail, "requested", 120);
+        redisUtil.setDataExpire(toEmail, code, 30);
     }
     //3. 인증 번호 검증
     public boolean verifyAuthCode(String email, String code) {
         String savedCode = redisUtil.getData(email);
         if (savedCode == null) return false;
-        return savedCode.equals(code);
+
+        boolean matched = savedCode.equals(code);
+        if (matched) {
+            redisUtil.deleteData(email);
+            redisUtil.setDataExpire("verified:" + email, "verified", 60);
+        }
+        return matched;
     }
 }
