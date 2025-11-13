@@ -69,9 +69,9 @@ public class GoogleAuthService implements OAuthService {
     }
 
     /**
-    * 서비스 서버 -> 구글 서버
-    */
-    public KakoAuthTokenResponse requestAccessToken(String code){
+     * 서비스 서버 -> 구글 서버
+     */
+    public KakoAuthTokenResponse requestAccessToken(String code) {
         OAuthTokenRequest oAuthTokenRequest = OAuthTokenRequest.builder()
                 .client_id(googleClientId)
                 .grant_type("authorization_code")
@@ -141,9 +141,12 @@ public class GoogleAuthService implements OAuthService {
         String jwtToken = jwtTokenProvider.generateToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
-        return new TokenResponse(jwtToken, refreshToken, user.getEmail());
+        return TokenResponse.builder()
+                .refreshToken(refreshToken)
+                .accessToken(jwtToken)
+                .email(user.getEmail())
+                .build();
     }
-
 
 
 }

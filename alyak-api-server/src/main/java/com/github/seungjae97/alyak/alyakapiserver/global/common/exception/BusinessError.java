@@ -17,8 +17,9 @@ public enum BusinessError {
     EMAIL_VERIFICATION_REQUEST_NEEDED(HttpStatus.BAD_REQUEST, "이메일 인증을 먼저 진행해주세요."),
     EMAIL_VERIFICATION_EXPIRED(HttpStatus.BAD_REQUEST, "이메일 인증 시간이 만료되었습니다. 다시 인증해주세요."),
     USER_NOT_EXIST(HttpStatus.BAD_REQUEST, "존재하지 않는 유저입니다."),
-    EXIST_USER(HttpStatus.BAD_REQUEST, "이미 가입한 유저 입니다.");
-
+    EXIST_USER(HttpStatus.BAD_REQUEST, "이미 가입한 유저 입니다."),
+    KAKAO_LOGIN_ERROR(HttpStatus.BAD_REQUEST, "카카오 로그인에 실패했습니다."),
+    EMAIL_NOT_EXIST(HttpStatus.BAD_REQUEST, "이메일이 비어있습니다.");
     private final HttpStatus httpStatus;
 
     private final String message;

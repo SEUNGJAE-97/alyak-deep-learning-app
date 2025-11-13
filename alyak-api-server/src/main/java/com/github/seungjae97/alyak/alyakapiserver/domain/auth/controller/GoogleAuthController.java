@@ -6,6 +6,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakoA
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.GoogleAuthService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.KakaoAuthService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ public class GoogleAuthController {
      * google 리다이렉트 url 호출하는 API
      */
     @PostMapping("/authorize")
+    @Operation(summary = "구글 로그인 API", description = "구글 OAUTH2 로그인 API")
     public KakaoAuthCodeResponse getAuthorizationUrl() {
         String state = UUID.randomUUID().toString();
         String authorizationUrl = googleAuthService.buildAuthorizationUrl(state);

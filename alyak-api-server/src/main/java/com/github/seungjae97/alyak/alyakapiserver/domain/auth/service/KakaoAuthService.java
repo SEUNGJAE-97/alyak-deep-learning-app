@@ -1,9 +1,11 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.auth.service;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.JwtTokenProvider;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.OAuthCodeRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.OAuthTokenRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakaoUserResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.KakoAuthTokenResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.repository.KakaoRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Provider;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.ProviderId;
@@ -15,6 +17,9 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.Provide
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +42,7 @@ public class KakaoAuthService implements OAuthService {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Value("${KAKAO_AUTHORIZE_URL}")
     private String kakaoAuthorUrl;
@@ -54,6 +59,9 @@ public class KakaoAuthService implements OAuthService {
 
     @Value("${KAKAO_REST_API_KEY}")
     private String kakaoClientId;
+
+    @Value("${KAKAO_CLIENT_SECRET}")
+    private String kakaoClientSecret;
 
     /**
      * 서비스 서버 -> 카카오 서버
@@ -84,6 +92,7 @@ public class KakaoAuthService implements OAuthService {
                 .client_id(kakaoClientId)
                 .redirect_uri(kakaoRedirectUri)
                 .code(code)
+                .client_secret(kakaoClientSecret)
                 .build();
 
         HttpHeaders headers = new HttpHeaders();
@@ -97,8 +106,6 @@ public class KakaoAuthService implements OAuthService {
 
         // Redis에 토큰 저장 (만료시간 적용)
         kakaoRepository.saveAccessToken(kakaoClientId, response.getBody().getAccess_token(), Long.parseLong(response.getBody().getExpires_in()));
-
-        //log.info(response.getBody().getAccess_token());
 
         return response.getBody();
     }
@@ -115,28 +122,28 @@ public class KakaoAuthService implements OAuthService {
         return response.getBody();
     }
 
-    public Boolean saveOrUpdateUser(KakaoUserResponse userInfo) {
+    @Transactional
+    public TokenResponse saveOrUpdateUser(KakaoUserResponse userInfo) {
         // email 존재 유무 확인
         if (userInfo.getKakaoAccount().getEmail() == null) {
-            return false;
+            throw new BusinessException(BusinessError.EMAIL_NOT_EXIST);
         }
         // 이미 가입한 사람인지 확인
         if (userRepository.existsByEmail(userInfo.getKakaoAccount().getEmail())) {
-            return false;
+            throw new BusinessException(BusinessError.EMAIL_ALREADY_EXISTS);
         }
         //신규 가입 처리
         User newUser = User.builder()
                 .email(userInfo.getKakaoAccount().getEmail())
                 .name(userInfo.getKakaoAccount().getProfile().getNickname())
-                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .build();
         newUser = userRepository.save(newUser);
 
-        // 기본 역할 부여 (USER 역할, role_id = 2)
+        // 기본 역할 부여 (USER 역할)
         Role defaultRole = roleRepository.findById(2)
                 .orElseThrow(() -> new IllegalArgumentException("기본 역할 정보 없음"));
         
-        // UserRoleId를 명시적으로 생성 (@MapsId를 사용하려면 id가 먼저 존재해야 함)
+        // UserRoleId
         UserRoleId userRoleId = new UserRoleId(newUser.getId(), defaultRole.getId());
         
         UserRole userRole = UserRole.builder()
@@ -152,7 +159,13 @@ public class KakaoAuthService implements OAuthService {
                 .user(newUser)
                 .build();
         providerRepository.save(provider);
-        return true;
+        String jwtToken = jwtTokenProvider.generateToken(newUser);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(newUser);
+        return TokenResponse.builder()
+                .accessToken(jwtToken)
+                .refreshToken(refreshToken)
+                .email(userRole.getUser().getEmail())
+                .build();
     }
 
     public boolean validateState(String state) {
