@@ -3,6 +3,9 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.user.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -25,13 +28,11 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    public void changePassword(String encodedPassword) {
-        this.password = encodedPassword;
-    }
+    @OneToMany(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.REMOVE)
+    @Builder.Default
+    private List<UserRole> userRole = new ArrayList<>();
 
-    public enum Provider {
-        LOCAL,
-        GOOGLE,
-        KAKAO
-    }
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Builder.Default
+    private List<Provider> providers = new ArrayList<>();
 }

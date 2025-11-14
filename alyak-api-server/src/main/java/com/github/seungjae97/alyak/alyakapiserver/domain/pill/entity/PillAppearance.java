@@ -34,6 +34,15 @@ public class PillAppearance {
     @Column(name = "color_id")
     private Long colorId;
 
+    @Column(name = "pill_score")
+    private String pillScore;
+
+    @Column(name = "pill_ingredient")
+    private String pillIngredient;
+
+    @Column(name = "pill_form")
+    private String pillForm;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shape_id", insertable = false, updatable = false)
     private PillShape pillShapeId;

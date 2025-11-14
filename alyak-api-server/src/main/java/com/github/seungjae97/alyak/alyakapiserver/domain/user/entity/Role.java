@@ -3,9 +3,6 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.user.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
 @Table(name = "role")
 @Getter

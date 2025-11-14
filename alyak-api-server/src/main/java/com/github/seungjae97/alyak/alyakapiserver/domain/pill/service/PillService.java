@@ -1,5 +1,11 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.SimplePillInfo;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillAppearance;
+
+import java.util.List;
+
 public interface PillService {
 
     /**
@@ -9,5 +15,9 @@ public interface PillService {
      * */
     void findPill(String pillName);
 
-
+    /**
+     * 외형, 색상, 성상, 분할선을 기준으로 검색한다.
+     * @param pillSearchRequest 외형, 색상, 성상, 분할선을 필드로 갖는 dto
+     * */
+    List<SimplePillInfo> searchPill(PillSearchRequest pillSearchRequest);
 }
