@@ -1,5 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.user.repository;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRole;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRoleId;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -16,20 +17,8 @@ public interface UserRoleRepository extends JpaRepository<UserRole, UserRoleId> 
      */
     @EntityGraph(attributePaths = {"role"})
     List<UserRole> findByUser_Id(Long userId);
-    
-    /**
-     * 특정 역할을 가진 모든 사용자 조회
-     * @param roleId 역할 ID
-     * @return 해당 역할을 가진 사용자 목록
-     */
-    List<UserRole> findByRole_Id(Integer roleId);
-    
-    /**
-     * 특정 사용자와 역할로 조회
-     * @param userId 사용자 ID
-     * @param roleId 역할 ID
-     * @return UserRole 엔티티
-     */
-    Optional<UserRole> findByUser_IdAndRole_Id(Long userId, Integer roleId);
+
+
+    void deleteByUserId(Long userId);
 }
 

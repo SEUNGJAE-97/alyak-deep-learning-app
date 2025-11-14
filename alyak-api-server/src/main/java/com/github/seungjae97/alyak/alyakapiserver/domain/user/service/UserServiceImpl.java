@@ -2,7 +2,12 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.user.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.dto.UserUpdateRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.ProviderRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -11,37 +16,16 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-
-    private PasswordEncoder passwordEncoder;
-
-    public UserServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    @Override
-    public List<User> getAll() {
-        return userRepository.findAll();
-    }
+    private final ProviderRepository providerRepository;
+    private final UserRoleRepository userRoleRepository;
 
     @Override
     public Optional<User> getById(Long id) {
         return userRepository.findById(id);
-    }
-
-    @Override
-    public Optional<User> getByEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
-
-    @Override
-    public User create(User user) {
-        User encodedUser = user.toBuilder()
-                .password(passwordEncoder.encode(user.getPassword()))
-                .build();
-        return userRepository.save(encodedUser);
     }
 
     @Override
@@ -61,12 +45,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
+        // TODO : userId가 외래키로 사용되기 때문에 일괄적으로
+        providerRepository.deleteByUser_Id(id);
+        userRoleRepository.deleteByUserId(id);
         userRepository.deleteById(id);
     }
 
-    @Override
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
-    }
 }

@@ -24,35 +24,16 @@ public class UserController {
         this.userService = userService;
     }
 
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.getAll();
-        return ResponseEntity.ok(users);
-    }
-
     @GetMapping("/me")
+    @Operation(summary = "회원정보 조회", description = "사용자 정보를 조회할때 호출하는 API")
     public ResponseEntity<User> getUserById(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         Optional<User> user = userService.getById(userDetails.getUser().getId());
         return user.map(ResponseEntity::ok)
                   .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/email")
-    public ResponseEntity<User> getUserByEmail(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        Optional<User> user = userService.getByEmail(userDetails.getUser().getEmail());
-        return user.map(ResponseEntity::ok)
-                  .orElse(ResponseEntity.notFound().build());
-    }
-    
-    @PostMapping
-    public ResponseEntity<User> createUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        if (userService.existsByEmail(userDetails.getUser().getEmail())){
-            return ResponseEntity.badRequest().build();
-        }
-        User createdUser = userService.create(userDetails.getUser());
-        return ResponseEntity.ok(createdUser);
-    }
-
     @PutMapping
+    @Operation(summary = "회원정보 수정", description = "사용자 정보를 수정할때 사용하는 API")
     public ResponseEntity<User> updateUser(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody UserUpdateRequest request) {
         Optional<User> existingUser = userService.getById(userDetails.getUser().getId());
         if (existingUser.isEmpty()) {

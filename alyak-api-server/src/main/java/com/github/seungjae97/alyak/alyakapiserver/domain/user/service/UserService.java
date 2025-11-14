@@ -7,11 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserService {
-    List<User> getAll();
     Optional<User> getById(Long id);
-    Optional<User> getByEmail(String email);
-    User create(User user);
     User update(Long id, UserUpdateRequest request);
     void delete(Long id);
-    boolean existsByEmail(String email);
 } 
