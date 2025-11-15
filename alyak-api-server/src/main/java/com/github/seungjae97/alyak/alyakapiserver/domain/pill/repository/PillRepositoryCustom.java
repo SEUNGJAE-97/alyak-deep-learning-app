@@ -6,5 +6,5 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.Simpl
 import java.util.List;
 
 public interface PillRepositoryCustom {
-    List<SimplePillInfo> findByAppearance(PillSearchRequest pillSearchRequest);
+    List<SimplePillInfo> searchAppearance(PillSearchRequest pillSearchRequest);
 }

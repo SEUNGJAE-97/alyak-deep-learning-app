@@ -13,7 +13,7 @@ public interface PillService {
      * 저장 후 사용자에게 알약 정보 반환
      * @param pillName 알약 이름
      * */
-    void findPill(String pillName);
+    List<SimplePillInfo> findPill(String pillName);
 
     /**
      * 외형, 색상, 성상, 분할선을 기준으로 검색한다.

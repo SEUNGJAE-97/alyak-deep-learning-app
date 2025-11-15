@@ -37,9 +37,6 @@ public class PillAppearance {
     @Column(name = "pill_score")
     private String pillScore;
 
-    @Column(name = "pill_ingredient")
-    private String pillIngredient;
-
     @Column(name = "pill_form")
     private String pillForm;
 

@@ -16,7 +16,7 @@ import static com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.QPil
 @Repository
 @Transactional
 @RequiredArgsConstructor
-public class PIllRepositoryImpl implements PillRepositoryCustom{
+public class PillRepositoryCustomImpl implements PillRepositoryCustom{
 
     private final JPAQueryFactory queryFactory;
 
@@ -35,13 +35,13 @@ public class PIllRepositoryImpl implements PillRepositoryCustom{
     }
 
     @Override
-    public List<SimplePillInfo> findByAppearance(PillSearchRequest pillSearchRequest) {
+    public List<SimplePillInfo> searchAppearance(PillSearchRequest pillSearchRequest) {
         BooleanBuilder where = buildWhereClause(pillSearchRequest);
         return queryFactory
                 .select(Projections.fields(SimplePillInfo.class,
                         pillAppearance.pillId.as("pillId"),
                         pill.pillName.as("pillName"),
-                        pillAppearance.pillIngredient.as("ingredient"),
+                        pill.pillIngredient.as("ingredient"),
                         pill.pillManufacturer.as("manufacturer")
                 ))
                 .from(pillAppearance)
