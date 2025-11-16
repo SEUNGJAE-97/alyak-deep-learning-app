@@ -26,7 +26,10 @@ public class PillRepositoryCustomImpl implements PillRepositoryCustom{
             where.and(pillAppearance.pillShapeId.shapeName.eq(req.getShape()));
         }
         if(req.getColor() != null && !req.getColor().isBlank()) {
-            where.and(pillAppearance.pillColorId.colorName.eq(req.getColor()));
+            where.and(
+                pillAppearance.pillColorClass1.colorName.eq(req.getColor())
+                .or(pillAppearance.pillColorClass2.colorName.eq(req.getColor()))
+            );
         }
         if(req.getScore() != null && !req.getScore().isBlank()) {
             where.and(pillAppearance.pillScore.eq(req.getScore()));

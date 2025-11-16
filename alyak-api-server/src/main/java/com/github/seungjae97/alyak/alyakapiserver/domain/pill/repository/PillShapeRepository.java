@@ -1,0 +1,11 @@
+package com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository;
+
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillShape;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface PillShapeRepository extends JpaRepository<PillShape, Long> {
+    Optional<PillShape> findByShapeName(String shapeName);
+}
+
