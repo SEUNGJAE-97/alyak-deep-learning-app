@@ -1,9 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
@@ -21,25 +18,32 @@ public class Pill {
     @Column(name = "pill_name")
     private String pillName;
 
-    @Column(name = "pill_description")
+    @Column(name = "pill_description", columnDefinition = "TEXT")
+    @Lob
     private String pillDescription;
 
-    @Column(name = "user_method")
+    @Column(name = "user_method", columnDefinition = "TEXT")
+    @Lob
     private String userMethod;
 
-    @Column(name = "pill_efficacy")
+    @Column(name = "pill_efficacy", columnDefinition = "TEXT")
+    @Lob
     private String pillEfficacy;
 
-    @Column(name = "pill_warn")
+    @Column(name = "pill_warn", columnDefinition = "TEXT")
+    @Lob
     private String pillWarn;
 
-    @Column(name = "pill_caution")
+    @Column(name = "pill_caution", columnDefinition = "TEXT")
+    @Lob
     private String pillCaution;
 
-    @Column(name = "pill_interactive")
+    @Column(name = "pill_interactive", columnDefinition = "TEXT")
+    @Lob
     private String pillInteractive;
 
-    @Column(name = "pill_adverse_reaction")
+    @Column(name = "pill_adverse_reaction", columnDefinition = "TEXT")
+    @Lob
     private String pillAdverseReaction;
 
     @Column(name = "pill_manufacturer")

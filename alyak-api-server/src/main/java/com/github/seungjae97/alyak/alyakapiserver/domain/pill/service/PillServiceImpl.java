@@ -52,6 +52,7 @@ public class PillServiceImpl implements PillService {
             List<Pill> pills = new ArrayList<>();
             for (PillInfoResponse.Item item : pillInfoResponse.getBody().getItems()) {
                 Pill pill = Pill.builder()
+                        .id(item.getItemSeq())
                         .pillName(item.getItemName())
                         .pillAdverseReaction(item.getSeQesitm())
                         .pillCaution(item.getAtpnQesitm())

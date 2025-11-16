@@ -32,7 +32,7 @@ public class PillInfoResponse {
     public static class Item {
         private String entpName;
         private String itemName;
-        private String itemSeq;
+        private Long itemSeq;
         private String efcyQesitm;
         private String useMethodQesitm;
         private String atpnWarnQesitm;
