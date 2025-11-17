@@ -36,3 +36,46 @@ INSERT INTO provider (provider_name, user_id) VALUES
 ('KAKAO', 4),   -- user3@example.com - 카카오 로그인
 ('GOOGLE', 5)   -- user4@example.com - 구글 로그인
 ON DUPLICATE KEY UPDATE provider_name = VALUES(provider_name);
+
+-- PillShape 데이터
+INSERT INTO pill_shape (shape_id, shape_name) VALUES
+(1, '원형'),
+(2, '타원형'),
+(3, '장방형'),
+(4, '반원형'),
+(5, '삼각형'),
+(6, '사각형'),
+(7, '마름모형'),
+(8, '오각형'),
+(9, '육각형'),
+(10, '팔각형'),
+(11, '기타'),
+(12, '8자형'),
+(13, '강낭콩형'),
+(14, '과일모양'),
+(15, '구형'),
+(16, '나비넥타이형'),
+(17, '나비모양'),
+(18, '다이아몬드형'),
+(19, '도넛형')
+ON DUPLICATE KEY UPDATE shape_name = VALUES(shape_name);
+
+-- PillColor 데이터
+INSERT INTO pill_color (color_id, color_name) VALUES
+(1, '하양'),
+(2, '노랑'),
+(3, '주황'),
+(4, '분홍'),
+(5, '빨강'),
+(6, '갈색'),
+(7, '연두'),
+(8, '초록'),
+(9, '청록'),
+(10, '파랑'),
+(11, '남색'),
+(12, '자주'),
+(13, '보라'),
+(14, '회색'),
+(15, '검정'),
+(16, '투명')
+ON DUPLICATE KEY UPDATE color_name = VALUES(color_name);
