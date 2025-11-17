@@ -37,9 +37,6 @@ public class PillAppearance {
     @Column(name = "color_class2_id")
     private Long colorClass2Id;
 
-    @Column(name = "pill_score")
-    private String pillScore;
-
     @Column(name = "pill_form")
     private String pillForm;
 
