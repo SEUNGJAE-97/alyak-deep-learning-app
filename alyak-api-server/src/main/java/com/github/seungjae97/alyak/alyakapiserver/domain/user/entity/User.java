@@ -1,5 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.user.entity;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Family;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,4 +36,8 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @Builder.Default
     private List<Provider> providers = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "family_id")
+    private Family family;
 }
