@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 @Table(name = "pill_shape")
 public class PillShape {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "shape_id")
     private Long id;
 
