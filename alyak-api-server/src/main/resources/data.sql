@@ -48,6 +48,14 @@ UPDATE users SET family_id = 1 WHERE user_id IN (1, 2);
 UPDATE users SET family_id = 2 WHERE user_id IN (3, 4);
 UPDATE users SET family_id = 3 WHERE user_id = 5;
 
+-- Schedule Status 데이터
+INSERT INTO status (status_id, status_name) VALUES
+(1, 'SCHEDULED'),
+(2, 'TAKEN'),
+(3, 'SKIPPED'),
+(4, 'CANCELLED')
+ON DUPLICATE KEY UPDATE status_name = VALUES(status_name);
+
 -- PillShape 데이터
 INSERT INTO pill_shape (shape_id, shape_name) VALUES
 (1, '원형'),
