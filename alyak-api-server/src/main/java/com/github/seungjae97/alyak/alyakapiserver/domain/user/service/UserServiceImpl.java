@@ -48,8 +48,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void delete(Long id) {
         // TODO : userId가 외래키로 사용되기 때문에 일괄적으로
-        providerRepository.deleteByUser_Id(id);
-        userRoleRepository.deleteByUserId(id);
+        providerRepository.deleteByUser_UserId(id);
+        userRoleRepository.deleteByUser_UserId(id);
         userRepository.deleteById(id);
     }
 

@@ -130,7 +130,7 @@ public class GoogleAuthService implements OAuthService {
             Role defaultRole = roleRepository.findById(2)
                     .orElseThrow(() -> new IllegalArgumentException("Default role not found"));
             UserRole userRole = UserRole.builder()
-                    .id(new UserRoleId(user.getId(), defaultRole.getId()))
+                    .id(new UserRoleId(user.getUserId(), defaultRole.getId()))
                     .user(user)
                     .role(defaultRole)
                     .build();

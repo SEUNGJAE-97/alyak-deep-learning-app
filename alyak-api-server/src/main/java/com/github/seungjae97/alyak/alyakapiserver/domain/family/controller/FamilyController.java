@@ -25,7 +25,7 @@ public class FamilyController {
     @GetMapping("/members")
     @Operation(summary = "구성원 검색", description = "userId 기준 가족 구성원 조회")
     public ResponseEntity<List<FamilyMemberInfoResponse>> findMembers(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        List<FamilyMemberInfoResponse> members = familyService.findMembersByUserId(userDetails.getUser().getId());
+        List<FamilyMemberInfoResponse> members = familyService.findMembersByUserId(userDetails.getUser().getUserId());
         return ResponseEntity.ok(members);
     }
 

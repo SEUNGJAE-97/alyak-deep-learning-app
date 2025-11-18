@@ -47,7 +47,7 @@ public class AuthServiceImpl implements AuthService {
         return new LoginResponse(
                 token,
                 jwtProperties.getExpirationTime(),
-                user.getId()
+                user.getUserId()
         );
     }
 
@@ -87,7 +87,7 @@ public class AuthServiceImpl implements AuthService {
         Role defaultRole = roleRepository.findById(2)
                 .orElseThrow(() -> new IllegalArgumentException("Default role not found"));
 
-        UserRoleId userRoleId = new UserRoleId(user.getId(), defaultRole.getId());
+        UserRoleId userRoleId = new UserRoleId(user.getUserId(), defaultRole.getId());
 
         UserRole userRole = UserRole.builder()
                 .id(userRoleId)

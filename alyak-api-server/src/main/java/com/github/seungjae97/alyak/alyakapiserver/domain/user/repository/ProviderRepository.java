@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface ProviderRepository extends JpaRepository<Provider, ProviderId> {
 
-    void deleteByUser_Id(Long userId);
+    void deleteByUser_UserId(Long userId);
 }

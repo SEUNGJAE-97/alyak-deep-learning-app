@@ -39,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
             User user = userRepository.findById(userId).orElse(null);
             if (user != null) {
-                List<UserRole> userRoles = userRoleRepository.findByUser_Id(userId);
+                List<UserRole> userRoles = userRoleRepository.findByUser_userId(userId);
                 var authorities = userRoles.stream()
                         .map(userRole -> new SimpleGrantedAuthority("ROLE_" + userRole.getRole().getName()))
                         .collect(Collectors.toList());

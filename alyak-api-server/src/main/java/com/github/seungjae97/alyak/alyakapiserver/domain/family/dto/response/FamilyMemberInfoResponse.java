@@ -12,7 +12,7 @@ public class FamilyMemberInfoResponse {
 
     public static FamilyMemberInfoResponse from(User user) {
         return FamilyMemberInfoResponse.builder()
-                .memberId(user.getId())
+                .memberId(user.getUserId())
                 .memberName(user.getName())
                 .build();
     }

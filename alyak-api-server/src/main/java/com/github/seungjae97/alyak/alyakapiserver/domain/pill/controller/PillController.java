@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/pill")
 @RequiredArgsConstructor
-@Tag(name = "03.알약", description = "알약 정보 관련 API")
+@Tag(name = "08.알약", description = "알약 정보 관련 API")
 public class PillController {
 
     private final PillService pillService;

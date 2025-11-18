@@ -25,12 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.UUID;
 
 @Service
 @Slf4j
@@ -144,7 +141,7 @@ public class KakaoAuthService implements OAuthService {
                 .orElseThrow(() -> new IllegalArgumentException("기본 역할 정보 없음"));
         
         // UserRoleId
-        UserRoleId userRoleId = new UserRoleId(newUser.getId(), defaultRole.getId());
+        UserRoleId userRoleId = new UserRoleId(newUser.getUserId(), defaultRole.getId());
         
         UserRole userRole = UserRole.builder()
                 .id(userRoleId)
@@ -153,7 +150,7 @@ public class KakaoAuthService implements OAuthService {
                 .build();
         userRoleRepository.save(userRole);
 
-        ProviderId providerId = new ProviderId("KAKAO", newUser.getId());
+        ProviderId providerId = new ProviderId("KAKAO", newUser.getUserId());
         Provider provider = Provider.builder()
                 .id(providerId)
                 .user(newUser)

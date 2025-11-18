@@ -16,9 +16,9 @@ public interface UserRoleRepository extends JpaRepository<UserRole, UserRoleId> 
      * @return 해당 사용자의 역할 목록
      */
     @EntityGraph(attributePaths = {"role"})
-    List<UserRole> findByUser_Id(Long userId);
+    List<UserRole> findByUser_userId(Long userId);
 
 
-    void deleteByUserId(Long userId);
+    void deleteByUser_UserId(Long userId);
 }
 

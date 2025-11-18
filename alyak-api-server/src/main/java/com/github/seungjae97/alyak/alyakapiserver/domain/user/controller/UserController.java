@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -27,7 +26,7 @@ public class UserController {
     @GetMapping("/me")
     @Operation(summary = "회원정보 조회", description = "사용자 정보를 조회할때 호출하는 API")
     public ResponseEntity<User> getUserById(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        Optional<User> user = userService.getById(userDetails.getUser().getId());
+        Optional<User> user = userService.getById(userDetails.getUser().getUserId());
         return user.map(ResponseEntity::ok)
                   .orElse(ResponseEntity.notFound().build());
     }
@@ -35,11 +34,11 @@ public class UserController {
     @PutMapping
     @Operation(summary = "회원정보 수정", description = "사용자 정보를 수정할때 사용하는 API")
     public ResponseEntity<User> updateUser(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody UserUpdateRequest request) {
-        Optional<User> existingUser = userService.getById(userDetails.getUser().getId());
+        Optional<User> existingUser = userService.getById(userDetails.getUser().getUserId());
         if (existingUser.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        User updatedUser = userService.update(existingUser.get().getId(), request);
+        User updatedUser = userService.update(existingUser.get().getUserId(), request);
         return ResponseEntity.ok(updatedUser);
     }
 
@@ -47,11 +46,11 @@ public class UserController {
     @DeleteMapping
     @Operation(summary = "회원탈퇴", description = "사용자가 회원탈퇴를 할때 호출하는 API")
     public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        Optional<User> user = userService.getById(userDetails.getUser().getId());
+        Optional<User> user = userService.getById(userDetails.getUser().getUserId());
         if (user.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        userService.delete(user.get().getId());
+        userService.delete(user.get().getUserId());
         return ResponseEntity.noContent().build();
     }
 } 
