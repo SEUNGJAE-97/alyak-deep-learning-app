@@ -38,4 +38,25 @@ public class ScheduleService {
         }
         return userScheduleResponseList;
     }
+
+    /**
+     * User가 속해있는 가족이 가지고 있는 스케쥴을 조회한다.
+     * */
+    public List<UserScheduleResponse> findAllByUserIdFromFamily(Long familyId) {
+        List<Schedule> schedules = scheduleRepository.findSchedulesByFamilyId(familyId);
+        List<UserScheduleResponse> responses = new ArrayList<>();
+
+        for(Schedule schedule : schedules){
+            responses.add(
+                    UserScheduleResponse.builder()
+                            .scheduleId(schedule.getScheduleId())
+                            .pillName(schedule.getPill().getPillName())
+                            .scheduleTime(schedule.getScheduleTime())
+                            .pillDosage(0)
+                            .scheduleStartTime(schedule.getScheduleStartTime())
+                            .scheduleEndTime(schedule.getScheduleEndTime())
+                            .build());
+        }
+        return responses;
+    }
 }

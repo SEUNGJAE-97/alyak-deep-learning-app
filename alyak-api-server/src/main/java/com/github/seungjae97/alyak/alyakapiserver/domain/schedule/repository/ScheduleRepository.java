@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
+public interface ScheduleRepository extends JpaRepository<Schedule, Integer>, ScheduleRepositoryCustom {
     List<Schedule> findByUser_userId(Long userId);
 }
