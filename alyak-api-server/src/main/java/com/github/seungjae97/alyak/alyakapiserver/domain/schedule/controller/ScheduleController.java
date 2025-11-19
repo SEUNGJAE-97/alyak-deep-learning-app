@@ -24,8 +24,15 @@ public class ScheduleController {
 
     @GetMapping("/search")
     @Operation(summary = "회원의 스케쥴 정보를 조회합니다.", description = "사용자한테 등록된 스케쥴을 조회하는 API")
-    public ResponseEntity<List<UserScheduleResponse>> getUserById(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+    public ResponseEntity<List<UserScheduleResponse>> getScheduleByUserId(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         List<UserScheduleResponse> responses = scheduleService.findAllByUserId(userDetails.getUser().getUserId());
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/searchFamily")
+    @Operation(summary = "회원이 속한 가족들의 스케쥴 정보를 조회합니다.", description = "가족 구성원으로 등록된 사람들의 스케쥴을 조회")
+    public ResponseEntity<List<UserScheduleResponse>> getScheduleByFamilyId(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        List<UserScheduleResponse> responses = scheduleService.findAllByUserIdFromFamily(userDetails.getUser().getFamily().getId());
         return ResponseEntity.ok(responses);
     }
 }

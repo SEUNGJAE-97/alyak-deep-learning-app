@@ -9,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class ScheduleStatus {
+public class Status {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

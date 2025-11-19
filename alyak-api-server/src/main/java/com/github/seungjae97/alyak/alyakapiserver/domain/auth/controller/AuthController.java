@@ -50,6 +50,7 @@ public class AuthController {
 
 
     @PostMapping("/temp-login")
+    @Operation(summary = "임시 로그인", description = "개발용 임시 로그인")
     public ResponseEntity<TokenResponse> tempLogin() {
         try {
             TokenResponse token = authService.tempLogin();

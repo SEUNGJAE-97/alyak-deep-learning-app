@@ -2,12 +2,11 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.schedule.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.schedule.dto.response.UserScheduleResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.schedule.entity.Schedule;
+import com.github.seungjae97.alyak.alyakapiserver.domain.schedule.mapper.ScheduleMapper;
 import com.github.seungjae97.alyak.alyakapiserver.domain.schedule.repository.ScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -15,6 +14,7 @@ import java.util.List;
 public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
+    private final ScheduleMapper scheduleMapper;
 
     /**
      * UserId 값으로 모든 복약정보 가져온다.
@@ -22,41 +22,15 @@ public class ScheduleService {
      * */
     public List<UserScheduleResponse> findAllByUserId(Long userId) {
         List<Schedule> schedules = scheduleRepository.findByUser_userId(userId);
-        List<UserScheduleResponse> userScheduleResponseList = new ArrayList<>();
-
-        for(Schedule schedule : schedules){
-            userScheduleResponseList.add(
-                    UserScheduleResponse.builder()
-                            .scheduleId(schedule.getScheduleId())
-                            .pillName(schedule.getPill().getPillName())
-                            .scheduleTime(schedule.getScheduleTime())
-                            .pillDosage(0)
-                            .scheduleStartTime(schedule.getScheduleStartTime())
-                            .scheduleEndTime(schedule.getScheduleEndTime())
-                            .build()
-            );
-        }
-        return userScheduleResponseList;
+        return scheduleMapper.convertToDtoList(schedules);
     }
 
     /**
      * User가 속해있는 가족이 가지고 있는 스케쥴을 조회한다.
+     * @param familyId 유저가 속한 가족 ID 값
      * */
     public List<UserScheduleResponse> findAllByUserIdFromFamily(Long familyId) {
         List<Schedule> schedules = scheduleRepository.findSchedulesByFamilyId(familyId);
-        List<UserScheduleResponse> responses = new ArrayList<>();
-
-        for(Schedule schedule : schedules){
-            responses.add(
-                    UserScheduleResponse.builder()
-                            .scheduleId(schedule.getScheduleId())
-                            .pillName(schedule.getPill().getPillName())
-                            .scheduleTime(schedule.getScheduleTime())
-                            .pillDosage(0)
-                            .scheduleStartTime(schedule.getScheduleStartTime())
-                            .scheduleEndTime(schedule.getScheduleEndTime())
-                            .build());
-        }
-        return responses;
+        return scheduleMapper.convertToDtoList(schedules);
     }
 }

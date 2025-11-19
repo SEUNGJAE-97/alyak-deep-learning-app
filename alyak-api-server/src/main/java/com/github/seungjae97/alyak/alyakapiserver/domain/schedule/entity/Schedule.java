@@ -30,7 +30,7 @@ public class Schedule {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id", nullable = false)
-    private ScheduleStatus status;
+    private Status status;
 
     @Column(name = "schedule_time", nullable = false)
     private LocalDateTime scheduleTime;
