@@ -1,5 +1,7 @@
 package com.alyak.detector.data.api
 
+import com.alyak.detector.di.AppServerRetrofit
+import com.alyak.detector.di.KakaoRetrofit
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,6 +18,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @KakaoRetrofit
     fun provideRetrofit(): Retrofit =
         Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -24,18 +27,20 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @AppServerRetrofit
     fun provideServerRetrofit(): Retrofit =
         Retrofit.Builder()
             .baseUrl(SERVER_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+
     @Provides
     @Singleton
-    fun provideAppApi(retrofit: Retrofit): AuthApi =
+    fun provideAppApi(@AppServerRetrofit retrofit: Retrofit): AuthApi =
         provideServerRetrofit().create(AuthApi::class.java)
 
     @Provides
     @Singleton
-    fun provideKakaoLocalApi(retrofit: Retrofit): KakaoLocalApi =
+    fun provideKakaoLocalApi(@KakaoRetrofit retrofit: Retrofit): KakaoLocalApi =
         retrofit.create(KakaoLocalApi::class.java)
 }

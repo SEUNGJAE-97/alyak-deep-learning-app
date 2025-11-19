@@ -1,5 +1,6 @@
 package com.alyak.detector.ui.main
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -7,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alyak.detector.core.network.ApiResult
 import com.alyak.detector.data.family.model.DailyMedicationStat
 import com.alyak.detector.data.family.model.FamilyMember
 import com.alyak.detector.data.family.repository.FamilyRepo
@@ -31,14 +33,14 @@ class MainViewModel @Inject constructor(
     private var delayedCount by mutableIntStateOf(0)
     private var scheduledCount by mutableIntStateOf(0)
     private var totalCount = completeCount + missedCount + delayedCount + scheduledCount
-    val _totalCount : Int get() = totalCount
+    val _totalCount: Int get() = totalCount
     val dateFormatter = SimpleDateFormat("M/d", Locale.getDefault())
-    
+
     /**
      * 선택된 멤버의 주간 통계 데이터
      * UI에서 dailyStatToBarSegments 함수로 BarSegments로 변환
      */
-    val selectedMemberStats: List<DailyMedicationStat> 
+    val selectedMemberStats: List<DailyMedicationStat>
         get() = if (_familyMembers.isNotEmpty()) _familyMembers[_selectedIndex].weeklyMedicationStats else emptyList()
 
     init {
@@ -53,13 +55,35 @@ class MainViewModel @Inject constructor(
     private fun fetchFamilyMembers() {
         //TODO : API 호출
         viewModelScope.launch {
-            try {
-                val fetchedMembers = familyRepo.fetchMembers()
-                _familyMembers.clear()
-                _familyMembers.addAll(fetchedMembers)
-                loadUserChartData()
-            } catch (e: Exception) {
-                e.stackTrace
+            // 1. familyRepo.fetchMembers()를 호출하고 그 결과를 apiResult 변수에 저장합니다.
+            val apiResult = familyRepo.fetchMembers()
+
+            // 2. when 표현식을 사용해 ApiResult의 상태를 확인합니다.
+            when (apiResult) {
+                // 3. API 호출이 성공한 경우 (ApiResult.Success)
+                is ApiResult.Success -> {
+                    // '포장지'에서 '선물(데이터)'을 꺼냅니다 (apiResult.data).
+                    val fetchedMembers = apiResult.data
+                    _familyMembers.clear()
+                    // 이제 올바른 타입의 List를 addAll에 전달합니다.
+                    _familyMembers.addAll(fetchedMembers)
+
+                    if (_familyMembers.isNotEmpty()) {
+                        loadUserChartData()
+                    }
+                }
+
+                // 4. API 호출이 실패한 경우 (ApiResult.Error)
+                is ApiResult.Error -> {
+                    // 에러 상황을 처리합니다. (예: 로그 출력, 사용자에게 메시지 표시)
+                    Log.e("MainViewModel", "API Error: ${apiResult.code} - ${apiResult.message}")
+                }
+
+                // 5. 네트워크 예외 등 다른 예외가 발생한 경우 (ApiResult.Exception)
+                is ApiResult.Exception -> {
+                    // 예외 상황을 처리합니다.
+                    Log.e("MainViewModel", "Network Exception: ${apiResult.throwable.message}")
+                }
             }
         }
     }
@@ -73,8 +97,6 @@ class MainViewModel @Inject constructor(
             scheduledCount = _familyMembers[_selectedIndex].stats.scheduledCount
         }
     }
-
-
 
 
 }
