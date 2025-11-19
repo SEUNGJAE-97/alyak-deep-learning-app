@@ -45,7 +45,7 @@
     # Ensure data.sql runs AFTER Hibernate creates tables
     defer-datasource-initialization: true
 
-  # Ensure SQL init runs for non-embedded DBs and tolerate re-runs
+  # SQL initialization configuration
   sql:
     init:
       mode: always
@@ -70,3 +70,12 @@ jwt:
   expiration-time: ${JWT_EXPIRATION_TIME:3600000}
   header: ${JWT_HEADER:Authorization}
   prefix: ${JWT_PREFIX:Bearer }
+
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web.filter: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
+    com.github.seungjae97.alyak.alyakapiserver.domain.auth: DEBUG
+    com.github.seungjae97.alyak.alyakapiserver.config: DEBUG

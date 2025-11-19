@@ -43,8 +43,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("email", user.getEmail())
-                .claim("id", user.getId())
-                .claim("role", user.getRole().name())
+                .claim("id", user.getUserId())
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + accessTokenExpiration))
                 .signWith(getSigningKey())
@@ -55,7 +54,7 @@ public class JwtTokenProvider {
         Date now = new Date();
         return Jwts.builder()
                 .subject(user.getEmail())
-                .claim("id", user.getId())
+                .claim("id", user.getUserId())
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + refreshTokenExpiration))
                 .signWith(getSigningKey())

@@ -5,9 +5,17 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.JwtTokenProvider;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.LoginRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.SignupRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.LoginResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Role;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRole;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRoleId;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
+import com.github.seungjae97.alyak.alyakapiserver.global.Redis.Util.RedisUtil;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,45 +28,86 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
+    private final RedisUtil redisUtil;
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Invalid email or password");
-        }
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .filter(u -> passwordEncoder.matches(loginRequest.getPassword(), u.getPassword()))
+                .orElseThrow(() -> new BusinessException(BusinessError.INVALID_LOGIN));
 
         String token = jwtTokenProvider.generateToken(user);
-        
+
         return new LoginResponse(
-            token,
-            jwtProperties.getPrefix().trim(),
-            jwtProperties.getExpirationTime(),
-            user.getId(),
-            user.getRole()
+                token,
+                jwtProperties.getExpirationTime(),
+                user.getUserId()
         );
     }
 
     @Override
-    public void signup(SignupRequest signupRequest) {
-        if (userRepository.existsByEmail(signupRequest.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+    @Transactional
+    public TokenResponse signup(SignupRequest signupRequest) {
+
+        String email = signupRequest.getEmail();
+
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException(BusinessError.EMAIL_ALREADY_EXISTS);
+        }
+
+        boolean isVerified = redisUtil.existData("verified:" + email);
+        if (!isVerified) {
+            boolean verificationRequested = redisUtil.existData("auth_request:" + email);
+            if (!verificationRequested) {
+                throw new BusinessException(BusinessError.EMAIL_VERIFICATION_REQUEST_NEEDED);
+            }
+
+            boolean hasAuthCode = redisUtil.existData(email);
+            if (hasAuthCode) {
+                throw new BusinessException(BusinessError.EMAIL_VERIFICATION_PENDING);
+            }
+
+            throw new BusinessException(BusinessError.EMAIL_VERIFICATION_EXPIRED);
         }
 
         User user = User.builder()
                 .email(signupRequest.getEmail())
                 .password(passwordEncoder.encode(signupRequest.getPassword()))
                 .name(signupRequest.getName())
-                .phoneNumber(signupRequest.getPhoneNumber())
-                .role(User.Role.Admin)
                 .build();
 
-        userRepository.save(user);
+        user = userRepository.save(user);
+
+        Role defaultRole = roleRepository.findById(2)
+                .orElseThrow(() -> new IllegalArgumentException("Default role not found"));
+
+        UserRoleId userRoleId = new UserRoleId(user.getUserId(), defaultRole.getId());
+
+        UserRole userRole = UserRole.builder()
+                .id(userRoleId)
+                .user(user)
+                .role(defaultRole)
+                .build();
+
+        userRoleRepository.save(userRole);
+
+        redisUtil.deleteData("verified:" + email);
+        redisUtil.deleteData("auth_request:" + email);
+
+        String accessToken = jwtTokenProvider.generateToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .email(user.getEmail())
+                .build();
     }
 
     @Override
@@ -69,7 +118,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public TokenResponse reissue(String refreshToken) {
-        if(!jwtTokenProvider.validateToken(refreshToken)) {
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new BadCredentialsException("Invalid refresh token");
         }
         Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);

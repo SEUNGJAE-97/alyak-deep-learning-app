@@ -1,101 +1,144 @@
--- Insert dummy users data (provider NOT NULL, role is ORDINAL in entity)
-INSERT INTO users (name, email, password, phone_number, gender, resident_registration_number, role, provider)
-VALUES ('김철수', 'kim.chulsoo@email.com', 'password123', '010-1234-5678', 'M', '900101-1234567', 0, 'LOCAL'),
-       ('이영희', 'lee.younghee@email.com', 'password123', '010-2345-6789', 'F', '920305-2345678', 0, 'LOCAL'),
-       ('박민수', 'park.minsu@email.com', 'password123', '010-3456-7890', 'M', '880715-3456789', 0, 'LOCAL'),
-       ('최수진', 'choi.sujin@email.com', 'password123', '010-4567-8901', 'F', '950822-4567890', 0, 'LOCAL'),
-       ('정태호', 'jung.taeho@email.com', 'password123', '010-5678-9012', 'M', '870312-5678901', 0, 'LOCAL'),
-       ('한미영', 'han.miyeong@email.com', 'password123', '010-6789-0123', 'F', '930628-6789012', 0, 'LOCAL'),
-       ('송재현', 'song.jaehyun@email.com', 'password123', '010-7890-1234', 'M', '910419-7890123', 0, 'LOCAL'),
-       ('윤소영', 'yoon.soyoung@email.com', 'password123', '010-8901-2345', 'F', '940711-8901234', 0, 'LOCAL'),
-       ('임동현', 'lim.donghyun@email.com', 'password123', '010-9012-3456', 'M', '860925-9012345', 0, 'LOCAL'),
-       ('강지은', 'kang.jieun@email.com', 'password123', '010-0123-4567', 'F', '960314-0123456', 0, 'LOCAL'),
-       ('김민준', 'kim.minjun@email.com', 'password123', '010-1111-2222', 'M', '001215-1111111', 0, 'LOCAL'),
-       ('이서연', 'lee.seoyeon@email.com', 'password123', '010-2222-3333', 'F', '020708-2222222', 0, 'LOCAL'),
-       ('박준호', 'park.junho@email.com', 'password123', '010-3333-4444', 'M', '030321-3333333', 0, 'LOCAL'),
-       ('최예은', 'choi.yeeun@email.com', 'password123', '010-4444-5555', 'F', '041112-4444444', 0, 'LOCAL'),
-       ('정현우', 'jung.hyunwoo@email.com', 'password123', '010-5555-6666', 'M', '050603-5555555', 0, 'LOCAL'),
-       ('한소희', 'han.sohee@email.com', 'password123', '010-6666-7777', 'F', '060929-6666666', 0, 'LOCAL'),
-       ('송도현', 'song.dohyun@email.com', 'password123', '010-7777-8888', 'M', '070417-7777777', 0, 'LOCAL'),
-       ('윤지원', 'yoon.jiwon@email.com', 'password123', '010-8888-9999', 'F', '080825-8888888', 0, 'LOCAL'),
-       ('임승우', 'lim.seungwoo@email.com', 'password123', '010-9999-0000', 'M', '090512-9999999', 0, 'LOCAL');
+-- Role 데이터
+INSERT INTO role (role_id, role_name) VALUES
+(1, 'ADMIN'),
+(2, 'USER')
+ON DUPLICATE KEY UPDATE role_name = VALUES(role_name);
 
--- Insert dummy families data
-INSERT INTO families (family_name, description)
-VALUES ('김가족', '김철수 가족 - 4인 가족'),
-       ('이가족', '이영희 가족 - 3인 가족'),
-       ('박가족', '박민수 가족 - 5인 가족'),
-       ('최가족', '최수진 가족 - 2인 가족'),
-       ('정가족', '정태호 가족 - 4인 가족'),
-       ('한가족', '한미영 가족 - 3인 가족'),
-       ('송가족', '송재현 가족 - 6인 가족'),
-       ('윤가족', '윤소영 가족 - 2인 가족'),
-       ('임가족', '임동현 가족 - 4인 가족'),
-       ('강가족', '강지은 가족 - 3인 가족');
+-- User 데이터
+-- 주의: 비밀번호는 BCrypt로 암호화된 값입니다.
+-- 모든 사용자의 비밀번호는 'password123'입니다.
+-- 실제 운영 환경에서는 더 강력한 비밀번호를 사용해야 합니다.
+-- BCrypt 해시는 Spring Security의 BCryptPasswordEncoder로 생성되었습니다.
+INSERT INTO users (email, password, name) VALUES
+('admin@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '관리자'),
+('user1@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '김철수'),
+('user2@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '이영희'),
+('user3@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '박민수'),
+('user4@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '정수진')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
 
--- Insert dummy family_members data (assumes fresh DB with auto-increment starting at 1)
--- 김가족 (Family ID: 1)
-INSERT INTO family_members (family_id, user_id, relationship)
-VALUES (1, 1, '부모'),  -- 김철수
-       (1, 11, '자녀'), -- 김민준
-       (1, 12, '자녀'), -- 이서연 (김가족의 자녀)
-       (1, 13, '자녀'); -- 박준호 (김가족의 자녀)
+-- UserRole 데이터 (복합키: user_id + role_id)
+-- 관리자는 ADMIN 역할, 나머지는 USER 역할
+INSERT INTO user_role (user_id, role_id) VALUES
+(1, 1),  -- admin@example.com -> ADMIN
+(2, 2),  -- user1@example.com -> USER
+(3, 2),  -- user2@example.com -> USER
+(4, 2),  -- user3@example.com -> USER
+(5, 2)   -- user4@example.com -> USER
+ON DUPLICATE KEY UPDATE user_id = VALUES(user_id);
 
--- 이가족 (Family ID: 2)
-INSERT INTO family_members (family_id, user_id, relationship)
-VALUES (2, 2, '부모'),  -- 이영희
-       (2, 14, '자녀'), -- 최예은
-       (2, 15, '자녀'); -- 정현우
+-- Provider 데이터 (복합키: provider_name + user_id)
+-- 각 사용자의 로그인 제공자 정보
+INSERT INTO provider (provider_name, user_id) VALUES
+('LOCAL', 1),   -- admin@example.com - 로컬 가입
+('LOCAL', 2),   -- user1@example.com - 로컬 가입
+('LOCAL', 3),   -- user2@example.com - 로컬 가입
+('KAKAO', 4),   -- user3@example.com - 카카오 로그인
+('GOOGLE', 5)   -- user4@example.com - 구글 로그인
+ON DUPLICATE KEY UPDATE provider_name = VALUES(provider_name);
 
--- 박가족 (Family ID: 3)
-INSERT INTO family_members (family_id, user_id, relationship)
-VALUES (3, 3, '부모'),  -- 박민수
-       (3, 16, '자녀'), -- 한소희
-       (3, 17, '자녀'), -- 송도현
-       (3, 18, '자녀'), -- 윤지원
-       (3, 19, '자녀'); -- 임승우
+-- Family 데이터 및 사용자-가족 매핑
+INSERT INTO family (family_id) VALUES
+(1),
+(2),
+(3)
+ON DUPLICATE KEY UPDATE family_id = VALUES(family_id);
 
--- 최가족 (Family ID: 4)
-INSERT INTO family_members (family_id, user_id, relationship)
-VALUES (4, 4, '부모'), -- 최수진
-       (4, 20, '자녀'); -- 강하은
+UPDATE users SET family_id = 1 WHERE user_id IN (1, 2);
+UPDATE users SET family_id = 2 WHERE user_id IN (3, 4);
+UPDATE users SET family_id = 3 WHERE user_id = 5;
 
--- 정가족 (Family ID: 5)
-INSERT INTO family_members (family_id, user_id, relationship)
-VALUES (5, 5, '부모'), -- 정태호
-       (5, 6, '부모'), -- 한미영
-       (5, 7, '자녀'), -- 송재현
-       (5, 8, '자녀'); -- 윤소영
+-- Schedule Status 데이터
+INSERT INTO status (status_id, status_name) VALUES
+(1, 'SCHEDULED'),
+(2, 'TAKEN'),
+(3, 'SKIPPED'),
+(4, 'CANCELLED')
+ON DUPLICATE KEY UPDATE status_name = VALUES(status_name);
 
--- 한가족 (Family ID: 6)
-INSERT INTO family_members (family_id, user_id, relationship)
-VALUES (6, 9, '부모'),  -- 임동현
-       (6, 10, '부모'), -- 강지은
-       (6, 11, '자녀'); -- 김민준 (한가족의 자녀)
+-- PillShape 데이터
+INSERT INTO pill_shape (shape_id, shape_name) VALUES
+(1, '원형'),
+(2, '타원형'),
+(3, '장방형'),
+(4, '반원형'),
+(5, '삼각형'),
+(6, '사각형'),
+(7, '마름모형'),
+(8, '오각형'),
+(9, '육각형'),
+(10, '팔각형'),
+(11, '기타'),
+(12, '8자형'),
+(13, '강낭콩형'),
+(14, '과일모양'),
+(15, '구형'),
+(16, '나비넥타이형'),
+(17, '나비모양'),
+(18, '다이아몬드형'),
+(19, '도넛형')
+ON DUPLICATE KEY UPDATE shape_name = VALUES(shape_name);
 
--- 송가족 (Family ID: 7)
-INSERT INTO family_members (family_id, user_id, relationship)
-VALUES (7, 12, '부모'), -- 이서연
-       (7, 13, '부모'), -- 박준호
-       (7, 14, '자녀'), -- 최예은
-       (7, 15, '자녀'), -- 정현우
-       (7, 16, '자녀'), -- 한소희
-       (7, 17, '자녀'); -- 송도현
+-- PillColor 데이터
+INSERT INTO pill_color (color_id, color_name) VALUES
+(1, '하양'),
+(2, '노랑'),
+(3, '주황'),
+(4, '분홍'),
+(5, '빨강'),
+(6, '갈색'),
+(7, '연두'),
+(8, '초록'),
+(9, '청록'),
+(10, '파랑'),
+(11, '남색'),
+(12, '자주'),
+(13, '보라'),
+(14, '회색'),
+(15, '검정'),
+(16, '투명')
+ON DUPLICATE KEY UPDATE color_name = VALUES(color_name);
 
--- 윤가족 (Family ID: 8)
-INSERT INTO family_members (family_id, user_id, relationship)
-VALUES (8, 18, '부모'), -- 윤지원
-       (8, 19, '자녀'); -- 임승우
+-- Pill 데이터
+INSERT INTO pill (pill_id, pill_name, pill_description, user_method, pill_efficacy, pill_warn, pill_caution, pill_interactive, pill_adverse_reaction, pill_manufacturer, pill_img, pill_ingredient) VALUES
+(1, '타이레놀', '진통 및 해열제', '성인: 1회 1~2정, 1일 3~4회 복용', '두통, 치통, 생리통, 근육통, 관절통, 신경통, 요통, 감기로 인한 발열 및 동통의 완화', '다음 환자에게는 복용하지 말 것: 간장애 환자, 알레르기 체질 환자', '복용 전 의사와 상의할 것: 임신부, 수유부, 고령자', '알코올과 함께 복용 시 간 손상 위험', '드물게 발진, 가려움, 두드러기 등이 나타날 수 있음', '한국얀센제약', NULL, '아세트아미노펜'),
+(2, '게보린', '두통 및 신경통 완화제', '성인: 1회 1정, 1일 3회 식후 복용', '두통, 치통, 생리통, 근육통, 관절통, 신경통, 요통의 완화', '다음 환자에게는 복용하지 말 것: 위궤양 환자, 심장질환 환자', '복용 전 의사와 상의할 것: 고혈압 환자, 신장질환 환자', '항응고제와 함께 복용 시 출혈 위험 증가', '드물게 위장장애, 어지러움 등이 나타날 수 있음', '동화약품', NULL, '아세틸살리실산, 카페인'),
+(3, '판콜에이내복액', '감기 증상 완화제', '성인: 1회 1포, 1일 3회 식후 복용', '감기로 인한 발열, 오한, 두통, 콧물, 코막힘, 재채기, 인후통, 기침의 완화', '다음 환자에게는 복용하지 말 것: 간장애 환자, 알레르기 체질 환자', '복용 전 의사와 상의할 것: 임신부, 수유부, 고령자', '수면제, 진정제와 함께 복용 시 졸음 증가', '드물게 발진, 가려움, 어지러움 등이 나타날 수 있음', '동화약품', NULL, '아세트아미노펜, 클로르페니라민말레산염'),
+(4, '베아제', '소화 효소제', '성인: 1회 1~2정, 1일 3회 식후 복용', '소화불량, 식욕부진, 과식, 체함, 소화촉진', '다음 환자에게는 복용하지 말 것: 알레르기 체질 환자', '복용 전 의사와 상의할 것: 임신부, 수유부', '특별한 상호작용 없음', '드물게 발진, 가려움 등이 나타날 수 있음', '한독약품', NULL, '판크레아틴, 리파제, 아밀라제'),
+(5, '우루사', '간 기능 개선제', '성인: 1회 1캡슐, 1일 3회 식후 복용', '만성 간염, 간경변증의 보조치료', '다음 환자에게는 복용하지 말 것: 알레르기 체질 환자', '복용 전 의사와 상의할 것: 임신부, 수유부', '특별한 상호작용 없음', '드물게 소화불량, 설사 등이 나타날 수 있음', '대웅제약', NULL, '우르소데옥시콜산')
+ON DUPLICATE KEY UPDATE pill_name = VALUES(pill_name);
 
--- 임가족 (Family ID: 9)
-INSERT INTO family_members (family_id, user_id, relationship)
-VALUES (9, 20, '부모'), -- 강하은
-       (9, 1, '자녀'),  -- 김철수 (임가족의 자녀)
-       (9, 2, '자녀'),  -- 이영희 (임가족의 자녀)
-       (9, 3, '자녀'); -- 박민수 (임가족의 자녀)
+-- Schedule 데이터 (medication_schedules)
+-- 오늘부터 7일간의 복약 스케줄 데이터
+INSERT INTO medication_schedules (user_id, pill_id, status_id, schedule_time, schedule_start_time, schedule_end_time, schedule_dosage) VALUES
+-- 관리자 (admin@example.com)의 스케줄
+(1, 5, 1, '2024-12-20 07:30:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 우루사 아침
+(1, 5, 2, '2024-12-20 19:30:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 우루사 저녁 (복용 완료)
+(1, 2, 1, '2024-12-20 10:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 게보린 오전
+(1, 2, 1, '2024-12-20 16:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 게보린 오후
+(1, 4, 1, '2024-12-20 12:30:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 베아제 점심
 
--- 강가족 (Family ID: 10)
-INSERT INTO family_members (family_id, user_id, relationship)
-VALUES (10, 4, '부모'), -- 최수진
-       (10, 5, '부모'), -- 정태호
-       (10, 6, '자녀'); -- 한미영
+-- user1 (김철수)의 스케줄
+(2, 1, 1, '2024-12-20 08:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 타이레놀 아침
+(2, 1, 1, '2024-12-20 14:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 타이레놀 점심
+(2, 1, 2, '2024-12-20 20:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 타이레놀 저녁 (복용 완료)
+(2, 4, 1, '2024-12-20 12:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 2),  -- 베아제 점심
+(2, 4, 1, '2024-12-20 18:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 2),  -- 베아제 저녁
+
+-- user2 (이영희)의 스케줄
+(3, 2, 1, '2024-12-20 09:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 게보린 아침
+(3, 2, 3, '2024-12-20 15:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 게보린 점심 (건너뜀)
+(3, 2, 1, '2024-12-20 21:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 게보린 저녁
+(3, 5, 1, '2024-12-20 08:30:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 우루사 아침
+(3, 5, 1, '2024-12-20 20:30:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 우루사 저녁
+
+-- user3 (박민수)의 스케줄
+(4, 3, 1, '2024-12-20 07:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 판콜에이내복액 아침
+(4, 3, 2, '2024-12-20 13:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 판콜에이내복액 점심 (복용 완료)
+(4, 3, 1, '2024-12-20 19:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1),  -- 판콜에이내복액 저녁
+
+-- user4 (정수진)의 스케줄
+(5, 1, 1, '2024-12-20 08:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 2),  -- 타이레놀 아침
+(5, 1, 1, '2024-12-20 20:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 2),  -- 타이레놀 저녁
+(5, 4, 1, '2024-12-20 12:00:00', '2024-12-20 00:00:00', '2024-12-27 23:59:59', 1)   -- 베아제 점심
+ON DUPLICATE KEY UPDATE schedule_time = VALUES(schedule_time);

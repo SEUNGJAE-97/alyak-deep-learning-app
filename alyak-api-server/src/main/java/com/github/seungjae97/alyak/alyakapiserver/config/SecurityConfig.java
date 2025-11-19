@@ -34,7 +34,6 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // 공개 엔드포인트
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/swagger-ui/**",
@@ -44,7 +43,8 @@ public class SecurityConfig {
                                 "/actuator/**",
                                 "/api/email/**",
                                 "/auth/kakao/**",
-                                "/api/families"
+                                "/auth/google/**",
+                                "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

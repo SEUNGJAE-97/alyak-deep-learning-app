@@ -37,6 +37,7 @@ services:
 
   # Spring Boot Application
   alyak-api:
+    env_file: .env
     build: .
     container_name: alyak-api-server
     ports:

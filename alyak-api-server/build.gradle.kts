@@ -24,7 +24,8 @@ dependencies {
     implementation("mysql:mysql-connector-java:8.0.33")
     implementation("org.projectlombok:lombok")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
+    // JJWT dependencies (모듈화된 구조로 3개 모두 필요)
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
     implementation(libs.lombok)
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
@@ -38,6 +39,13 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
     annotationProcessor("org.projectlombok:lombok")
+
+    // query dsl
+    implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
+    annotationProcessor("com.querydsl:querydsl-apt:5.1.0:jakarta")
+    annotationProcessor ("jakarta.annotation:jakarta.annotation-api")
+    annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+
 }
 
 tasks.withType<JavaCompile> {

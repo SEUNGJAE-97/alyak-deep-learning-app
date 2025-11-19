@@ -1,5 +1,5 @@
-# Use OpenJDK 17 as base image
-FROM openjdk:17-jdk-slim
+# Use Temurin OpenJDK 17 as base image for build stage
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
 # Install dos2unix to fix line ending issues
 RUN apt-get update && apt-get install -y dos2unix && rm -rf /var/lib/apt/lists/*
@@ -34,13 +34,13 @@ COPY src/ src/
 RUN ./gradlew build -x test --no-daemon
 
 # Create a new stage for runtime
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-jammy
 
 # Set working directory
 WORKDIR /app
 
-# Copy the built jar from the previous stage
-COPY --from=0 /app/build/libs/*.jar app.jar
+# Copy the built jar from the build stage
+COPY --from=builder /app/build/libs/*.jar app.jar
 
 # Expose port
 EXPOSE 8080
