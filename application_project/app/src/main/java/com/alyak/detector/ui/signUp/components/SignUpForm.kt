@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.alyak.detector.R
+import com.alyak.detector.data.dto.user.SignUpRequest
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.CustomUnderlineTextField
@@ -44,14 +45,13 @@ fun SignUpForm(
     signUpViewModel: SignUpViewModel
 ) {
     val state by signUpViewModel.state.collectAsState()
+    val signUpResult by signUpViewModel.signUpResult.collectAsState()
 
     // 자체 상태 관리
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var checkPassword by remember { mutableStateOf("") }
     var userName by remember { mutableStateOf("") }
-    var userPhoneNumber by remember { mutableStateOf("") }
-    var userSSN by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
 
     ContentBox(modifier = Modifier.fillMaxWidth()) {
@@ -164,44 +164,6 @@ fun SignUpForm(
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        Text(
-            text = "주민번호",
-            color = colorResource(R.color.primaryBlue)
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        CustomUnderlineTextField(
-            value = userSSN,
-            onValueChange = { userSSN = it },
-            hint = "주민번호",
-            modifier = Modifier
-                .fillMaxWidth(0.30f),
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(30.dp))
-
-        Text(
-            text = "전화번호",
-            color = colorResource(R.color.primaryBlue)
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        CustomUnderlineTextField(
-            value = userPhoneNumber,
-            onValueChange = {
-                userPhoneNumber = it
-                signUpViewModel.validatePhoneNumber(it)
-            },
-            hint = "전화번호",
-            modifier = Modifier.fillMaxWidth(0.45f),
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(30.dp))
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
@@ -228,7 +190,9 @@ fun SignUpForm(
 
             CustomButton(
                 text = "",
-                onClick = { /* TODO: 회원가입 로직 */ },
+                onClick = {
+                    signUpViewModel.signUpUser(email, password, userName)
+                },
                 image = painterResource(R.drawable.arrow),
                 containerColor = colorResource(R.color.primaryBlue),
                 modifier = Modifier.size(80.dp),
@@ -237,14 +201,4 @@ fun SignUpForm(
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SignUpFormPreview() {
-    SignUpForm(
-        onNavigateToLogin = {},
-        navController = androidx.navigation.compose.rememberNavController(),
-        signUpViewModel = SignUpViewModel()
-    )
 }
