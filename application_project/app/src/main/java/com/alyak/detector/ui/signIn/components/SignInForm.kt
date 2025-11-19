@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.signIn
+package com.alyak.detector.ui.signIn.components
 
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -157,7 +157,10 @@ fun SignInForm(
             CustomButton(
                 text = "카카오 로그인",
                 textColor = colorResource(R.color.black),
-                onClick = {},
+                onClick = {
+                    //TODO : 카카오 로그인
+
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(5f),

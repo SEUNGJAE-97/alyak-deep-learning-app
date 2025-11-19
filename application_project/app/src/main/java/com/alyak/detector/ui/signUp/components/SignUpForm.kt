@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.signUp
+package com.alyak.detector.ui.signUp.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -35,6 +35,7 @@ import com.alyak.detector.R
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.CustomUnderlineTextField
+import com.alyak.detector.ui.signUp.SignUpViewModel
 
 @Composable
 fun SignUpForm(

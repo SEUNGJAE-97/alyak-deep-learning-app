@@ -12,6 +12,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     private const val BASE_URL = "https://dapi.kakao.com/"
+    private const val SERVER_URL = "https://localhost:8080"
 
     @Provides
     @Singleton
@@ -20,6 +21,18 @@ object NetworkModule {
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+
+    @Provides
+    @Singleton
+    fun provideServerRetrofit(): Retrofit =
+        Retrofit.Builder()
+            .baseUrl(SERVER_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    @Provides
+    @Singleton
+    fun provideAppApi(retrofit: Retrofit): AuthApi =
+        provideServerRetrofit().create(AuthApi::class.java)
 
     @Provides
     @Singleton

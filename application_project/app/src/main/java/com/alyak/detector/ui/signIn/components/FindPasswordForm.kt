@@ -1,4 +1,4 @@
-package com.alyak.detector.ui.other
+package com.alyak.detector.ui.signIn.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -108,7 +108,9 @@ fun FindPasswordForm(
                     containerColor = colorResource(R.color.primaryBlue),
                     modifier = Modifier.size(80.dp),
                     shape = RoundedCornerShape(50.dp),
-                    imageSize = 40.dp
+                    imageSize = 40.dp,
+                    contentDescription = null,
+                    contentColor = colorResource(R.color.white)
                 )
             }
         }

@@ -1,12 +1,9 @@
 package com.alyak.detector.data.repository
 
-import android.Manifest.permission.ACCESS_COARSE_LOCATION
-import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
 import android.os.Looper
 import android.util.Log
-import com.alyak.detector.data.dto.LocationDto
-import com.alyak.detector.util.PermissionManager
+import com.alyak.detector.data.dto.map.LocationDto
 import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
