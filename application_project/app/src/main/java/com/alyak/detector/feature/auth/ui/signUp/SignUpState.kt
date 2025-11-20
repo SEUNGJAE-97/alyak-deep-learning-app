@@ -13,5 +13,5 @@ data class SignUpState(
     val validPassword: Boolean = false,
     val duplicatedEmail: Boolean = false,
     val duplicatedPassword: Boolean = false,
-    val requestCode: Boolean = false,
+    val isVerified: Boolean = false,
 )

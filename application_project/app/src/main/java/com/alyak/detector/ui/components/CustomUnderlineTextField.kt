@@ -27,7 +27,8 @@ fun CustomUnderlineTextField(
     underlineColor: Color = Color.Gray,
     textAlign: TextAlign = TextAlign.Start,
     trailingIcon: (@Composable (() -> Unit))? = null,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    enabled: Boolean = true
 ) {
     val mergedTextStyle = textStyle.merge(TextStyle(textAlign = textAlign))
 
@@ -39,7 +40,11 @@ fun CustomUnderlineTextField(
         ) {
             BasicTextField(
                 value = value,
-                onValueChange = onValueChange,
+                onValueChange = {
+                    if(enabled){
+                        onValueChange(it)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(end = 40.dp),

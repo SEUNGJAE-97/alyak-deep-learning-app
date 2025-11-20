@@ -56,6 +56,7 @@ fun SignUpForm(
     var userName by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var verificationCode by remember { mutableStateOf("") }
+    var isDisabled = state.isVerified
 
     LaunchedEffect(signUpResult) {
         signUpResult?.onSuccess {
@@ -97,7 +98,8 @@ fun SignUpForm(
                         contentDescription = "check email state"
                     )
                 }
-            }
+            },
+            enabled = !isDisabled
         )
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -127,7 +129,8 @@ fun SignUpForm(
                         contentDescription = "check email state",
                     )
                 }
-            }
+            },
+            enabled = !isDisabled
         )
 
         Spacer(modifier = Modifier.height(20.dp))

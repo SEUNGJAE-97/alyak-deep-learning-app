@@ -3,6 +3,7 @@ package com.alyak.detector.feature.auth.ui.signUp
 import android.content.Context
 import android.util.Log
 import android.util.Patterns
+import android.widget.Toast
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -29,7 +30,8 @@ class SignUpViewModel @Inject constructor(
     val signUpResult: StateFlow<Result<SignUpResponse>?> = _signUpResult
     private val _state = MutableStateFlow(SignUpState())
     val state: StateFlow<SignUpState> = _state
-    val Context.dataStore by preferencesDataStore(name = "user_prefs")
+    private val Context.dataStore by preferencesDataStore(name = "user_prefs")
+
     fun validateEmail(email: String) {
         val pattern: Pattern = Patterns.EMAIL_ADDRESS
         val isValid = pattern.matcher(email).matches()
@@ -60,33 +62,46 @@ class SignUpViewModel @Inject constructor(
                     _signUpResult.value = Result.failure(result.throwable)
                 }
             }
-
-
         }
     }
 
     fun requestCode(email: String) {
         viewModelScope.launch {
-            try {
-                val response = authApi.requestCode(email)
-                Log.d("response", response.toString())
-            } catch (e: Exception) {
-                Log.d("code error : ", e.toString())
+            when(val result = safeCall { authApi.requestCode(email) }){
+                is ApiResult.Success -> {
+                    Log.d("code success : ", result.toString())
+                }
+
+                is ApiResult.Error -> {
+                    val errorMsg = "오류 ${result.code}: ${result.message}"
+                    Log.d("code error : ", errorMsg)
+                }
+                is ApiResult.Exception -> {
+                    Log.d("code error : ", result.throwable.toString())
+                }
             }
         }
     }
 
     fun verifyCode(email: String, code: String) {
         viewModelScope.launch {
-            try {
-                val response = authApi.verifyCode(CodeValidateRequest(email, code))
-            } catch (e: Exception) {
-                Log.d("code error : ", e.toString())
+            when(val result = safeCall { authApi.verifyCode(CodeValidateRequest(email, code)) }){
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(isVerified = true)
+                }
+
+                is ApiResult.Error -> {
+                    val errorMsg = "오류 ${result.code}: ${result.message}"
+                    Log.d("code error : ", errorMsg)
+                }
+                is ApiResult.Exception -> {
+                    Log.d("code error : ", result.throwable.toString())
+                }
             }
         }
     }
 
-    suspend fun saveSignUpResponse(context: Context, response: SignUpResponse) {
+    private suspend fun saveSignUpResponse(context: Context, response: SignUpResponse) {
         context.dataStore.edit { prefs ->
             prefs[stringPreferencesKey("access_token")] = response.accessToken
             prefs[stringPreferencesKey("refresh_token")] = response.refreshToken
