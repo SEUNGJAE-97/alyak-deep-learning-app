@@ -1,5 +1,6 @@
 package com.alyak.detector.data.api
 
+import com.alyak.detector.core.network.AuthInterceptor
 import com.alyak.detector.di.AppServerRetrofit
 import com.alyak.detector.di.KakaoRetrofit
 import com.alyak.detector.feature.auth.data.api.AuthApi
@@ -8,6 +9,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -30,11 +33,23 @@ object NetworkModule {
     @Provides
     @Singleton
     @AppServerRetrofit
-    fun provideServerRetrofit(): Retrofit =
-        Retrofit.Builder()
+    fun provideServerRetrofit(
+        authInterceptor: AuthInterceptor
+    ): Retrofit {
+        val logging = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        val client = OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)  // 토큰 추가 (먼저 실행)
+            .addInterceptor(logging)          // 로깅 (나중에 실행)
+            .build()
+        
+        return Retrofit.Builder()
             .baseUrl(SERVER_URL)
+            .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+    }
 
     @Provides
     @Singleton

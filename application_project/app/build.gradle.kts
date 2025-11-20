@@ -13,17 +13,17 @@ android {
     defaultConfig {
         applicationId = "com.alyak.detector"
         minSdk = 23
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-//        ndk {
-//            abiFilters.add("arm64-v8a")
-//            abiFilters.add("armeabi-v7a")
-//            abiFilters.add("x86")
-//            abiFilters.add("x86_64")
-//        }
+        ndk {
+            abiFilters.add("arm64-v8a")
+            abiFilters.add("armeabi-v7a")
+            abiFilters.add("x86")
+            abiFilters.add("x86_64")
+        }
     }
 
     buildTypes {

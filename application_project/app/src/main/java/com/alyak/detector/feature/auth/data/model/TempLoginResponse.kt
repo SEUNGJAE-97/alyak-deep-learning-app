@@ -1,8 +1,7 @@
 package com.alyak.detector.feature.auth.data.model
 
-data class SignInResponse(
+data class TempLoginResponse(
     val accessToken: String,
-    val expiresIn: Long,
-    val userId: Long
+    val refreshToken: String,
+    val email: String
 )
-

@@ -24,4 +24,3 @@ data class DailyMedicationStat(
     val delayedRatio: Float,
     val missedRatio: Float
 )
-
