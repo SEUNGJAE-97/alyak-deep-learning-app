@@ -9,5 +9,4 @@ import com.alyak.detector.data.family.model.FamilyMember
 class FamilyRepo(private val familyService: FamilyService) {
     suspend fun fetchMembers(): ApiResult<List<FamilyMember>> =
         safeCall { familyService.getFamilyMembers() }
-
 }

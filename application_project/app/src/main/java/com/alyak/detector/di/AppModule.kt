@@ -2,7 +2,6 @@ package com.alyak.detector.di
 
 import com.alyak.detector.data.family.api.FamilyService
 import com.alyak.detector.data.family.repository.FamilyRepo
-import dagger.Lazy
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

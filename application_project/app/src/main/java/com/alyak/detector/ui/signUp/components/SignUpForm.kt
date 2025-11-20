@@ -1,5 +1,6 @@
 package com.alyak.detector.ui.signUp.components
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,15 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.alyak.detector.R
-import com.alyak.detector.data.dto.user.SignUpRequest
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.CustomUnderlineTextField
@@ -42,10 +43,11 @@ import com.alyak.detector.ui.signUp.SignUpViewModel
 fun SignUpForm(
     onNavigateToLogin: () -> Unit,
     navController: NavController,
-    signUpViewModel: SignUpViewModel
+    viewModel: SignUpViewModel = hiltViewModel()
 ) {
-    val state by signUpViewModel.state.collectAsState()
-    val signUpResult by signUpViewModel.signUpResult.collectAsState()
+    val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+    val signUpResult by viewModel.signUpResult.collectAsState()
 
     // 자체 상태 관리
     var email by remember { mutableStateOf("") }
@@ -53,7 +55,17 @@ fun SignUpForm(
     var checkPassword by remember { mutableStateOf("") }
     var userName by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
+    var verificationCode by remember { mutableStateOf("") }
 
+    LaunchedEffect(signUpResult) {
+        signUpResult?.onSuccess {
+            Toast.makeText(context, "회원가입 성공!", Toast.LENGTH_SHORT).show()
+            navController.navigate("SignInScreen")
+        }
+        signUpResult?.onFailure {
+            Toast.makeText(context, it.message ?: "알 수 없는 오류 발생", Toast.LENGTH_SHORT).show()
+        }
+    }
     ContentBox(modifier = Modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -68,25 +80,51 @@ fun SignUpForm(
             value = email,
             onValueChange = {
                 email = it
-                signUpViewModel.validateEmail(it)
+                viewModel.validateEmail(it)
             },
             hint = "이메일",
             trailingIcon = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.clickable {
+                        viewModel.requestCode(email)
+                    }
                 ) {
-                    Icon(
-                        imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                        contentDescription = "Toggle password visibility",
-                        modifier = Modifier
-                            .clickable { isPasswordVisible = !isPasswordVisible }
-                            .size(24.dp)
-                    )
                     Icon(
                         painter = painterResource(R.drawable.check),
                         modifier = Modifier.size(24.dp),
                         contentDescription = "check email state"
+                    )
+                }
+            }
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text(
+            text = "이메일 인증 번호",
+            color = colorResource(R.color.primaryBlue)
+        )
+        Spacer(modifier = Modifier.height(30.dp))
+        CustomUnderlineTextField(
+            value = verificationCode,
+            onValueChange = {
+                verificationCode = it
+                viewModel.requestCode(it)
+            },
+            hint = "이메일로 전송된 인증 번호를 입력해주세요.",
+            trailingIcon = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.clickable {
+                        viewModel.verifyCode(email, verificationCode)
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.arrow),
+                        modifier = Modifier.size(24.dp),
+                        contentDescription = "check email state",
                     )
                 }
             }
@@ -105,7 +143,7 @@ fun SignUpForm(
             value = password,
             onValueChange = {
                 password = it
-                signUpViewModel.validatePassword(it)
+                viewModel.validatePassword(it)
             },
             hint = "비밀번호",
             trailingIcon = {
@@ -191,7 +229,7 @@ fun SignUpForm(
             CustomButton(
                 text = "",
                 onClick = {
-                    signUpViewModel.signUpUser(email, password, userName)
+                    viewModel.signUpUser(email, password, userName, context)
                 },
                 image = painterResource(R.drawable.arrow),
                 containerColor = colorResource(R.color.primaryBlue),

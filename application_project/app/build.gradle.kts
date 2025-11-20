@@ -18,12 +18,12 @@ android {
         versionName = "1.0"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        ndk {
-            abiFilters.add("arm64-v8a")
-            abiFilters.add("armeabi-v7a")
-            abiFilters.add("x86")
-            abiFilters.add("x86_64")
-        }
+//        ndk {
+//            abiFilters.add("arm64-v8a")
+//            abiFilters.add("armeabi-v7a")
+//            abiFilters.add("x86")
+//            abiFilters.add("x86_64")
+//        }
     }
 
     buildTypes {
@@ -108,4 +108,6 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+    // Preferences DataStore (SharedPreferences like APIs)
+    implementation("androidx.datastore:datastore-preferences:1.2.0")
 }

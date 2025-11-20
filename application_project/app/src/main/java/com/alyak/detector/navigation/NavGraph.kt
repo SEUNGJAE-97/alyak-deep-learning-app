@@ -1,13 +1,13 @@
 package com.alyak.detector.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.ui.camera.CameraScreen
-import com.alyak.detector.ui.map.MapScreen
 import com.alyak.detector.ui.main.MainScreen
+import com.alyak.detector.ui.map.MapScreen
 import com.alyak.detector.ui.signIn.SignInScreen
 import com.alyak.detector.ui.signIn.SignInViewModel
 import com.alyak.detector.ui.signUp.SignUpViewModel
@@ -28,8 +28,8 @@ fun Navigator() {
         }
 
         composable("SignInScreen") {
-            val signInViewModel: SignInViewModel = viewModel()
-            val signUpViewModel: SignUpViewModel = viewModel()
+            val signInViewModel: SignInViewModel = hiltViewModel()
+            val signUpViewModel: SignUpViewModel = hiltViewModel()
             SignInScreen(navController, signInViewModel, signUpViewModel)
         }
 

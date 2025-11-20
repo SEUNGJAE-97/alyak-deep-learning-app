@@ -14,7 +14,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     private const val BASE_URL = "https://dapi.kakao.com/"
-    private const val SERVER_URL = "https://localhost:8080"
+    private const val SERVER_URL = "http://10.0.2.2:8080/"
 
     @Provides
     @Singleton

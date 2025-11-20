@@ -36,6 +36,7 @@ import com.alyak.detector.R
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.CustomUnderlineTextField
+import com.alyak.detector.ui.signIn.SignInViewModel
 import com.alyak.detector.ui.signIn.state.SignInState
 
 @Composable
@@ -43,10 +44,11 @@ fun SignInForm(
     onNavigateToSignUp: () -> Unit,
     onNavigateToFindPassword: () -> Unit,
     state: SignInState,
-    navController: NavController
+    navController: NavController,
+    viewModel: SignInViewModel
 ) {
     val context = LocalContext.current
-    
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
@@ -119,7 +121,10 @@ fun SignInForm(
 
             CustomButton(
                 text = "",
-                onClick = { /* TODO: 로그인 로직 */ },
+                onClick = {
+                    /* TODO: 로그인 로직 */
+                    viewModel.signIn(email, password)
+                },
                 image = painterResource(R.drawable.arrow),
                 containerColor = colorResource(R.color.primaryBlue),
                 modifier = Modifier.size(80.dp),

@@ -44,6 +44,7 @@ fun CustomUnderlineTextField(
                     .fillMaxWidth()
                     .padding(end = 40.dp),
                 textStyle = mergedTextStyle,
+                maxLines = 1,
                 visualTransformation = visualTransformation,
                 decorationBox = { innerTextField ->
                     if (value.isEmpty() && hint.isNotEmpty()) {
