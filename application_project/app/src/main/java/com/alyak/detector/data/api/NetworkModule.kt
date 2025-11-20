@@ -2,6 +2,8 @@ package com.alyak.detector.data.api
 
 import com.alyak.detector.di.AppServerRetrofit
 import com.alyak.detector.di.KakaoRetrofit
+import com.alyak.detector.feature.auth.data.api.AuthApi
+import com.alyak.detector.feature.map.data.api.KakaoLocalApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -36,8 +38,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAppApi(@AppServerRetrofit retrofit: Retrofit): AuthApi =
-        provideServerRetrofit().create(AuthApi::class.java)
+    fun provideAuthApi(@AppServerRetrofit retrofit: Retrofit): AuthApi =
+        retrofit.create(AuthApi::class.java)
 
     @Provides
     @Singleton
