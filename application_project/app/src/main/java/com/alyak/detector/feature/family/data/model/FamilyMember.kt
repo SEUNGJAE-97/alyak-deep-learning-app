@@ -5,9 +5,8 @@ import java.util.Date
 data class FamilyMember(
     val role: String,
     val name: String,
-    val isSelected: Boolean,
     val stats: MemberStats,
-    val weeklyMedicationStats: List<DailyMedicationStat> // 주간 데이터 (최근 7일)
+    val weeklyMedicationStats: List<DailyMedicationStat>
 )
 
 data class MemberStats(

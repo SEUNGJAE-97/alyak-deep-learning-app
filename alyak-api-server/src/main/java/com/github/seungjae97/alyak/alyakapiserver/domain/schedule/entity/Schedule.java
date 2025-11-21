@@ -43,4 +43,7 @@ public class Schedule {
 
     @Column(name = "schedule_dosage", nullable = false)
     private Integer scheduleDosage;
+
+    @Column(name = "schedule_taken_time")
+    private LocalDateTime takenTime;
 }

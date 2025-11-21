@@ -38,17 +38,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
+import com.alyak.detector.feature.family.ui.main.components.ChartBar
+import com.alyak.detector.feature.family.ui.main.components.DonutChart
+import com.alyak.detector.feature.family.ui.main.components.DonutSegment
+import com.alyak.detector.feature.family.ui.main.components.FamilyMemberButton
+import com.alyak.detector.feature.family.ui.main.components.HistoryCard
+import com.alyak.detector.feature.family.ui.main.components.StatusRow
+import com.alyak.detector.feature.family.ui.main.components.dailyStatToBarSegments
 import com.alyak.detector.ui.components.BottomForm
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.HeaderForm
 import com.alyak.detector.ui.components.MultiFloatingActionButton
-import com.alyak.detector.feature.family.ui.main.components.FamilyMemberButton
-import com.alyak.detector.feature.family.ui.main.components.DonutChart
-import com.alyak.detector.feature.family.ui.main.components.DonutSegment
-import com.alyak.detector.feature.family.ui.main.components.ChartBar
-import com.alyak.detector.feature.family.ui.main.components.HistoryCard
-import com.alyak.detector.feature.family.ui.main.components.StatusRow
-import com.alyak.detector.feature.family.ui.main.components.dailyStatToBarSegments
 
 @Composable
 fun MainScreen(
@@ -68,6 +68,11 @@ fun MainScreen(
         Icons.Filled.Settings
     )
 
+    if (familyMembers.isEmpty()) {
+        // TODO : 이후에 스피너나 다른 로딩 화면으로 대체해야함
+        Text("가족 정보를 불러오는 중 입니다. ")
+        return
+    }
     Scaffold(
         topBar = {
             HeaderForm()
@@ -98,11 +103,11 @@ fun MainScreen(
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
                 modifier = Modifier.padding(16.dp)
             ) {
-                familyMembers.forEach { member ->
+                familyMembers.forEachIndexed { index, member ->
                     FamilyMemberButton(
                         role = member.role,
                         name = member.name,
-                        isSelected = member.isSelected
+                        isSelected = (index == viewModel.selectedIndex)
                     )
                 }
             }
@@ -126,10 +131,22 @@ fun MainScreen(
                 ) {
                     DonutChart(
                         segments = listOf(
-                            DonutSegment(familyMembers[selectedIndex].stats.successRate/totalRatio.toFloat(), colorResource(R.color.primaryBlue)),
-                            DonutSegment(familyMembers[selectedIndex].stats.scheduledCount/totalRatio.toFloat(), colorResource(R.color.lightGray)),
-                            DonutSegment(familyMembers[selectedIndex].stats.delayedCount/totalRatio.toFloat(), colorResource(R.color.Orange)),
-                            DonutSegment(familyMembers[selectedIndex].stats.missedCount/totalRatio.toFloat(), colorResource(R.color.RealRed))
+                            DonutSegment(
+                                familyMembers[selectedIndex].stats.successRate / totalRatio.toFloat(),
+                                colorResource(R.color.primaryBlue)
+                            ),
+                            DonutSegment(
+                                familyMembers[selectedIndex].stats.scheduledCount / totalRatio.toFloat(),
+                                colorResource(R.color.lightGray)
+                            ),
+                            DonutSegment(
+                                familyMembers[selectedIndex].stats.delayedCount / totalRatio.toFloat(),
+                                colorResource(R.color.Orange)
+                            ),
+                            DonutSegment(
+                                familyMembers[selectedIndex].stats.missedCount / totalRatio.toFloat(),
+                                colorResource(R.color.RealRed)
+                            )
                         ),
                         modifier = Modifier
                             .size(180.dp)
