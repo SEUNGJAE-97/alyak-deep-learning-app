@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.alyak.detector.navigation.Navigator
+import com.alyak.detector.ui.theme.AlyakTheme
 import com.kakao.sdk.common.util.Utility
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -19,7 +20,9 @@ class MainActivity : ComponentActivity() {
         var keyHash = Utility.getKeyHash(this)
         Log.d("Mykey" , keyHash)
         setContent {
-            Navigator()
+            AlyakTheme {
+                Navigator()
+            }
         }
     }
 }

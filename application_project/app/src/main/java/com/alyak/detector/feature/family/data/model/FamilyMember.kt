@@ -1,5 +1,6 @@
 package com.alyak.detector.feature.family.data.model
 
+import com.google.gson.annotations.SerializedName
 import java.util.Date
 
 data class FamilyMember(
@@ -22,4 +23,16 @@ data class DailyMedicationStat(
     val successRatio: Float,
     val delayedRatio: Float,
     val missedRatio: Float
+)
+
+data class MedicineSchedule(
+    val scheduleId : Long,
+    val pillName: String,
+    @SerializedName("userMethod")
+    val detail: String,
+    @SerializedName("scheduleTime")
+    val scheduledTime: Date,
+    val scheduleStartTime: Date,
+    val scheduleEndTime: Date,
+    val pillDosage : Int
 )

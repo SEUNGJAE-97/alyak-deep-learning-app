@@ -27,7 +27,9 @@ import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 
 @Composable
-fun HeaderForm() {
+fun HeaderForm(
+//    name : String
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -48,6 +50,7 @@ fun HeaderForm() {
             )
             Spacer(modifier = Modifier.height(15.dp))
             Text(
+//                text = "안녕하세요, ${name}님",
                 text = "안녕하세요, 김민수님",
                 fontSize = 15.sp
             )
@@ -83,5 +86,7 @@ fun HeaderForm() {
 @Composable
 @Preview(showBackground = true)
 fun HeaderFormPreview() {
-    HeaderForm()
+    HeaderForm(
+//        name = "김민수"
+    )
 }

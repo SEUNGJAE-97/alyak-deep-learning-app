@@ -12,6 +12,7 @@ public class ScheduleMapper implements BaseMapper<Schedule, UserScheduleResponse
         return UserScheduleResponse.builder()
                 .scheduleId(schedule.getScheduleId())
                 .pillName(schedule.getPill().getPillName())
+                .userMethod(schedule.getPill().getUserMethod())
                 .scheduleTime(schedule.getScheduleTime())
                 .scheduleStartTime(schedule.getScheduleStartTime())
                 .scheduleEndTime(schedule.getScheduleEndTime())

@@ -35,10 +35,10 @@ import com.alyak.detector.R
 
 @Composable
 fun ScheduleCard(
-    doseTime: String = "오늘 저녁 7시",
-    medicine: String = "고혈압약 아모잘탄",
-    detail: String = "1정, 식후 30분",
-    timeLeft: String = "3시간 20분",
+    doseTime: String,
+    medicine: String,
+    detail: String,
+    timeLeft: String,
     onAlarmClick: () -> Unit = {}
 ) {
     Box(
@@ -116,11 +116,4 @@ fun ScheduleCard(
             }
         }
     }
-}
-
-
-@Composable
-@Preview(showBackground = true)
-fun ScheduleCardPrev() {
-    ScheduleCard()
 }

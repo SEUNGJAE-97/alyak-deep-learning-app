@@ -1,5 +1,6 @@
 package com.alyak.detector.feature.family.ui.main
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -49,18 +50,21 @@ import com.alyak.detector.ui.components.BottomForm
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.HeaderForm
 import com.alyak.detector.ui.components.MultiFloatingActionButton
+import com.kakao.sdk.friend.m.s
 
 @Composable
 fun MainScreen(
     navController: NavController,
-    modifier: Modifier = Modifier.background(Color.White),
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val familyMembers = viewModel.familyMembers
+    val schedules = viewModel.familySchedule
     var selectedIndex by remember { mutableIntStateOf(viewModel.selectedIndex) }
     val selectedMemberStats = viewModel.selectedMemberStats
     val dateFormatter = viewModel.dateFormatter
     val totalRatio = viewModel._totalCount
+    val nearestSchedule by viewModel.nearestSchedule
+    val schedule = viewModel.nearestSchedule.value
     val icons = listOf(
         Icons.Filled.Home,
         Icons.Filled.DateRange,
@@ -225,7 +229,22 @@ fun MainScreen(
                         }
                     }
                 }
-                ScheduleCard()
+
+                if (schedule != null) {
+                    ScheduleCard(
+                        doseTime = "${schedule.scheduledTime}",
+                        medicine = schedule.pillName ?: "null",
+                        detail = schedule.detail ?: "null",
+                        timeLeft = schedule.pillDosage?.toString() ?: "null"
+                    )
+                } else {
+                    ScheduleCard(
+                        doseTime = "null",
+                        medicine = "null",
+                        detail = "null",
+                        timeLeft = "null"
+                    )
+                }
 
                 // 복약 기록 박스
                 Spacer(modifier = Modifier.height(10.dp))
@@ -234,13 +253,4 @@ fun MainScreen(
             }
         }
     }
-}
-
-
-@Composable
-@Preview(showBackground = true, heightDp = 2000)
-fun HistoryScreenPrev() {
-    MainScreen(
-        navController = rememberNavController()
-    )
 }

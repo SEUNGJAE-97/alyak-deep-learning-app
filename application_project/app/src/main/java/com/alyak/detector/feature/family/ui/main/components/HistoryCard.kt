@@ -49,7 +49,7 @@ fun HistoryCard(
                 selected = "전체",
                 onSelectedChange = {},
                 list = listOf("전체", "완료", "미복용", "지연"),
-                modifier = Modifier.wrapContentWidth()
+                modifier = Modifier.wrapContentWidth().align(Alignment.CenterVertically)
             )
         }
 

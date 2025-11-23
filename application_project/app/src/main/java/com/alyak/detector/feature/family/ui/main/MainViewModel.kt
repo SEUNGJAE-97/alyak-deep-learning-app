@@ -1,9 +1,11 @@
 package com.alyak.detector.feature.family.ui.main
 
 import android.util.Log
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
@@ -11,11 +13,13 @@ import androidx.lifecycle.viewModelScope
 import com.alyak.detector.core.network.ApiResult
 import com.alyak.detector.feature.family.data.model.DailyMedicationStat
 import com.alyak.detector.feature.family.data.model.FamilyMember
+import com.alyak.detector.feature.family.data.model.MedicineSchedule
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @HiltViewModel
@@ -35,6 +39,10 @@ class MainViewModel @Inject constructor(
     private var totalCount = completeCount + missedCount + delayedCount + scheduledCount
     val _totalCount: Int get() = totalCount
     val dateFormatter = SimpleDateFormat("M/d", Locale.getDefault())
+    val familySchedule: List<MedicineSchedule> get() = _familySchedules
+    private val _familySchedules: SnapshotStateList<MedicineSchedule> = mutableStateListOf()
+    private val _nearestSchedule = mutableStateOf<MedicineSchedule?>(null)
+    val nearestSchedule: State<MedicineSchedule?> = _nearestSchedule
 
     /**
      * 선택된 멤버의 주간 통계 데이터
@@ -45,6 +53,7 @@ class MainViewModel @Inject constructor(
 
     init {
         fetchFamilyMembers()
+        fetchSchedules()
     }
 
     fun onItemSelected(index: Int) {
@@ -96,6 +105,31 @@ class MainViewModel @Inject constructor(
             delayedCount = _familyMembers[_selectedIndex].stats.delayedCount
             scheduledCount = _familyMembers[_selectedIndex].stats.scheduledCount
         }
+    }
+
+    private fun fetchSchedules(){
+        viewModelScope.launch {
+            val apiResult = familyRepo.fetchSchedule()
+            when(apiResult){
+                is ApiResult.Success -> {
+                    val fetchSchedule = apiResult.data
+                    _familySchedules.clear()
+                    _familySchedules.addAll(fetchSchedule)
+                    _nearestSchedule.value = getNearestSchedule(fetchSchedule)
+                }
+                is ApiResult.Error -> {
+                    Log.e("MainViewModel", "API Error: ${apiResult.code} - ${apiResult.message}")
+                }
+                is ApiResult.Exception -> {
+                    Log.e("MainViewModel", "Network Exception: ${apiResult.throwable.message}")
+                }
+            }
+        }
+    }
+    private fun getNearestSchedule(schedules: List<MedicineSchedule>, now: Date = Date()): MedicineSchedule? {
+        return schedules
+            .filter { it.scheduledTime.after(now) }
+            .minByOrNull { it.scheduledTime.time - now.time }
     }
 
 

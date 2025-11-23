@@ -27,11 +27,11 @@ fun PeriodToggle(
     selected: String,
     onSelectedChange: (String) -> Unit,
     list: List<String>,
-    modifier: Modifier
+    modifier: Modifier = Modifier
 ) {
     val options = list
     Row(
-        modifier = Modifier
+        modifier = modifier
             .shadow(1.dp, shape = RoundedCornerShape(16.dp))
             .background(colorResource(R.color.white), shape = RoundedCornerShape(16.dp))
             .height(24.dp)
