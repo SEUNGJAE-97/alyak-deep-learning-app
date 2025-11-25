@@ -18,13 +18,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
 import com.alyak.detector.feature.pill.ui.PillDetail.components.CardBox
 import com.alyak.detector.ui.components.BottomForm
 import com.alyak.detector.ui.components.HeaderForm
 import com.alyak.detector.ui.components.MultiFloatingActionButton
 
 @Composable
-fun PillDetailScreen() {
+fun PillDetailScreen(
+    navController: NavController
+) {
     val icons = listOf(
         Icons.Filled.Home,
         Icons.Filled.DateRange,
@@ -35,7 +38,7 @@ fun PillDetailScreen() {
 
     Scaffold(
         topBar = {
-            HeaderForm()
+            HeaderForm("김민수")
         },
         bottomBar = {
             BottomForm(
@@ -46,7 +49,7 @@ fun PillDetailScreen() {
             )
         },
         floatingActionButton = {
-            MultiFloatingActionButton()
+            MultiFloatingActionButton(navController)
         }
     ) { paddingValues ->
         Column(
@@ -56,13 +59,7 @@ fun PillDetailScreen() {
                 .verticalScroll(rememberScrollState())
         ) {
             //
-            CardBox {  }
+            CardBox { }
         }
     }
-}
-
-@Composable
-@Preview(showBackground = true)
-fun PillDetailPrev() {
-    PillDetailScreen()
 }

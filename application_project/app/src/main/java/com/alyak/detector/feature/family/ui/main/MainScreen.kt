@@ -9,16 +9,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -34,7 +30,6 @@ import com.alyak.detector.feature.family.ui.main.components.ChartBar
 import com.alyak.detector.feature.family.ui.main.components.DonutChart
 import com.alyak.detector.feature.family.ui.main.components.DonutSegment
 import com.alyak.detector.feature.family.ui.main.components.FamilyMemberButton
-import com.alyak.detector.feature.family.ui.main.components.HistoryCard
 import com.alyak.detector.feature.family.ui.main.components.StatusRow
 import com.alyak.detector.feature.family.ui.main.components.dailyStatToBarSegments
 import com.alyak.detector.ui.components.ContentBox
@@ -54,6 +49,7 @@ fun MainScreen(
     val totalRatio = viewModel._totalCount
     val nearestSchedule by viewModel.nearestSchedule
     val schedule = viewModel.nearestSchedule.value
+    val name by viewModel.name.collectAsState()
 
     if (familyMembers.isEmpty()) {
         // TODO : 이후에 스피너나 다른 로딩 화면으로 대체해야함
@@ -62,17 +58,16 @@ fun MainScreen(
     }
     Scaffold(
         topBar = {
-            HeaderForm()
+            HeaderForm(name ?: "No Name")
         },
         floatingActionButton = {
-            MultiFloatingActionButton()
+            MultiFloatingActionButton(navController)
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
         ) {
             // 가족 리스트
             Row(
@@ -224,8 +219,10 @@ fun MainScreen(
                 // 복약 기록 박스
                 Spacer(modifier = Modifier.height(10.dp))
 
-                HistoryCard()
+                // TODO : 일단 막아
+                //HistoryCard()
             }
         }
     }
 }
+

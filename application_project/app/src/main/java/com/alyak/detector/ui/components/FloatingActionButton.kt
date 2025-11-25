@@ -13,9 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
@@ -29,8 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.alyak.detector.R
 
 @Composable
@@ -59,7 +57,9 @@ fun FloatingActionButton(
 }
 
 @Composable
-fun MultiFloatingActionButton() {
+fun MultiFloatingActionButton(
+    navController: NavController
+) {
     var expanded by remember { mutableStateOf(false) }
 
     Box(
@@ -77,13 +77,17 @@ fun MultiFloatingActionButton() {
                     modifier = Modifier.size(50.dp),
                     icon = Icons.Filled.CameraAlt,
                     contentDescription = "수정",
-                    onClick = { /* 동작2: 수정 */ }
+                    onClick = {
+                        navController.navigate("CameraScreen")
+                    }
                 )
                 FloatingActionButton(
                     modifier = Modifier.size(50.dp),
                     icon = Icons.Filled.Map,
                     contentDescription = "수정",
-                    onClick = { /* 동작2: 수정 */ }
+                    onClick = {
+                        navController.navigate("MapScreen")
+                    }
                 )
                 FloatingActionButton(
                     modifier = Modifier.size(50.dp),
@@ -111,10 +115,4 @@ fun MultiFloatingActionButton() {
             )
         }
     }
-}
-
-@Composable
-@Preview(showBackground = true)
-fun FloatingActionButtonPrev() {
-    MultiFloatingActionButton()
 }

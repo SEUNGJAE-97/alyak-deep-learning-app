@@ -1,21 +1,19 @@
 package com.alyak.detector.core.util
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.fragment.app.Fragment
-import android.Manifest
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 
 /** 권한이 모두 허용되었을 때 실행할 콜백 인터페이스**/
 fun interface OnGrantedListener {
@@ -29,6 +27,7 @@ class PermissionManager(
     activityOrFragment: Any
 ) {
     private val context: Context = when (activityOrFragment) {
+        is ComponentActivity -> activityOrFragment
         is AppCompatActivity -> activityOrFragment
         is Fragment -> activityOrFragment.requireContext()
         else -> throw RuntimeException("Activity혹은 Fragment에서 권한설정이 가능합니다.")
@@ -57,6 +56,14 @@ class PermissionManager(
      */
     private val requestPermissionLauncher: ActivityResultLauncher<Array<String>> =
         when (activityOrFragment) {
+            is ComponentActivity -> {
+                activityOrFragment.registerForActivityResult(
+                    ActivityResultContracts.RequestMultiplePermissions()
+                ) {
+                    resultChecking(it)
+                }
+            }
+
             is AppCompatActivity -> {
                 activityOrFragment.registerForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions()
@@ -112,7 +119,7 @@ class PermissionManager(
     }
 
     /** 사용자 위치 정보 액세스 권한 요청 **/
-    fun requestPermissions(){
+    fun requestPermissions() {
         requestPermissionLauncher.launch(
             arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,

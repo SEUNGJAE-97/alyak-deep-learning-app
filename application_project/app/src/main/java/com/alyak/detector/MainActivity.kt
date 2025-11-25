@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import com.alyak.detector.navigation.Navigator
 import com.alyak.detector.ui.theme.AlyakTheme
 import com.kakao.sdk.common.util.Utility
@@ -18,7 +17,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // hash key 확인
         var keyHash = Utility.getKeyHash(this)
-        Log.d("Mykey" , keyHash)
+        Log.d("Mykey", keyHash)
         setContent {
             AlyakTheme {
                 Navigator()

@@ -23,6 +23,8 @@ private object PreferencesKeys {
     val EXPIRES_IN = longPreferencesKey("expires_in")
     val USER_ID = longPreferencesKey("user_id")
     val TOKEN_SAVED_AT = longPreferencesKey("token_saved_at")
+    val USER_EMAIL = stringPreferencesKey("user_email")
+    val USER_NAME = stringPreferencesKey("user_name")
 }
 
 @Singleton
@@ -109,7 +111,53 @@ class TokenManager @Inject constructor(
     }
 
     /**
-     * 모든 토큰 정보 삭제 (로그아웃 시 사용)
+     * 사용자 정보 저장
+     * @param email 사용자 이메일
+     * @param name 사용자 이름 (선택)
+     */
+    suspend fun saveUserInfo(email: String, name: String? = null) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.USER_EMAIL] = email
+            name?.let {
+                preferences[PreferencesKeys.USER_NAME] = it
+            }
+        }
+    }
+
+    /**
+     * 사용자 이메일 가져오기
+     * @return 사용자 이메일, 없으면 null
+     */
+    suspend fun getUserEmail(): String? {
+        return dataStore.data.first()[PreferencesKeys.USER_EMAIL]
+    }
+
+    /**
+     * 사용자 이름 가져오기
+     * @return 사용자 이름, 없으면 null
+     */
+    suspend fun getUserName(): String? {
+        return dataStore.data.first()[PreferencesKeys.USER_NAME]
+    }
+
+    /**
+     * 사용자 이메일 Flow
+     * 사용자 이메일 변경을 관찰할 수 있음
+     */
+    val userEmailFlow: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.USER_EMAIL]
+    }
+
+    /**
+     * 사용자 이름 Flow
+     * 사용자 이름 변경을 관찰할 수 있음
+     */
+    val userNameFlow: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.USER_NAME]
+    }
+
+    /**
+     * 모든 토큰 및 사용자 정보 삭제 (로그아웃 시 사용)
      */
     suspend fun clearToken() {
         dataStore.edit { preferences ->
@@ -118,6 +166,8 @@ class TokenManager @Inject constructor(
             preferences.remove(PreferencesKeys.EXPIRES_IN)
             preferences.remove(PreferencesKeys.USER_ID)
             preferences.remove(PreferencesKeys.TOKEN_SAVED_AT)
+            preferences.remove(PreferencesKeys.USER_EMAIL)
+            preferences.remove(PreferencesKeys.USER_NAME)
         }
     }
 }

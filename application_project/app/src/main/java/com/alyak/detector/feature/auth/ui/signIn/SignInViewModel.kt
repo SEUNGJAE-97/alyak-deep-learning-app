@@ -6,9 +6,7 @@ import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.core.network.ApiResult
 import com.alyak.detector.core.network.safeCall
 import com.alyak.detector.feature.auth.data.api.AuthApi
-import com.alyak.detector.feature.auth.data.model.SignInRequest
 import com.alyak.detector.feature.auth.data.model.SignInResponse
-import com.alyak.detector.feature.auth.data.model.TempLoginResponse
 import com.alyak.detector.feature.auth.ui.signIn.state.SignInState
 import com.alyak.detector.feature.auth.ui.signIn.state.UserInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,10 +34,16 @@ class SignInViewModel @Inject constructor(
             when (val result = safeCall { authApi.tempLogin() }) {
                 is ApiResult.Success -> {
                     val tempLoginResponse = result.data
-                    
+
                     // TempLoginResponse를 받는 오버로딩된 saveToken 사용
                     tokenManager.saveToken(tempLoginResponse)
-                    
+
+                    // 사용자 정보 저장 (이메일은 tempLoginResponse에서 가져오거나 파라미터로 받은 email 사용)
+                    tokenManager.saveUserInfo(
+                        email = tempLoginResponse.email.ifEmpty { email },
+                        name = null // 실제 로그인 API에서는 이름도 받아올 수 있음
+                    )
+
                     // TempLoginResponse를 SignInResponse로 변환해서 반환
                     val signInResponse = SignInResponse(
                         accessToken = tempLoginResponse.accessToken,
@@ -47,7 +51,7 @@ class SignInViewModel @Inject constructor(
                         userId = 1L
                     )
                     _signInResult.value = Result.success(signInResponse)
-                    
+
                     _state.value = _state.value.copy(
                         isLoading = false,
                         loginSuccess = true,
@@ -74,7 +78,7 @@ class SignInViewModel @Inject constructor(
                     )
                 }
             }
-            
+
             // ========== 원래 signIn 로직 (나중에 사용) ==========
             /*
             when (val result = safeCall { authApi.signIn(SignInRequest(email, password)) }) {
@@ -85,6 +89,12 @@ class SignInViewModel @Inject constructor(
                         accessToken = signInResponse.accessToken,
                         expiresIn = signInResponse.expiresIn,
                         userId = signInResponse.userId
+                    )
+                    
+                    // 사용자 정보 저장
+                    tokenManager.saveUserInfo(
+                        email = email,
+                        name = null // 실제 API 응답에 이름이 포함되면 여기서 사용
                     )
                     
                     _signInResult.value = Result.success(signInResponse)

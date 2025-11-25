@@ -1,16 +1,13 @@
 package com.alyak.detector.feature.map.ui
 
-import android.Manifest
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
 import android.util.Log
 import android.view.View
-import android.webkit.PermissionRequest
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -24,20 +21,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.alyak.detector.R
 import com.kakao.vectormap.KakaoMap
 import com.kakao.vectormap.KakaoMapReadyCallback
 import com.kakao.vectormap.LatLng
 import com.kakao.vectormap.MapLifeCycleCallback
 import com.kakao.vectormap.MapView
-import com.alyak.detector.R
-import com.alyak.detector.core.util.PermissionManager
 import com.kakao.vectormap.camera.CameraUpdateFactory
 import com.kakao.vectormap.label.LabelManager
 import com.kakao.vectormap.label.LabelOptions
@@ -45,6 +40,7 @@ import com.kakao.vectormap.label.LabelStyle
 import com.kakao.vectormap.label.LabelStyles
 
 private const val TAG = "MapScreen"
+
 @Composable
 fun MapScreen(
     navController: NavController,
@@ -62,27 +58,27 @@ fun MapScreen(
     val y = loc.longitude
     val radius = 2000
     val mapView = rememberMapViewWithLifecycle(kakaoMapState, context)
-    
-    LaunchedEffect(Unit) {
-        val activity = context as? androidx.activity.ComponentActivity
-        if (activity != null) {
-            val permissionManager = PermissionManager(activity)
-            if (permissionManager.checkPermission(
-                    context,
-                    arrayOf(
-                        ACCESS_FINE_LOCATION,
-                        ACCESS_COARSE_LOCATION
-                    )
-                )) {
-                viewModel.fetchLocation()
-                Log.d(TAG, "MapScreen: $loc")
-            } else {
-                permissionManager.setOnGrantedListener {
-                    viewModel.fetchLocation()
-                }
-                permissionManager.requestPermissions()
-            }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        // 권한 요청 결과 처리
+        val allPermissionsGranted = permissions.values.all { it }
+        if (allPermissionsGranted) {
+            // 모든 권한이 허용되었을 때
+            Log.d(TAG, "모든 권한이 허용되었습니다.")
+            viewModel.fetchLocation()
+        } else {
+            // 하나라도 거부된 권한이 있을 때
+            Toast.makeText(context, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    LaunchedEffect(Unit) {
+        val permissionsToRequest = arrayOf(
+            ACCESS_FINE_LOCATION,
+            ACCESS_COARSE_LOCATION
+        )
+        permissionLauncher.launch(permissionsToRequest)
     }
     LaunchedEffect(Unit) {
         viewModel.fetchPlaces(apiKey, categoryGroupCode, x.toString(), y.toString(), radius)
@@ -123,12 +119,6 @@ fun rememberMapViewWithLifecycle(
 ): View {
     val mapView = remember { MapView(context) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val activity = context as? AppCompatActivity ?: throw IllegalStateException("Activity가 아닙니다.")
-    val permissionManager = remember { PermissionManager(activity).apply {
-        setOnGrantedListener {
-            // 권한 허용 시 처리
-        }
-    } }
 
     DisposableEffect(lifecycle) {
         val observer = object : DefaultLifecycleObserver {
@@ -154,9 +144,6 @@ fun rememberMapViewWithLifecycle(
                         }
 
                         override fun onMapReady(kakaoMap: KakaoMap) {
-                            // 1. 퍼미션 받기
-                            permissionManager.requestPermissions()
-
                             kakaoMapState.value = kakaoMap
 
                             val position = LatLng.from(37.2, 127.1)
@@ -181,7 +168,6 @@ fun rememberMapViewWithLifecycle(
 
             override fun onStart(owner: LifecycleOwner) {
                 super.onStart(owner)
-                //FusedLocation start
             }
 
             override fun onResume(owner: LifecycleOwner) {

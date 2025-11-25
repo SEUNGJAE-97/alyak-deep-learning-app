@@ -23,18 +23,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.alyak.detector.R
 import com.alyak.detector.feature.pill.data.model.PillShapeType
-import com.alyak.detector.ui.components.BottomForm
-import com.alyak.detector.ui.components.MultiFloatingActionButton
-import com.alyak.detector.feature.pill.ui.search.components.SearchBar
 import com.alyak.detector.feature.pill.ui.search.components.FilterBar
 import com.alyak.detector.feature.pill.ui.search.components.QuickSearch
+import com.alyak.detector.feature.pill.ui.search.components.SearchBar
+import com.alyak.detector.ui.components.BottomForm
+import com.alyak.detector.ui.components.MultiFloatingActionButton
 
 @Composable
-fun PillSearchScreen() {
+fun PillSearchScreen(navController: NavController) {
     val icons = listOf(
         Icons.Filled.Home,
         Icons.Filled.DateRange,
@@ -57,7 +57,7 @@ fun PillSearchScreen() {
             )
         },
         floatingActionButton = {
-            MultiFloatingActionButton()
+            MultiFloatingActionButton(navController)
         }
     ) { paddingValues ->
         Column(
@@ -96,10 +96,4 @@ fun PillSearchScreen() {
             //최근 검색
         }
     }
-}
-
-@Composable
-@Preview(showBackground = true)
-fun PillSearchPrev() {
-    PillSearchScreen()
 }

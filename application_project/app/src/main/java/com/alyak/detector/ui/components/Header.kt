@@ -28,7 +28,7 @@ import com.alyak.detector.R
 
 @Composable
 fun HeaderForm(
-//    name : String
+    name : String
 ) {
     Row(
         modifier = Modifier
@@ -50,8 +50,8 @@ fun HeaderForm(
             )
             Spacer(modifier = Modifier.height(15.dp))
             Text(
-//                text = "안녕하세요, ${name}님",
-                text = "안녕하세요, 김민수님",
+                text = "안녕하세요, ${name}님",
+//                text = "안녕하세요, 김민수님",
                 fontSize = 15.sp
             )
         }
@@ -87,6 +87,6 @@ fun HeaderForm(
 @Preview(showBackground = true)
 fun HeaderFormPreview() {
     HeaderForm(
-//        name = "김민수"
+        name = "김민수"
     )
 }
