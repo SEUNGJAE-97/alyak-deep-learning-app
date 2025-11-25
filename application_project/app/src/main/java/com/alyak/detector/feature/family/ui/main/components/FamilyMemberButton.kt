@@ -2,6 +2,7 @@ package com.alyak.detector.feature.family.ui.main.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,14 +29,17 @@ fun FamilyMemberButton(
     modifier: Modifier = Modifier,
     role: String,
     name: String,
-    isSelected: Boolean
+    isSelected: Boolean,
+    onClick: () -> Unit = {}
 ){
     val selectedColor = Color(0xFF5864D9)
     val unselectedBorder = Color(0xFFDDDDDD)
     val unselectedText = Color(0xFF9E9E9E)
 
     Column(
-        modifier = modifier.width(100.dp),
+        modifier = modifier
+            .width(100.dp)
+            .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
@@ -82,8 +86,8 @@ fun FamilyMemberPrev(){
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         modifier = Modifier.padding(16.dp)
     ) {
-        FamilyMemberButton(role = "할머니", name = "김순자", isSelected = true)
-        FamilyMemberButton(role = "할아버지", name = "하이고", isSelected = false)
-        FamilyMemberButton(role = "아버지", name = "하태영", isSelected = false)
+        FamilyMemberButton(role = "할머니", name = "김순자", isSelected = true, onClick = {})
+        FamilyMemberButton(role = "할아버지", name = "하이고", isSelected = false, onClick = {})
+        FamilyMemberButton(role = "아버지", name = "하태영", isSelected = false, onClick = {})
     }
 }
