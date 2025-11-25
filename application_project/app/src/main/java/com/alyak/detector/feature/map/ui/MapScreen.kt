@@ -1,14 +1,21 @@
 package com.alyak.detector.feature.map.ui
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.ui.components.HeaderForm
 
 @Composable
@@ -19,11 +26,29 @@ fun MapScreen(
         topBar = { HeaderForm("No Name") }
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .padding(paddingValues)
+//            modifier = Modifier
+//                .padding(paddingValues)
         ) {
+            Box(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+            ) {
+                KakaoMapView()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 32.dp, start = 16.dp, end = 16.dp)
+                        .align(Alignment.TopCenter),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
 
-            KakaoMapView()
+                    FilterButton("전체", isSelected = true, onClick = {})
+                    FilterButton("병원", isSelected = false, onClick = {})
+                    FilterButton("약국", isSelected = false, onClick = {})
+                    FilterButton("영업중", isSelected = false, onClick = {})
+                }
+            }
         }
     }
 
