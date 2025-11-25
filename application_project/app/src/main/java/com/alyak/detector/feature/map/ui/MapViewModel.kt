@@ -16,13 +16,13 @@ import javax.inject.Inject
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val repo: KakaoPlaceRepo,
-    private val locRepo : FusedLocationRepo
+    private val locRepo: FusedLocationRepo
 ) : ViewModel() {
     private val _curLocation = MutableStateFlow(LocationDto(37.2, 127.1))
     private val _places = MutableStateFlow<List<KakaoPlaceDto>>(emptyList())
     val places: StateFlow<List<KakaoPlaceDto>> = _places
     val curLocation: StateFlow<LocationDto> = _curLocation
-
+    
     /**
      * 카카오 장소 카테고리 검색 요청
      *
@@ -59,10 +59,11 @@ class MapViewModel @Inject constructor(
         }
     }
 
-    fun fetchLocation(){
+    fun fetchLocation() {
         viewModelScope.launch {
             val result = locRepo.getCurrentLocation()
             _curLocation.value = result
+            Log.d("MapViewModel", "fetchLocation: $result")
         }
     }
 

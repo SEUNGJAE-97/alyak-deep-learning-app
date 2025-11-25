@@ -34,7 +34,6 @@ import com.kakao.vectormap.LatLng
 import com.kakao.vectormap.MapLifeCycleCallback
 import com.kakao.vectormap.MapView
 import com.kakao.vectormap.camera.CameraUpdateFactory
-import com.kakao.vectormap.label.LabelManager
 import com.kakao.vectormap.label.LabelOptions
 import com.kakao.vectormap.label.LabelStyle
 import com.kakao.vectormap.label.LabelStyles
@@ -54,8 +53,6 @@ fun MapScreen(
 
     val apiKey = "KakaoAK ${context.getString(R.string.REST_API_KEY)}"
     val categoryGroupCode = "HP8"
-    val x = loc.latitude
-    val y = loc.longitude
     val radius = 2000
     val mapView = rememberMapViewWithLifecycle(kakaoMapState, context)
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -80,11 +77,27 @@ fun MapScreen(
         )
         permissionLauncher.launch(permissionsToRequest)
     }
-    LaunchedEffect(Unit) {
-        viewModel.fetchPlaces(apiKey, categoryGroupCode, x.toString(), y.toString(), radius)
-    }
-    LaunchedEffect(markerList) {
-        Log.d(TAG, "MapScreen: $markerList")
+
+    LaunchedEffect(loc, kakaoMapState.value) {
+        val kakaoMap = kakaoMapState.value ?: return@LaunchedEffect
+
+        if (loc.latitude != 0.0 && loc.longitude != 0.0) {
+
+
+            val position = LatLng.from(loc.latitude, loc.longitude)
+            kakaoMap.moveCamera(CameraUpdateFactory.newCenterPosition(position, 15))
+
+            val apiKey = "KakaoAK ${context.getString(R.string.REST_API_KEY)}"
+            val categoryGroupCode = "HP8"
+            val radius = 2000
+            viewModel.fetchPlaces(
+                apiKey,
+                categoryGroupCode,
+                loc.longitude.toString(),
+                loc.latitude.toString(),
+                radius
+            )
+        }
     }
 
     LaunchedEffect(markerList, kakaoMapState.value) {
@@ -128,7 +141,6 @@ fun rememberMapViewWithLifecycle(
                     object : MapLifeCycleCallback() {
                         // 지도 생명 주기 콜백: 지도가 파괴될 때 호출
                         override fun onMapDestroy() {
-                            // 필자가 직접 만든 Toast생성 함수
                             Toast.makeText(context, "지도를 불러오는데 실패했습니다.", Toast.LENGTH_SHORT).show()
                         }
 
@@ -145,22 +157,6 @@ fun rememberMapViewWithLifecycle(
 
                         override fun onMapReady(kakaoMap: KakaoMap) {
                             kakaoMapState.value = kakaoMap
-
-                            val position = LatLng.from(37.2, 127.1)
-                            kakaoMap.moveCamera(CameraUpdateFactory.newCenterPosition(position))
-
-                            // 2. 라벨 매니저 초기화 및 라벨 추가
-                            val labelManager: LabelManager? = kakaoMap.labelManager
-                            labelManager?.let { manager ->
-                                val style = LabelStyles.from(
-                                    "myStyleId",
-                                    getLabelStyleByCategory(context, "PM9"),
-                                    getLabelStyleByCategory(context, "HP8")
-                                )
-                                manager.addLabelStyles(style)
-                                val labelOptions = LabelOptions.from(position).setStyles(style)
-                                manager.layer?.addLabel(labelOptions)
-                            }
                         }
                     }
                 )
