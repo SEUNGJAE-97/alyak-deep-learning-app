@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +18,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.ui.components.HeaderForm
+import com.alyak.detector.feature.pill.ui.search.components.SearchBar
 
 @Composable
 fun MapScreen(
@@ -25,28 +27,32 @@ fun MapScreen(
     Scaffold(
         topBar = { HeaderForm("No Name") }
     ) { paddingValues ->
-        Column(
-//            modifier = Modifier
-//                .padding(paddingValues)
-        ) {
+        Column {
             Box(
                 modifier = Modifier
                     .padding(paddingValues)
                     .fillMaxSize()
             ) {
                 KakaoMapView()
-                Row(
+                Column(
                     modifier = Modifier
+                        .align(Alignment.TopCenter)
                         .fillMaxWidth()
-                        .padding(top = 32.dp, start = 16.dp, end = 16.dp)
-                        .align(Alignment.TopCenter),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.Top
                 ) {
-
-                    FilterButton("전체", isSelected = true, onClick = {})
-                    FilterButton("병원", isSelected = false, onClick = {})
-                    FilterButton("약국", isSelected = false, onClick = {})
-                    FilterButton("영업중", isSelected = false, onClick = {})
+                    SearchBar()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        FilterButton("전체", isSelected = true, onClick = {})
+                        FilterButton("병원", isSelected = false, onClick = {})
+                        FilterButton("약국", isSelected = false, onClick = {})
+                        FilterButton("영업중", isSelected = false, onClick = {})
+                    }
                 }
             }
         }

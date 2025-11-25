@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -24,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,80 +42,87 @@ fun SearchBar(
     onMicClick: () -> Unit = {},
     onCameraClick: () -> Unit = {}
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .background(colorResource(R.color.white), shape = RoundedCornerShape(24.dp))
-            .shadow(2.dp, shape = RoundedCornerShape(24.dp))
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Search,
-            contentDescription = null,
-            tint = Color.Gray.copy(alpha = 0.3f), // 흐린 아이콘
-            modifier = Modifier.size(28.dp)
-        )
+    // BasicTextField는 장식(배경, 테두리 등)이 없는 순수 입력 필드입니다.
+    BasicTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        textStyle = TextStyle(
+            fontSize = 14.sp,
+            color = Color.Black // 텍스트 색상
+        ),
+        singleLine = true,
+        cursorBrush = SolidColor(colorResource(R.color.primaryBlue)), // 커서 색상
+        decorationBox = { innerTextField ->
+            // decorationBox 안에서 디자인(아이콘, 배경 등)을 모두 구성합니다.
+            Row(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .height(50.dp) // 전체 높이 고정
+                    .shadow(4.dp, shape = RoundedCornerShape(24.dp)) // 그림자
+                    .background(color = Color.White, shape = RoundedCornerShape(24.dp)) // 배경 및 모양
+                    .padding(horizontal = 12.dp), // 내부 좌우 여백
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 1. 검색 아이콘
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "검색",
+                    tint = Color.Gray.copy(alpha = 0.5f),
+                    modifier = Modifier.size(24.dp)
+                )
 
-        Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-        Box(
-            modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            TextField(
-                value = query,
-                onValueChange = onQueryChange,
-                placeholder = {
-                    Text(
-                        "약 이름, 성분, 식별 문자 검색",
-                        color = Color.Gray.copy(alpha = 0.5f),
-                    )
-                },
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = colorResource(R.color.white),
-                    unfocusedContainerColor = colorResource(R.color.white),
-                    disabledContainerColor = colorResource(R.color.white),
-                    cursorColor = colorResource(R.color.white),
-                    focusedLabelColor = colorResource(R.color.white).copy(alpha = 0.6f),
-                    unfocusedLabelColor = colorResource(R.color.white).copy(alpha = 0.4f),
-                    focusedPlaceholderColor = colorResource(R.color.white).copy(alpha = 0.5f),
-                    unfocusedPlaceholderColor = colorResource(R.color.white).copy(alpha = 0.5f),
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                textStyle = TextStyle(
-                    fontSize = 12.sp
-                ),
-                singleLine = true,
-                modifier = Modifier
-                    .height(45.dp)
-                    .fillMaxWidth(),
-                //contentPadding = PaddingValues(vertical = 0.dp)
-            )
+                // 2. 입력 필드 및 placeholder 영역
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    // 텍스트가 비어있을 때만 Placeholder 표시
+                    if (query.isEmpty()) {
+                        Text(
+                            text = "약 이름, 성분, 식별 문자 검색",
+                            color = Color.Gray.copy(alpha = 0.5f),
+                            fontSize = 14.sp
+                        )
+                    }
+                    // 실제 텍스트 입력 컴포넌트 위치
+                    innerTextField()
+                }
+
+                // 3. 우측 아이콘들 (마이크, 카메라)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onMicClick,
+                        modifier = Modifier.size(36.dp) // 터치 영역 확보를 위해 약간 크게
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Mic,
+                            contentDescription = "음성 검색",
+                            tint = Color.Gray.copy(alpha = 0.5f),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    IconButton(
+                        onClick = onCameraClick,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "사진 검색",
+                            tint = Color.Gray.copy(alpha = 0.5f),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
         }
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        IconButton(onClick = onMicClick) {
-            Icon(
-                imageVector = Icons.Default.Mic,
-                contentDescription = "음성 검색",
-                tint = Color.Gray.copy(alpha = 0.3f),
-                modifier = Modifier.size(28.dp)
-            )
-        }
-
-        IconButton(onClick = onCameraClick) {
-            Icon(
-                imageVector = Icons.Default.CameraAlt,
-                contentDescription = "사진 검색",
-                tint = Color.Gray.copy(alpha = 0.3f),
-                modifier = Modifier.size(28.dp)
-            )
-        }
-    }
-
+    )
 }
 
 @Composable
