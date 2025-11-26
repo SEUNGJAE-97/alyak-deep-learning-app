@@ -1,6 +1,5 @@
 package com.alyak.detector.feature.map.ui
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,8 +21,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
@@ -33,21 +30,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberAsyncImagePainter
 import com.alyak.detector.R
 import com.alyak.detector.feature.map.ui.components.FilterButton
-import com.alyak.detector.ui.components.HeaderForm
+import com.alyak.detector.feature.map.ui.components.HospitalInfo
 import com.alyak.detector.feature.pill.ui.search.components.SearchBar
 import com.alyak.detector.ui.components.CustomButton
-import coil.compose.rememberAsyncImagePainter
-import coil.decode.SvgDecoder
-import com.alyak.detector.feature.map.ui.components.HospitalInfo
+import com.alyak.detector.ui.components.HeaderForm
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,18 +52,16 @@ fun MapScreen(
     val scaffoldState = rememberBottomSheetScaffoldState()
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
-        // --- [핵심 1] 시트 디자인 (흰색 배경, 둥근 모서리) ---
         sheetContainerColor = Color.White,
         sheetContentColor = Color.Black,
         sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         sheetShadowElevation = 10.dp,
-        // --- [핵심 2] 시트가 처음 보일 높이 (Peek Height) ---
         sheetPeekHeight = 200.dp, // 처음에 지도 밑에 얼마나 깔려있을지 설정 (적절히 조절)
-        // --- [핵심 3] 시트 안에 들어갈 내용 (리스트) ---
         sheetContent = {
             HospitalListContent() // 아래에서 만들 함수 호출
         },
-        topBar = { HeaderForm("No Name") }
+        topBar = { HeaderForm("No Name") },
+        sheetDragHandle = { DragHandler() }
     ) { paddingValues ->
         Column {
             Box(
@@ -115,33 +108,18 @@ fun MapScreen(
     }
 
 }
+
 @Composable
 fun HospitalListContent() {
     // 임시 데이터 (실제로는 ViewModel 등에서 받아오겠죠?)
     val hospitalList = List(8) { index ->
         "병원 ${index + 1}"
     }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.9f) // 시트를 최대로 올렸을 때 화면의 90%까지만 차지
     ) {
-        // 1. 드래그 핸들 (회색 작은 막대기)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(40.dp)
-                    .height(4.dp)
-                    .background(Color.LightGray, RoundedCornerShape(2.dp))
-            )
-        }
-
         // 2. 헤더 (총 8개의 의료기관 | 거리순)
         Row(
             modifier = Modifier
@@ -183,6 +161,25 @@ fun HospitalListContent() {
         }
     }
 }
+
+@Composable
+fun DragHandler() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .width(40.dp)
+                .height(4.dp)
+                .background(Color.LightGray, RoundedCornerShape(2.dp))
+        )
+    }
+}
+
+
 @Composable
 @Preview(showBackground = true)
 fun MapScreenPrev() {
