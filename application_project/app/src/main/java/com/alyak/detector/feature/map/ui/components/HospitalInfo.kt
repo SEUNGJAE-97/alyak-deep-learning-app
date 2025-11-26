@@ -39,6 +39,7 @@ fun HospitalInfo(
     hospitalName: String,
     hospitalAddress: String,
     hospitalDepartment: ArrayList<String>,
+    hospitalDistance: String
 ) {
     Card(
         Modifier
@@ -61,11 +62,11 @@ fun HospitalInfo(
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
-                StatusBadge("영업중", null,Color(0xFFD1FAE5), Color(0xFF10B981))
+                StatusBadge("영업중", null, Color(0xFFD1FAE5), Color(0xFF10B981))
             }
 
             Spacer(Modifier.height(6.dp))
-            Text("300m", fontSize = 14.sp, color = Color.Gray)
+            Text("${hospitalDistance}m", fontSize = 14.sp, color = Color.Gray)
             Spacer(Modifier.height(10.dp))
             Text(hospitalAddress, fontSize = 15.sp)
             Spacer(Modifier.height(10.dp))
@@ -151,6 +152,7 @@ fun HospitalInfoPrev() {
         modifier = Modifier,
         hospitalName = "연세 세브란스 병원",
         hospitalAddress = "서울특별시 서대문구 신촌동",
-        hospitalDepartment = arrayListOf("안과", "정형외과")
+        hospitalDepartment = arrayListOf("안과", "정형외과"),
+        hospitalDistance = "100"
     )
 }

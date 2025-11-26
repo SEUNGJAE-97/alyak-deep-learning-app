@@ -24,6 +24,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,10 +36,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.alyak.detector.R
+import com.alyak.detector.feature.map.data.model.KakaoPlaceDto
 import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.feature.map.ui.components.HospitalInfo
 import com.alyak.detector.feature.pill.ui.search.components.SearchBar
@@ -48,7 +52,9 @@ import com.alyak.detector.ui.components.HeaderForm
 @Composable
 fun MapScreen(
     navController: NavController,
+    viewModel: MapViewModel = hiltViewModel()
 ) {
+    val places by viewModel.places.collectAsState()
     val scaffoldState = rememberBottomSheetScaffoldState()
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -58,7 +64,7 @@ fun MapScreen(
         sheetShadowElevation = 10.dp,
         sheetPeekHeight = 200.dp, // 처음에 지도 밑에 얼마나 깔려있을지 설정 (적절히 조절)
         sheetContent = {
-            HospitalListContent() // 아래에서 만들 함수 호출
+            HospitalListContent(places) // 아래에서 만들 함수 호출
         },
         topBar = { HeaderForm("No Name") },
         sheetDragHandle = { DragHandler() }
@@ -69,7 +75,7 @@ fun MapScreen(
                     .padding(paddingValues)
                     .fillMaxSize()
             ) {
-                KakaoMapView()
+                KakaoMapView(viewModel = viewModel)
                 Column(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -110,17 +116,12 @@ fun MapScreen(
 }
 
 @Composable
-fun HospitalListContent() {
-    // 임시 데이터 (실제로는 ViewModel 등에서 받아오겠죠?)
-    val hospitalList = List(8) { index ->
-        "병원 ${index + 1}"
-    }
+fun HospitalListContent(hospitals: List<KakaoPlaceDto>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.9f) // 시트를 최대로 올렸을 때 화면의 90%까지만 차지
     ) {
-        // 2. 헤더 (총 8개의 의료기관 | 거리순)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -129,7 +130,7 @@ fun HospitalListContent() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "총 ${hospitalList.size}개의 의료기관",
+                text = "총 ${hospitals.size}개의 의료기관",
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )
@@ -143,19 +144,18 @@ fun HospitalListContent() {
                 )
             }
         }
-
-        // 3. 스크롤 가능한 병원 리스트
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(bottom = 20.dp) // 맨 아래 여백
+            contentPadding = PaddingValues(bottom = 20.dp)
         ) {
-            items(hospitalList.size) { index ->
-                // 만드신 컴포넌트 사용
+            items(hospitals.size) { index ->
                 HospitalInfo(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    hospitalName = "연세세브란스병원",
-                    hospitalAddress = "서울특별시 서대문구 신촌동 134",
-                    hospitalDepartment = arrayListOf("내과", "외과", "정형외과")
+                    hospitalName = hospitals[index].place_name,
+                    hospitalAddress = hospitals[index].address_name,
+//                    hospitalDepartment = hospitals[index].category_name.
+                    hospitalDepartment = arrayListOf("안과", "정형외과"),
+                    hospitalDistance = hospitals[index].distance
                 )
             }
         }
@@ -163,7 +163,7 @@ fun HospitalListContent() {
 }
 
 @Composable
-fun DragHandler() {
+private fun DragHandler() {
     Box(
         modifier = Modifier
             .fillMaxWidth()

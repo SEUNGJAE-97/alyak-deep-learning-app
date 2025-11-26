@@ -63,6 +63,9 @@ fun KakaoMapView(
         }
     }
 
+    LaunchedEffect(markerList) {
+        Log.d("markerList", markerList.toString())
+    }
     LaunchedEffect(Unit) {
         val permissionsToRequest = arrayOf(
             ACCESS_FINE_LOCATION,
