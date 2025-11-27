@@ -120,7 +120,7 @@ fun HospitalListContent(hospitals: List<KakaoPlaceDto>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.9f) // 시트를 최대로 올렸을 때 화면의 90%까지만 차지
+            .fillMaxHeight(0.9f)
     ) {
         Row(
             modifier = Modifier
