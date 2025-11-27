@@ -100,7 +100,9 @@ fun MapScreen(
                 }
                 CustomButton(
                     text = "",
-                    onClick = { /** TODO : 현재 위치를 갱신하고 줌인 해줄때 사용 */ },
+                    onClick = {
+                        viewModel.fetchLocation()
+                    },
                     image = rememberAsyncImagePainter(model = R.drawable.my_location),
                     containerColor = colorResource(R.color.white),
                     shape = CircleShape,

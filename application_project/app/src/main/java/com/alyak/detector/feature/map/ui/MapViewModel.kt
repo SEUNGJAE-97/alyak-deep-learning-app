@@ -9,8 +9,11 @@ import com.alyak.detector.feature.map.data.repository.ApiRepo
 import com.alyak.detector.feature.map.data.repository.FusedLocationRepo
 import com.alyak.detector.feature.map.data.repository.KakaoPlaceRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,6 +29,8 @@ class MapViewModel @Inject constructor(
     val curLocation: StateFlow<LocationDto> = _curLocation
     private val _routePath = MutableStateFlow<List<LocationDto>>(emptyList())
     val routePath: StateFlow<List<LocationDto>> = _routePath
+    private val _moveToCurrentLocationEvent = MutableSharedFlow<LocationDto>()
+    val moveToCurrentLocationEvent: SharedFlow<LocationDto> = _moveToCurrentLocationEvent.asSharedFlow()
 
     /**
      * 카카오 장소 카테고리 검색 요청
@@ -67,6 +72,7 @@ class MapViewModel @Inject constructor(
         viewModelScope.launch {
             val result = locRepo.getCurrentLocation()
             _curLocation.value = result
+            _moveToCurrentLocationEvent.emit(result)
             Log.d("MapViewModel", "fetchLocation: $result")
         }
     }

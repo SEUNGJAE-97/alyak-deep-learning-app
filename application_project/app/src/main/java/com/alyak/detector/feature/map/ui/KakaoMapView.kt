@@ -33,6 +33,7 @@ import com.kakao.vectormap.KakaoMapReadyCallback
 import com.kakao.vectormap.LatLng
 import com.kakao.vectormap.MapLifeCycleCallback
 import com.kakao.vectormap.MapView
+import com.kakao.vectormap.camera.CameraAnimation
 import com.kakao.vectormap.camera.CameraUpdateFactory
 import com.kakao.vectormap.label.LabelOptions
 import com.kakao.vectormap.label.LabelStyle
@@ -84,8 +85,6 @@ fun KakaoMapView(
         val kakaoMap = kakaoMapState.value ?: return@LaunchedEffect
 
         if (loc.latitude != 0.0 && loc.longitude != 0.0) {
-
-
             val position = LatLng.from(loc.latitude, loc.longitude)
             kakaoMap.moveCamera(CameraUpdateFactory.newCenterPosition(position, 15))
 
@@ -129,6 +128,21 @@ fun KakaoMapView(
             drawPathOnMap(kakaoMap, routePath)
 
 //            moveCameraToPath(kakaoMap, routePath)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.moveToCurrentLocationEvent.collect { location ->
+            val kakaoMap = kakaoMapState.value
+            if (kakaoMap != null) {
+                val position = LatLng.from(location.latitude, location.longitude)
+                val cameraUpdate = CameraUpdateFactory.newCenterPosition(position, 15)
+                val cameraAnimation = CameraAnimation.from(500)
+                kakaoMap.moveCamera(cameraUpdate, cameraAnimation)
+                // 위치 갱신 시 주변 장소도 다시 검색하고 싶다면 여기서 호출
+                val apiKey = "KakaoAK ${context.getString(R.string.REST_API_KEY)}"
+                viewModel.fetchPlaces(apiKey, "HP8", location.longitude.toString(), location.latitude.toString(), 2000)
+            }
         }
     }
 
