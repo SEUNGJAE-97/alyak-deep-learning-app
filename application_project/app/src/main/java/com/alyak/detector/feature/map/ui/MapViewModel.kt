@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alyak.detector.feature.map.data.model.KakaoPlaceDto
 import com.alyak.detector.feature.map.data.model.LocationDto
+import com.alyak.detector.feature.map.data.repository.ApiRepo
 import com.alyak.detector.feature.map.data.repository.FusedLocationRepo
 import com.alyak.detector.feature.map.data.repository.KakaoPlaceRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,13 +17,16 @@ import javax.inject.Inject
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val repo: KakaoPlaceRepo,
-    private val locRepo: FusedLocationRepo
+    private val locRepo: FusedLocationRepo,
+    private val ApiRepo: ApiRepo
 ) : ViewModel() {
     private val _curLocation = MutableStateFlow(LocationDto(37.2, 127.1))
     private val _places = MutableStateFlow<List<KakaoPlaceDto>>(emptyList())
     val places: StateFlow<List<KakaoPlaceDto>> = _places
     val curLocation: StateFlow<LocationDto> = _curLocation
-    
+    private val _routePath = MutableStateFlow<List<LocationDto>>(emptyList())
+    val routePath: StateFlow<List<LocationDto>> = _routePath
+
     /**
      * 카카오 장소 카테고리 검색 요청
      *
@@ -67,4 +71,15 @@ class MapViewModel @Inject constructor(
         }
     }
 
+    fun findPath(destination: LocationDto) {
+        viewModelScope.launch {
+            try {
+                val start = _curLocation.value
+                val pathDto = ApiRepo.pathFind(start, destination)
+                _routePath.value = pathDto.path
+            } catch (e: Exception) {
+                // 에러 처리
+            }
+        }
+    }
 }

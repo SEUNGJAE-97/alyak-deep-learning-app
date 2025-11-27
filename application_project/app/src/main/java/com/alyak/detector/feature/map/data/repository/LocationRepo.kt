@@ -6,5 +6,6 @@ interface LocationRepo {
     suspend fun getCurrentLocation(): LocationDto
     suspend fun startLocationUpdate(callback: (LocationDto) -> Unit)
     suspend fun stopLocationUpdate()
+
 }
 

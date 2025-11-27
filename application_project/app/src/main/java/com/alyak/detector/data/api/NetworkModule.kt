@@ -5,14 +5,13 @@ import com.alyak.detector.di.AppServerRetrofit
 import com.alyak.detector.di.KakaoRetrofit
 import com.alyak.detector.feature.auth.data.api.AuthApi
 import com.alyak.detector.feature.map.data.api.KakaoLocalApi
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
@@ -48,7 +47,7 @@ object NetworkModule {
             .addInterceptor(authInterceptor)  // 토큰 추가 (먼저 실행)
             .addInterceptor(logging)          // 로깅 (나중에 실행)
             .build()
-        
+
         // ISO 8601 날짜 형식 지원 (예: 2024-12-19T22:30:00)
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).apply {
             timeZone = TimeZone.getTimeZone("UTC")
@@ -57,7 +56,7 @@ object NetworkModule {
             .setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
             .setLenient()
             .create()
-        
+
         return Retrofit.Builder()
             .baseUrl(SERVER_URL)
             .client(client)

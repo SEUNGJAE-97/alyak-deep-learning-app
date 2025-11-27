@@ -1,5 +1,6 @@
 package com.alyak.detector.feature.map.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +43,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.alyak.detector.R
 import com.alyak.detector.feature.map.data.model.KakaoPlaceDto
+import com.alyak.detector.feature.map.data.model.LocationDto
 import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.feature.map.ui.components.HospitalInfo
 import com.alyak.detector.feature.pill.ui.search.components.SearchBar
@@ -64,7 +66,7 @@ fun MapScreen(
         sheetShadowElevation = 10.dp,
         sheetPeekHeight = 200.dp, // 처음에 지도 밑에 얼마나 깔려있을지 설정 (적절히 조절)
         sheetContent = {
-            HospitalListContent(places) // 아래에서 만들 함수 호출
+            HospitalListContent(places, viewModel) // 아래에서 만들 함수 호출
         },
         topBar = { HeaderForm("No Name") },
         sheetDragHandle = { DragHandler() }
@@ -112,11 +114,13 @@ fun MapScreen(
             }
         }
     }
-
 }
 
 @Composable
-fun HospitalListContent(hospitals: List<KakaoPlaceDto>) {
+fun HospitalListContent(
+    hospitals: List<KakaoPlaceDto>,
+    viewModel: MapViewModel
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -155,7 +159,18 @@ fun HospitalListContent(hospitals: List<KakaoPlaceDto>) {
                     hospitalAddress = hospitals[index].address_name,
 //                    hospitalDepartment = hospitals[index].category_name.
                     hospitalDepartment = arrayListOf("안과", "정형외과"),
-                    hospitalDistance = hospitals[index].distance
+                    hospitalDistance = hospitals[index].distance,
+                    onClick = {
+                        Log.d(
+                            "HospitalInfo",
+                            "길찾기 버튼 클릭됨 - 좌표: ${hospitals[index].y}, ${hospitals[index].x}"
+                        )
+                        val destination = LocationDto(
+                            hospitals[index].y.toDouble(),
+                            hospitals[index].x.toDouble()
+                        )
+                        viewModel.findPath(destination)
+                    }
                 )
             }
         }

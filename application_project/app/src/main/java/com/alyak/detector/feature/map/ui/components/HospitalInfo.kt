@@ -2,6 +2,7 @@ package com.alyak.detector.feature.map.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,7 +40,8 @@ fun HospitalInfo(
     hospitalName: String,
     hospitalAddress: String,
     hospitalDepartment: ArrayList<String>,
-    hospitalDistance: String
+    hospitalDistance: String,
+    onClick: () -> Unit
 ) {
     Card(
         Modifier
@@ -92,7 +94,8 @@ fun HospitalInfo(
                         .height(48.dp),
                     color = R.color.primaryBlue,
                     lineColor = R.color.primaryBlue,
-                    textColor = R.color.white
+                    textColor = R.color.white,
+                    onClick = onClick
                 )
                 Spacer(Modifier.size(10.dp))
                 SimpleButton(
@@ -103,7 +106,8 @@ fun HospitalInfo(
                         .height(48.dp),
                     color = R.color.white,
                     lineColor = R.color.primaryBlue,
-                    textColor = R.color.primaryBlue
+                    textColor = R.color.primaryBlue,
+                    onClick = {}
                 )
             }
         }
@@ -119,12 +123,14 @@ fun SimpleButton(
     color: Int,
     lineColor: Int,
     textColor: Int,
+    onClick: () -> Unit
 ) {
     Box(
         modifier
             .clip(RoundedCornerShape(8.dp))
             .border(2.dp, colorResource(lineColor), RoundedCornerShape(8.dp))
-            .background(colorResource(color)),
+            .background(colorResource(color))
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -153,6 +159,7 @@ fun HospitalInfoPrev() {
         hospitalName = "연세 세브란스 병원",
         hospitalAddress = "서울특별시 서대문구 신촌동",
         hospitalDepartment = arrayListOf("안과", "정형외과"),
-        hospitalDistance = "100"
+        hospitalDistance = "100",
+        onClick = {}
     )
 }

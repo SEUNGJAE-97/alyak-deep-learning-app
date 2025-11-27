@@ -21,11 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.alyak.detector.R
+import com.alyak.detector.feature.map.data.model.LocationDto
 import com.kakao.vectormap.KakaoMap
 import com.kakao.vectormap.KakaoMapReadyCallback
 import com.kakao.vectormap.LatLng
@@ -35,6 +37,9 @@ import com.kakao.vectormap.camera.CameraUpdateFactory
 import com.kakao.vectormap.label.LabelOptions
 import com.kakao.vectormap.label.LabelStyle
 import com.kakao.vectormap.label.LabelStyles
+import com.kakao.vectormap.route.RouteLineOptions
+import com.kakao.vectormap.route.RouteLineSegment
+import com.kakao.vectormap.route.RouteLineStyle
 
 private const val TAG = "KakaoMapView"
 
@@ -48,6 +53,7 @@ fun KakaoMapView(
     val loc by viewModel.curLocation.collectAsState()
     val context = LocalContext.current
     val mapView = rememberMapViewWithLifecycle(kakaoMapState, context)
+    val routePath by viewModel.routePath.collectAsState()
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -116,7 +122,15 @@ fun KakaoMapView(
         }
     }
 
+    LaunchedEffect(routePath, kakaoMapState.value) {
+        val kakaoMap = kakaoMapState.value ?: return@LaunchedEffect
+        Log.d("routePath", routePath.toString())
+        if (routePath.isNotEmpty()) {
+            drawPathOnMap(kakaoMap, routePath)
 
+//            moveCameraToPath(kakaoMap, routePath)
+        }
+    }
 
     AndroidView({ mapView }) { view -> }
 }
@@ -196,6 +210,36 @@ fun getLabelStyleByCategory(context: Context, category: String): LabelStyle {
         }
     return LabelStyle.from(mark).setZoomLevel(10).setApplyDpScale(true)
 }
+
+private fun drawPathOnMap(kakaoMap: KakaoMap, routePath: List<LocationDto>) {
+    val layer = kakaoMap.routeLineManager?.layer
+    layer?.removeAll()
+    val points = routePath.map { dto ->
+        LatLng.from(dto.latitude, dto.longitude)
+    }
+
+    val style = RouteLineStyle.from(
+        20f,
+        "#4F46E5".toColorInt()
+    )
+
+    val segment = RouteLineSegment.from(points, style)
+    val options = RouteLineOptions.from(segment)
+    layer?.addRouteLine(options)
+}
+
+//private fun moveCameraToPath(kakaoMap: KakaoMap, routePath: List<LocationDto>) {
+//    if (routePath.isEmpty()) return
+//
+//    val points = routePath.map { LatLng.from(it.latitude, it.longitude) }
+//
+//    // 경로 전체를 포함하는 영역(Bounds) 생성
+//    val bounds = CameraUpdateFactory.
+//
+//    // 100 padding을 주고 해당 영역으로 이동
+//    val cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 100)
+//    kakaoMap.moveCamera(cameraUpdate)
+//}
 
 @Preview(showBackground = true)
 @Composable
