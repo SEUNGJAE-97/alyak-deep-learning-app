@@ -77,11 +77,11 @@ class MapViewModel @Inject constructor(
         }
     }
 
-    fun findPath(destination: LocationDto) {
+    fun findPath(destination: LocationDto, destinationId: String) {
         viewModelScope.launch {
             try {
                 val start = _curLocation.value
-                val pathDto = ApiRepo.pathFind(start, destination)
+                val pathDto = ApiRepo.pathFind(start, destination, destinationId.toIntOrNull() ?: 0)
                 _routePath.value = pathDto.path
             } catch (e: Exception) {
                 // 에러 처리

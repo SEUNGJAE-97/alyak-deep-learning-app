@@ -71,6 +71,10 @@ jwt:
   header: ${JWT_HEADER:Authorization}
   prefix: ${JWT_PREFIX:Bearer }
 
+# Valhalla Configuration
+valhalla:
+  host: ${VALHALLA_HOST:http://localhost:8002}
+
 
 logging:
   level:

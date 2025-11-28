@@ -10,9 +10,10 @@ class ApiRepoImpl @Inject constructor(
 ) : ApiRepo {
     override suspend fun pathFind(
         start: LocationDto,
-        end: LocationDto
+        end: LocationDto,
+        destinationId: Int
     ): PathDto {
-        val response = api.findPath(start.latitude, start.longitude, end.latitude, end.longitude)
+        val response = api.findPath(start.latitude, start.longitude, end.latitude, end.longitude, destinationId)
 
         if (response.isSuccessful) {
             val body = response.body()

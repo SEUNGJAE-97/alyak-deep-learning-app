@@ -12,6 +12,7 @@ interface MapApi {
         @Query("startLat") startLat: Double,
         @Query("startLng") startLng: Double,
         @Query("endLat") endLat: Double,
-        @Query("endLng") endLng: Double
+        @Query("endLng") endLng: Double,
+        @Query("destinationId") destinationId: Int
     ): Response<PathDto>
 }

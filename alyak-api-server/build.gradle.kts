@@ -49,8 +49,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux:3.5.6")
 
     //OpenFeign 외부 API 호출용
-    // https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-openfeign
-    implementation("org.springframework.cloud:spring-cloud-starter-openfeign:5.0.0")
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign:4.3.0")
 
 }
 

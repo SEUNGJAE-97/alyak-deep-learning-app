@@ -171,7 +171,7 @@ fun HospitalListContent(
                             hospitals[index].y.toDouble(),
                             hospitals[index].x.toDouble()
                         )
-                        viewModel.findPath(destination)
+                        viewModel.findPath(destination, hospitals[index].id)
                     }
                 )
             }
