@@ -48,6 +48,10 @@ dependencies {
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-webflux
     implementation("org.springframework.boot:spring-boot-starter-webflux:3.5.6")
 
+    //OpenFeign 외부 API 호출용
+    // https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-openfeign
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign:5.0.0")
+
 }
 
 tasks.withType<JavaCompile> {

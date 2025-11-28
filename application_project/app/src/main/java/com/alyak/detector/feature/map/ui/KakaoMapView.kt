@@ -139,7 +139,7 @@ fun KakaoMapView(
                 val cameraUpdate = CameraUpdateFactory.newCenterPosition(position, 15)
                 val cameraAnimation = CameraAnimation.from(500)
                 kakaoMap.moveCamera(cameraUpdate, cameraAnimation)
-                // 위치 갱신 시 주변 장소도 다시 검색하고 싶다면 여기서 호출
+                // 위치 갱신 시 주변 장소 갱신
                 val apiKey = "KakaoAK ${context.getString(R.string.REST_API_KEY)}"
                 viewModel.fetchPlaces(apiKey, "HP8", location.longitude.toString(), location.latitude.toString(), 2000)
             }
