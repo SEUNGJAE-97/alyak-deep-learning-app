@@ -22,7 +22,7 @@ import com.alyak.detector.feature.pill.data.model.PillCategory
 import com.alyak.detector.feature.pill.ui.search.components.PillInfoBox
 
 @Composable
-fun QuickSearch() {
+fun RecentSearch() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -31,25 +31,6 @@ fun QuickSearch() {
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("빠른 검색", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text(
-                    "더보기",
-                    fontWeight = FontWeight.Thin,
-                    color = colorResource(R.color.primaryBlue)
-                )
-            }
-
-//            FilterBar(
-//                entries = PillCategory.entries,
-//                labelSelector = { it.name },
-//                iconSelector = { painterResource(it.image) },
-//                onItemClick = { },
-//            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -78,5 +59,5 @@ fun QuickSearch() {
 @Composable
 @Preview(showBackground = true)
 fun QuickSearchPrev() {
-    QuickSearch()
+    RecentSearch()
 }
