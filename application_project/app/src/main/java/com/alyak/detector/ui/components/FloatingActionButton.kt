@@ -91,15 +91,11 @@ fun MultiFloatingActionButton(
                 )
                 FloatingActionButton(
                     modifier = Modifier.size(50.dp),
-                    icon = Icons.Filled.Description,
-                    contentDescription = "추가",
-                    onClick = { /* 동작1: 추가 */ }
-                )
-                FloatingActionButton(
-                    modifier = Modifier.size(50.dp),
                     icon = Icons.Filled.Search,
-                    contentDescription = "수정",
-                    onClick = { /* 동작2: 수정 */ }
+                    contentDescription = "검색",
+                    onClick = {
+                        navController.navigate("PillSearchScreen")
+                    }
                 )
                 FloatingActionButton(
                     modifier = Modifier.size(50.dp),

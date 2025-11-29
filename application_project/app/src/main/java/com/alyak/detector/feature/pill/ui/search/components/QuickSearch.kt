@@ -44,12 +44,12 @@ fun QuickSearch() {
                 )
             }
 
-            FilterBar(
-                entries = PillCategory.entries,
-                labelSelector = { it.name },
-                iconSelector = { painterResource(it.image) },
-                onItemClick = { },
-            )
+//            FilterBar(
+//                entries = PillCategory.entries,
+//                labelSelector = { it.name },
+//                iconSelector = { painterResource(it.image) },
+//                onItemClick = { },
+//            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

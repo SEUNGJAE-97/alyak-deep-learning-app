@@ -12,6 +12,7 @@ import com.alyak.detector.feature.camera.ui.CameraScreen
 import com.alyak.detector.feature.family.ui.main.MainScreen
 import com.alyak.detector.feature.map.ui.KakaoMapView
 import com.alyak.detector.feature.map.ui.MapScreen
+import com.alyak.detector.feature.pill.ui.search.PillSearchScreen
 import com.alyak.detector.feature.splash.ui.SplashScreen
 
 @Composable
@@ -42,6 +43,9 @@ fun Navigator() {
         }
         composable("MapScreen") {
             MapScreen(navController)
+        }
+        composable("PillSearchScreen"){
+            PillSearchScreen(navController)
         }
     }
 }
