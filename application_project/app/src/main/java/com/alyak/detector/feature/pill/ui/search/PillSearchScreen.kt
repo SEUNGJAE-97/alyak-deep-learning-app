@@ -21,10 +21,12 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,9 +41,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.alyak.detector.R
-import com.alyak.detector.feature.pill.data.model.PillCategory
 import com.alyak.detector.feature.pill.data.model.PillColor
 import com.alyak.detector.feature.pill.data.model.PillLineType
 import com.alyak.detector.feature.pill.data.model.PillShapeType
@@ -55,11 +57,14 @@ import com.alyak.detector.ui.components.HeaderForm
 import com.alyak.detector.ui.components.MultiFloatingActionButton
 
 @Composable
-fun PillSearchScreen(navController: NavController) {
+fun PillSearchScreen(
+    navController: NavController,
+    viewModel: PillSearchViewModel = hiltViewModel()
+) {
     var selectedShape by remember { mutableStateOf(PillShapeType.entries.first()) }
     var selectedColor by remember { mutableStateOf(PillColor.entries.first()) }
     var selectedLine by remember { mutableStateOf(PillLineType.ALL) }
-    var selectedCategory by remember { mutableStateOf(PillCategory.entries.first()) }
+    val uiState by viewModel.recentSearchState.collectAsState()
     val icons = listOf(
         Icons.Filled.Home,
         Icons.Filled.DateRange,
@@ -147,39 +152,31 @@ fun PillSearchScreen(navController: NavController) {
 
             Spacer(Modifier.height(30.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("빠른 검색", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text(
-                    "더보기",
-                    fontWeight = FontWeight.Thin,
-                    color = colorResource(R.color.primaryBlue)
-                )
-            }
+            when (val state = uiState) {
+                is RecentSearchUiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
 
-            FilterBar(
-                entries = PillCategory.entries,
-                labelSelector = { it.name },
-                iconSelector = { category ->
-                    Image(
-                        painter = painterResource(id = category.image),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
+                is RecentSearchUiState.Error -> {
+                    Text(
+                        text = "데이터를 불러오지 못했습니다.",
+                        color = Color.Red,
+                        modifier = Modifier.padding(16.dp)
                     )
-                },
-                selectedItem = selectedCategory,
-                onItemClick = { clickedItem ->
-                    selectedCategory = clickedItem
-                },
+                }
 
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 10.dp)
-            )
-            RecentSearch()
+                is RecentSearchUiState.Success -> {
+                    RecentSearch(
+                        recentPills = state.pills,
+                        onItemClick = { /* 이벤트 처리 */ }
+                    )
+                }
+            }
         }
     }
 }

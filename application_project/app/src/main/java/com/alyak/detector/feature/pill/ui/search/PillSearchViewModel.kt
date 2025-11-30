@@ -6,11 +6,12 @@ import com.alyak.detector.feature.pill.data.model.Pill
 import com.alyak.detector.feature.pill.data.repository.PillRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 
 
 sealed interface RecentSearchUiState {
@@ -22,25 +23,20 @@ sealed interface RecentSearchUiState {
 @HiltViewModel
 class PillSearchViewModel @Inject constructor(
     private val repository: PillRepository
-): ViewModel() {
-    private val _recentSearchState = MutableStateFlow<RecentSearchUiState>(RecentSearchUiState.Loading)
-    val recentSearchState: StateFlow<RecentSearchUiState> = _recentSearchState.asStateFlow()
-
-    init {
-        getRecentSearches()
-    }
-
-    private fun getRecentSearches() {
-        viewModelScope.launch {
-            _recentSearchState.value = RecentSearchUiState.Loading
-
-            repository.fetchRecentPills()
-                .catch { e ->
-                    _recentSearchState.value = RecentSearchUiState.Error(e.message ?: "Unknown Error")
-                }
-                .collect { pills ->
-                    _recentSearchState.value = RecentSearchUiState.Success(pills)
-                }
+) : ViewModel() {
+    val recentSearchState: StateFlow<RecentSearchUiState> = repository.fetchRecentPills()
+        .map { pills ->
+            RecentSearchUiState.Success(pills) as RecentSearchUiState
         }
-    }
+        .onStart {
+            emit(RecentSearchUiState.Loading)
+        }
+        .catch { e ->
+            emit(RecentSearchUiState.Error(e.message ?: "Unknown Error"))
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = RecentSearchUiState.Loading
+        )
 }

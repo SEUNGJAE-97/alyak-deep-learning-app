@@ -115,4 +115,9 @@ dependencies {
     implementation ("io.coil-kt:coil-compose:2.4.0")
     implementation ("io.coil-kt:coil-svg:2.4.0")
 
+    //Room
+    implementation("androidx.room:room-runtime:2.8.4")
+    implementation("androidx.room:room-ktx:2.8.4") // Coroutines 지원
+    kapt("androidx.room:room-compiler:2.8.4")
+
 }

@@ -8,11 +8,11 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-@Module // 1. 모듈임을 알림
+@Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
-    @Binds // 4. 연결 고리 설정
+    @Binds
     @Singleton
     abstract fun bindApiRepo(
         apiRepoImpl: ApiRepoImpl
