@@ -50,9 +50,9 @@ import com.alyak.detector.feature.pill.data.model.PillShapeType
 import com.alyak.detector.feature.pill.ui.search.components.FilterBar
 import com.alyak.detector.feature.pill.ui.search.components.MarkingIcon
 import com.alyak.detector.feature.pill.ui.search.components.RecentSearch
+import com.alyak.detector.feature.pill.ui.search.components.SearchActionButtons
 import com.alyak.detector.feature.pill.ui.search.components.SearchBar
 import com.alyak.detector.feature.pill.ui.search.components.ShapeIcon
-import com.alyak.detector.ui.components.BottomForm
 import com.alyak.detector.ui.components.HeaderForm
 import com.alyak.detector.ui.components.MultiFloatingActionButton
 
@@ -150,7 +150,22 @@ fun PillSearchScreen(
                 onItemClick = { selectedShape = it }
             )
 
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(20.dp))
+
+            SearchActionButtons(
+                onResetClick = {
+                    // 필터 초기화 로직
+                    selectedShape = PillShapeType.entries.first()
+                    selectedColor = PillColor.entries.first()
+                    selectedLine = PillLineType.ALL
+                },
+                onSearchClick = {
+                    // 검색 로직 실행
+                },
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+
+            Spacer(Modifier.height(50.dp))
 
             when (val state = uiState) {
                 is RecentSearchUiState.Loading -> {
