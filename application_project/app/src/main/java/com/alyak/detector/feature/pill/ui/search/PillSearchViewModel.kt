@@ -66,4 +66,16 @@ class PillSearchViewModel @Inject constructor(
             }
         }
     }
+
+    fun findPillsByName(name: String) {
+        viewModelScope.launch {
+            _searchUiState.value = SearchUiState.Loading
+            try {
+                val result = repository.findPills(name)
+                _searchUiState.value = SearchUiState.Success(result)
+            } catch (e: Exception) {
+                _searchUiState.value = SearchUiState.Error(e.message ?: "Unknown Error")
+            }
+        }
+    }
 }

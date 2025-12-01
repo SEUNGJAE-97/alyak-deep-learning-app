@@ -72,6 +72,7 @@ fun PillSearchScreen(
     val uiState by viewModel.recentSearchState.collectAsState()
     val scaffoldState = rememberBottomSheetScaffoldState()
     val searchUiState by viewModel.searchUiState.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     var selectedIndex by remember { mutableStateOf(0) }
 
@@ -115,6 +116,7 @@ fun PillSearchScreen(
                             )
                         }
                     }
+
                     is SearchUiState.Loading -> {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
@@ -134,6 +136,7 @@ fun PillSearchScreen(
                             }
                         }
                     }
+
                     is SearchUiState.Error -> {
                         Text(
                             text = "검색 중 오류가 발생했습니다: ${(searchUiState as SearchUiState.Error).message}",
@@ -141,6 +144,7 @@ fun PillSearchScreen(
                             modifier = Modifier.padding(16.dp)
                         )
                     }
+
                     is SearchUiState.Success -> {
                         val pills = (searchUiState as SearchUiState.Success).pills
 
@@ -190,7 +194,21 @@ fun PillSearchScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(Modifier.height(20.dp))
-            SearchBar()
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                onSearch = { text ->
+                    if (text.isNotBlank()) {
+                        viewModel.findPillsByName(text)
+                        scope.launch {
+                            scaffoldState.bottomSheetState.expand()
+                        }
+                    }
+                },
+                onCameraClick = { navController.navigate("CameraScreen") },
+                onMicClick = {/*음성 인식 추후 추가..*/ }
+
+            )
             Spacer(Modifier.height(20.dp))
             FilterBar(
                 entries = PillLineType.entries,
@@ -252,13 +270,17 @@ fun PillSearchScreen(
 
             SearchActionButtons(
                 onResetClick = {
-                    // 필터 초기화 로직
+                    // 필터 초기화
                     selectedShape = PillShapeType.entries.first()
                     selectedColor = PillColor.entries.first()
                     selectedLine = PillLineType.ALL
                 },
                 onSearchClick = {
-                    viewModel.searchPills(selectedShape.name, selectedColor.name, selectedLine.name)
+                    val shapeParam =
+                        if (selectedShape == PillShapeType.ALL) "" else selectedShape.label
+                    val colorParam = if (selectedColor == PillColor.ALL) "" else selectedColor.label
+                    val lineParam = if (selectedLine == PillLineType.ALL) "" else selectedLine.query
+                    viewModel.searchPills(shapeParam, colorParam, lineParam)
                     scope.launch {
                         scaffoldState.bottomSheetState.expand()
                     }

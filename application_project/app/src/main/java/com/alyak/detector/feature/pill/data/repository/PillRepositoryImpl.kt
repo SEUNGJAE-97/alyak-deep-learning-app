@@ -19,6 +19,7 @@ class PillRepositoryImpl @Inject constructor(
     override suspend fun searchPills(shape: String, color: String, score: String): List<Pill> {
         return api.getPillSearchResult(shape, color, score)
     }
+
     /**
      * 알약명으로 검색한 결과를 모두 가져온다.
      * */

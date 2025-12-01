@@ -56,10 +56,10 @@ enum class PillColor(val label: String, val color: Color) {
     TRANSPARENT("투명", Color.Transparent);
 }
 
-enum class PillLineType(val label: String) {
-    ALL("전체"),
-    NONE("없음"),
-    PLUS(" + 형"),
-    MINUS(" - 형"),
-    ETC("기타")
+enum class PillLineType(val label: String, val query: String) {
+    ALL("전체",""),
+    NONE("없음",""),
+    PLUS(" + 형","+"),
+    MINUS(" - 형","-"),
+    ETC("기타","")
 }
