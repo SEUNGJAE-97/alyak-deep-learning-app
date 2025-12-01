@@ -8,28 +8,41 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,19 +57,23 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.alyak.detector.R
+import com.alyak.detector.feature.map.ui.DragHandler
 import com.alyak.detector.feature.pill.data.model.PillColor
 import com.alyak.detector.feature.pill.data.model.PillLineType
 import com.alyak.detector.feature.pill.data.model.PillShapeType
 import com.alyak.detector.feature.pill.ui.search.components.FilterBar
 import com.alyak.detector.feature.pill.ui.search.components.MarkingIcon
+import com.alyak.detector.feature.pill.ui.search.components.PillInfoBox
 import com.alyak.detector.feature.pill.ui.search.components.RecentSearch
 import com.alyak.detector.feature.pill.ui.search.components.SearchActionButtons
 import com.alyak.detector.feature.pill.ui.search.components.SearchBar
 import com.alyak.detector.feature.pill.ui.search.components.ShapeIcon
 import com.alyak.detector.ui.components.HeaderForm
 import com.alyak.detector.ui.components.MultiFloatingActionButton
+import kotlinx.coroutines.launch
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun PillSearchScreen(
     navController: NavController,
     viewModel: PillSearchViewModel = hiltViewModel()
@@ -65,20 +82,63 @@ fun PillSearchScreen(
     var selectedColor by remember { mutableStateOf(PillColor.entries.first()) }
     var selectedLine by remember { mutableStateOf(PillLineType.ALL) }
     val uiState by viewModel.recentSearchState.collectAsState()
-    val icons = listOf(
-        Icons.Filled.Home,
-        Icons.Filled.DateRange,
-        Icons.Filled.FavoriteBorder,
-        Icons.Filled.Settings
-    )
+    val scaffoldState = rememberBottomSheetScaffoldState()
+    val searchResultState by viewModel.searchResultState.collectAsState()
+    val scope = rememberCoroutineScope()
     var selectedIndex by remember { mutableStateOf(0) }
 
-    Scaffold(
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
         topBar = {
             HeaderForm("No name")
         },
-        floatingActionButton = {
-            MultiFloatingActionButton(navController)
+        sheetPeekHeight = 100.dp,
+        sheetContainerColor = Color.White,
+        sheetShadowElevation = 10.dp,
+        sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        sheetDragHandle = { DragHandler() },
+        sheetContent = {
+            // 시트 내부도 스크롤 되어야 하므로 높이 지정 혹은 max height
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.9f) // 화면의 80% 높이까지 확장
+                    .padding(16.dp)
+            ) {
+                when {
+                    searchResultState.isEmpty() -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 250.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .padding(bottom = 16.dp)
+                            )
+                            Text(
+                                text = "검색 결과가 없습니다.",
+                                fontSize = 16.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                    else -> {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            items(searchResultState) { pill ->
+                                PillInfoBox(pill)
+                            }
+                        }
+                    }
+                }
+            }
         }
     ) { paddingValues ->
         Column(
@@ -160,7 +220,10 @@ fun PillSearchScreen(
                     selectedLine = PillLineType.ALL
                 },
                 onSearchClick = {
-                    // 검색 로직 실행
+                    viewModel.searchPills(selectedShape.name, selectedColor.name, selectedLine.name)
+                    scope.launch {
+                        scaffoldState.bottomSheetState.expand()
+                    }
                 },
                 modifier = Modifier.padding(horizontal = 4.dp)
             )

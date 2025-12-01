@@ -64,9 +64,9 @@ fun MapScreen(
         sheetContentColor = Color.Black,
         sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         sheetShadowElevation = 10.dp,
-        sheetPeekHeight = 200.dp, // 처음에 지도 밑에 얼마나 깔려있을지 설정 (적절히 조절)
+        sheetPeekHeight = 200.dp,
         sheetContent = {
-            HospitalListContent(places, viewModel) // 아래에서 만들 함수 호출
+            HospitalListContent(places, viewModel)
         },
         topBar = { HeaderForm("No Name") },
         sheetDragHandle = { DragHandler() }
@@ -180,7 +180,7 @@ fun HospitalListContent(
 }
 
 @Composable
-private fun DragHandler() {
+fun DragHandler() {
     Box(
         modifier = Modifier
             .fillMaxWidth()

@@ -8,6 +8,9 @@ import com.alyak.detector.feature.map.data.api.MapApi
 import com.alyak.detector.feature.pill.data.api.PillApi
 import com.alyak.detector.feature.pill.data.model.local.dao.RecentSearchDao
 import com.alyak.detector.feature.pill.data.model.local.database.PillDatabase
+import com.alyak.detector.feature.pill.data.repository.PillRepository
+import com.alyak.detector.feature.pill.data.repository.PillRepositoryImpl
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -55,5 +58,14 @@ object AppModule {
     @Singleton
     fun provideRecentSearchDao(database: PillDatabase): RecentSearchDao {
         return database.recentSearchDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providePillRepository(
+        recentSearchDao: RecentSearchDao,
+        pillApi: PillApi
+    ): PillRepository {
+        return PillRepositoryImpl(recentSearchDao, pillApi)
     }
 }
