@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,19 +19,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 import com.alyak.detector.feature.pill.data.model.Pill
 import com.alyak.detector.ui.components.StatusBadge
+import com.valentinilk.shimmer.shimmer
 
 @Composable
 fun PillInfoBox(
-    PillInfo: Pill
+    pillInfo: Pill,
+    isLoading: Boolean = false
 ) {
     Box(
         modifier = Modifier
@@ -38,31 +43,58 @@ fun PillInfoBox(
             .shadow(2.dp, shape = RoundedCornerShape(24.dp))
             .clip(RoundedCornerShape(24.dp))
             .background(colorResource(R.color.white))
+            .then(if (isLoading) Modifier.shimmer() else Modifier)
 
     ) {
         Row(
             modifier = Modifier.padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            //image
-            Image(
-                painter = painterResource(R.drawable.pill),
-                contentDescription = null,
-                modifier = Modifier
-                    .clip(shape = RoundedCornerShape(24.dp))
-                    .weight(0.3f)
-                    .size(30.dp)
-            )
-            //info
-            Column(modifier = Modifier.weight(0.5f)) {
-                Text(PillInfo.name, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text(PillInfo.ingredient, fontWeight = FontWeight.Thin)
-                Row {
-                    Text("제조사 : " + PillInfo.manufacturer, fontWeight = FontWeight.Thin, fontSize = 10.sp)
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text("식별 코드 : " + PillInfo.pid, fontWeight = FontWeight.Thin, fontSize = 10.sp)
-                }
+            val imageModifier = Modifier
+                .clip(shape = RoundedCornerShape(24.dp))
+                .weight(0.3f)
+                .size(30.dp)
 
+            if (isLoading) {
+                Box(modifier = imageModifier.background(Color.LightGray))
+            } else {
+                Image(
+                    painter = painterResource(R.drawable.pill),
+                    contentDescription = null,
+                    modifier = imageModifier
+                )
+            }
+            //info
+            Column(
+                modifier = Modifier
+                    .weight(0.5f)
+                    .padding(horizontal = 8.dp)
+            ) {
+                if (isLoading) {
+                    TextPlaceholder(height = 24.dp, widthFraction = 0.8f)
+                } else {
+                    Text(pillInfo.name, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+
+                if (isLoading) {
+                    TextPlaceholder(height = 16.dp, widthFraction = 0.5f)
+                } else {
+                    Text(pillInfo.ingredient, fontWeight = FontWeight.Thin)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row {
+                    if (isLoading) {
+                        Box(modifier = Modifier.width(80.dp).height(12.dp).background(Color.LightGray))
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Box(modifier = Modifier.width(80.dp).height(12.dp).background(Color.LightGray))
+                    } else {
+                        Text("제조사 : ${pillInfo.manufacturer}", fontWeight = FontWeight.Thin, fontSize = 10.sp)
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text("식별 코드 : ${pillInfo.pid}", fontWeight = FontWeight.Thin, fontSize = 10.sp)
+                    }
+                }
             }
 
             //type
@@ -73,15 +105,28 @@ fun PillInfoBox(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                StatusBadge(
-                    text = PillInfo.category,
-                    backgroundColor = colorResource(R.color.primaryBlue), // 연한 초록
-                    textColor = colorResource(R.color.white)
-                )
+                if (isLoading) {
+                    Box(modifier = Modifier.height(20.dp).width(50.dp).background(Color.LightGray))
+                } else {
+                    StatusBadge(
+                        text = pillInfo.category,
+                        backgroundColor = colorResource(R.color.primaryBlue),
+                        textColor = colorResource(R.color.white)
+                    )
+                }
             }
         }
     }
-
+}
+@Composable
+fun TextPlaceholder(height: Dp, widthFraction: Float) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(widthFraction)
+            .height(height)
+            .clip(RoundedCornerShape(4.dp))
+            .background(Color.LightGray)
+    )
 }
 
 @Composable

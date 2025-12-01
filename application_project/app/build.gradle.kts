@@ -120,4 +120,7 @@ dependencies {
     implementation("androidx.room:room-ktx:2.8.4") // Coroutines 지원
     kapt("androidx.room:room-compiler:2.8.4")
 
+    //shimer
+    implementation("com.valentinilk.shimmer:compose-shimmer:1.3.3")
+
 }

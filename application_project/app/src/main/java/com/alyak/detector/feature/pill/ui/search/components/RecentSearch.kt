@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 import com.alyak.detector.feature.pill.data.model.Pill
-import com.alyak.detector.feature.pill.ui.search.components.PillInfoBox
 
 @Composable
 fun RecentSearch(
@@ -79,7 +78,7 @@ fun RecentSearch(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     recentPills.forEach { pill ->
-                        PillInfoBox(PillInfo = pill)
+                        PillInfoBox(pillInfo = pill)
                     }
                 }
             }

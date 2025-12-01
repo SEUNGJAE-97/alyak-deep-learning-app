@@ -15,26 +15,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
@@ -48,16 +38,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.alyak.detector.R
 import com.alyak.detector.feature.map.ui.DragHandler
+import com.alyak.detector.feature.pill.data.model.Pill
 import com.alyak.detector.feature.pill.data.model.PillColor
 import com.alyak.detector.feature.pill.data.model.PillLineType
 import com.alyak.detector.feature.pill.data.model.PillShapeType
@@ -69,7 +58,6 @@ import com.alyak.detector.feature.pill.ui.search.components.SearchActionButtons
 import com.alyak.detector.feature.pill.ui.search.components.SearchBar
 import com.alyak.detector.feature.pill.ui.search.components.ShapeIcon
 import com.alyak.detector.ui.components.HeaderForm
-import com.alyak.detector.ui.components.MultiFloatingActionButton
 import kotlinx.coroutines.launch
 
 @Composable
@@ -83,7 +71,7 @@ fun PillSearchScreen(
     var selectedLine by remember { mutableStateOf(PillLineType.ALL) }
     val uiState by viewModel.recentSearchState.collectAsState()
     val scaffoldState = rememberBottomSheetScaffoldState()
-    val searchResultState by viewModel.searchResultState.collectAsState()
+    val searchUiState by viewModel.searchUiState.collectAsState()
     val scope = rememberCoroutineScope()
     var selectedIndex by remember { mutableStateOf(0) }
 
@@ -98,15 +86,14 @@ fun PillSearchScreen(
         sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         sheetDragHandle = { DragHandler() },
         sheetContent = {
-            // 시트 내부도 스크롤 되어야 하므로 높이 지정 혹은 max height
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.9f) // 화면의 80% 높이까지 확장
+                    .fillMaxHeight(0.9f)
                     .padding(16.dp)
             ) {
-                when {
-                    searchResultState.isEmpty() -> {
+                when (searchUiState) {
+                    is SearchUiState.Idle -> {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -122,18 +109,69 @@ fun PillSearchScreen(
                                     .padding(bottom = 16.dp)
                             )
                             Text(
-                                text = "검색 결과가 없습니다.",
+                                text = "검색 조건을 입력 후 검색해 주세요.",
                                 fontSize = 16.sp,
                                 color = Color.Gray
                             )
                         }
                     }
-                    else -> {
+                    is SearchUiState.Loading -> {
                         LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            items(searchResultState) { pill ->
-                                PillInfoBox(pill)
+                            items(10) {
+                                PillInfoBox(
+                                    pillInfo = Pill(
+                                        name = "",
+                                        ingredient = "",
+                                        manufacturer = "",
+                                        pid = "",
+                                        category = ""
+                                    ),
+                                    isLoading = true
+                                )
+                            }
+                        }
+                    }
+                    is SearchUiState.Error -> {
+                        Text(
+                            text = "검색 중 오류가 발생했습니다: ${(searchUiState as SearchUiState.Error).message}",
+                            color = Color.Red,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                    is SearchUiState.Success -> {
+                        val pills = (searchUiState as SearchUiState.Success).pills
+
+                        if (pills.isEmpty()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 250.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .padding(bottom = 16.dp)
+                                )
+                                Text(
+                                    text = "검색 결과가 없습니다.",
+                                    fontSize = 16.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        } else {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                items(pills) { pill ->
+                                    PillInfoBox(pill)
+                                }
                             }
                         }
                     }
@@ -232,11 +270,22 @@ fun PillSearchScreen(
 
             when (val state = uiState) {
                 is RecentSearchUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(20.dp),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        CircularProgressIndicator()
+                        repeat(5) {
+                            PillInfoBox(
+                                pillInfo = Pill(
+                                    name = "",
+                                    ingredient = "",
+                                    manufacturer = "",
+                                    pid = "",
+                                    category = ""
+                                ),
+                                isLoading = true
+                            )
+                        }
                     }
                 }
 
