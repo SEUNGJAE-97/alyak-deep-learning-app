@@ -67,7 +67,6 @@ import com.alyak.detector.feature.pill.data.model.DosageInfoDto
 import com.alyak.detector.feature.pill.data.model.EffectsInfoDto
 import com.alyak.detector.feature.pill.data.model.MedicineDetailDto
 import com.alyak.detector.feature.pill.data.model.MedicineInfoDto
-import com.alyak.detector.feature.pill.data.model.MemoDTO
 import com.alyak.detector.feature.pill.data.model.SideEffectsDto
 import com.alyak.detector.feature.pill.data.model.SpecialCautionDto
 import com.alyak.detector.ui.components.StatusBadge
@@ -282,9 +281,6 @@ fun FullPillDetailScreenPreview() {
             formulation = "타원형 정제",
             packaging = "10정"
         ),
-        memo = MemoDTO(
-            content = "복용 시간 꼭 지킬 것"
-        )
     )
 
     Column(
@@ -492,21 +488,5 @@ fun FullPillDetailScreenPreview() {
 
         //  맞춤 기능(알림 등록/이력)
         CardBox { FunctionButtonRow() }
-
-        //  내 메모 입력
-        CardBox {
-            TitledSection(Icons.Default.Edit, "내 메모") {
-                var memoText by remember { mutableStateOf(medicineDetail.memo.content) }
-                OutlinedTextField(
-                    value = memoText,
-                    onValueChange = { memoText = it },
-                    placeholder = { Text("이 약에 대한 메모를 작성하세요...") },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(92.dp)
-                )
-            }
-        }
     }
 }
