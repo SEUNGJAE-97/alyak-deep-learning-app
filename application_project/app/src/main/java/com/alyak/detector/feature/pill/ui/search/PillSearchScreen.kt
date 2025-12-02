@@ -121,7 +121,7 @@ fun PillSearchScreen(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            items(10) {
+                            items(5) {
                                 PillInfoBox(
                                     pillInfo = Pill(
                                         name = "",
@@ -174,7 +174,7 @@ fun PillSearchScreen(
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 items(pills) { pill ->
-                                    PillInfoBox(pill)
+                                    PillInfoBox(pill, onClick = {viewModel.searchPillDetail(pill.pid.toLong())})
                                 }
                             }
                         }
@@ -360,7 +360,7 @@ fun PillSearchScreen(
                     } else {
                         RecentSearch(
                             recentPills = state.pills,
-                            onItemClick = { /* 이벤트 처리 */ }
+                            onItemClick = { pill ->  viewModel.searchPillDetail(pill.pid.toLong()) }
                         )
                     }
                 }

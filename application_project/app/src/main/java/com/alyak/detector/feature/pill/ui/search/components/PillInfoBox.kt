@@ -2,6 +2,7 @@ package com.alyak.detector.feature.pill.ui.search.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +38,8 @@ import com.valentinilk.shimmer.shimmer
 @Composable
 fun PillInfoBox(
     pillInfo: Pill,
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    onClick: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -45,6 +47,7 @@ fun PillInfoBox(
             .shadow(2.dp, shape = RoundedCornerShape(24.dp))
             .clip(RoundedCornerShape(24.dp))
             .background(colorResource(R.color.white))
+            .then(if (!isLoading) Modifier.clickable(onClick = onClick) else Modifier)
             .then(if (isLoading) Modifier.shimmer() else Modifier)
 
     ) {
