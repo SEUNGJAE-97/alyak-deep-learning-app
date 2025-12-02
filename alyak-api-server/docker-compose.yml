@@ -16,7 +16,7 @@ services:
     networks:
       - alyak-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       timeout: 20s
       retries: 10
 
@@ -31,7 +31,7 @@ services:
     networks:
       - alyak-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       timeout: 20s
       retries: 10
 
@@ -56,7 +56,7 @@ services:
       # Redis Configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: 
+      REDIS_PASSWORD:
       REDIS_DATABASE: 0
       
       # Email Configuration
@@ -71,7 +71,7 @@ services:
       JWT_SECRET: your-super-secret-key-here-change-in-production
       JWT_EXPIRATION_TIME: 3600000
       JWT_HEADER: Authorization
-      JWT_PREFIX: Bearer 
+      JWT_PREFIX: Bearer
     depends_on:
       mysql:
         condition: service_healthy
@@ -80,6 +80,23 @@ services:
     networks:
       - alyak-network
     restart: unless-stopped
+
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    container_name: alyak-valhalla
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./valhalla_data:/custom_files
+    environment:
+      # 한국 지도 데이터 자동 다운로드 및 빌드 설정
+      - tile_urls=https://download.geofabrik.de/asia/south-korea-latest.osm.pbf
+      - build_elevation=True  # 도보 경로를 위한 고도 데이터 포함
+      - build_admins=True     # 행정 구역 데이터
+      - build_time_zones=True
+      - server_threads=2      # CPU 사용량에 따라 조절 (기본 2)
+    networks:
+      - alyak-network
 
 volumes:
   mysql_data:

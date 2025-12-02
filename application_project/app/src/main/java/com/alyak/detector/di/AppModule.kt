@@ -1,51 +1,71 @@
 package com.alyak.detector.di
 
-import com.alyak.detector.data.family.api.FamilyService
-import com.alyak.detector.data.family.repository.FamilyRepo
-import dagger.Lazy
+import android.content.Context
+import androidx.room.Room
+import com.alyak.detector.feature.family.data.api.FamilyService
+import com.alyak.detector.feature.family.data.repository.FamilyRepo
+import com.alyak.detector.feature.map.data.api.MapApi
+import com.alyak.detector.feature.pill.data.api.PillApi
+import com.alyak.detector.feature.pill.data.model.local.dao.RecentSearchDao
+import com.alyak.detector.feature.pill.data.model.local.database.PillDatabase
+import com.alyak.detector.feature.pill.data.repository.PillRepository
+import com.alyak.detector.feature.pill.data.repository.PillRepositoryImpl
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    private const val LOCAL_BASE_URL = "http://10.0.2.2:8080/"
-
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
-        return OkHttpClient.Builder()
-            .addInterceptor(logging)
-            .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideRetrofit(client: OkHttpClient): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(LOCAL_BASE_URL)
-            .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
-    @Provides
-    fun provideFamilyService(retrofit: Retrofit): FamilyService =
+    fun provideFamilyService(@AppServerRetrofit retrofit: Retrofit): FamilyService =
         retrofit.create(FamilyService::class.java)
 
     @Provides
+    @Singleton
     fun provideFamilyRepository(familyService: FamilyService): FamilyRepo {
         return FamilyRepo(familyService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMapApi(@AppServerRetrofit retrofit: Retrofit): MapApi =
+        retrofit.create(MapApi::class.java)
+
+    @Provides
+    @Singleton
+    fun providePillApi(@AppServerRetrofit retrofit: Retrofit): PillApi =
+        retrofit.create(PillApi::class.java)
+
+    @Provides
+    @Singleton
+    fun providePillDatabase(@ApplicationContext context: Context): PillDatabase {
+        return Room.databaseBuilder(
+            context,
+            PillDatabase::class.java,
+            "pill_database"
+        ).build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRecentSearchDao(database: PillDatabase): RecentSearchDao {
+        return database.recentSearchDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providePillRepository(
+        recentSearchDao: RecentSearchDao,
+        pillApi: PillApi
+    ): PillRepository {
+        return PillRepositoryImpl(recentSearchDao, pillApi)
     }
 }

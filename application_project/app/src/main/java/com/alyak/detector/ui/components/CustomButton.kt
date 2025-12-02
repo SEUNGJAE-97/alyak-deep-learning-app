@@ -40,12 +40,11 @@ fun CustomButton(
         onClick = onClick,
         modifier = modifier.padding(8.dp),
         colors = ButtonDefaults.buttonColors(
-            // Provide a default color from your theme if the passed color is null
             containerColor = containerColor ?: MaterialTheme.colorScheme.primary,
             contentColor = contentColor ?: MaterialTheme.colorScheme.onPrimary
         ),
         shape = shape,
-        contentPadding = PaddingValues(15.dp)
+        contentPadding = PaddingValues(15.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (image != null) {
@@ -73,10 +72,9 @@ fun CustomButton(
 @Composable
 fun CustomButtonPreview() {
     CustomButton(
-        text = "미리보기 버튼",
+        text = "",
         onClick = {},
         containerColor = Color.White,
-        contentColor = Color.Black
-
+        contentColor = Color.Black,
     )
 }

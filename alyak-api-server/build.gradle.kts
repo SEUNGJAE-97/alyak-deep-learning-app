@@ -45,6 +45,11 @@ dependencies {
     annotationProcessor("com.querydsl:querydsl-apt:5.1.0:jakarta")
     annotationProcessor ("jakarta.annotation:jakarta.annotation-api")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-webflux
+    implementation("org.springframework.boot:spring-boot-starter-webflux:3.5.6")
+
+    //OpenFeign 외부 API 호출용
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign:4.3.0")
 
 }
 

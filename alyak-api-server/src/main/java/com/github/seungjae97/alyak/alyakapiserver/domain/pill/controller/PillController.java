@@ -24,8 +24,7 @@ public class PillController {
     @GetMapping("/find")
     @Operation(summary = "검색", description = "알약명을 기준으로 세부정보를 조회한다.")
     public ResponseEntity<?> findPill(@RequestParam String pillName) {
-        pillService.findPill(pillName);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(pillService.findPill(pillName));
     }
 
     @GetMapping("/search")
@@ -34,5 +33,11 @@ public class PillController {
             @ParameterObject PillSearchRequest req
     ) {
         return ResponseEntity.ok(pillService.searchPill(req));
+    }
+
+    @GetMapping("/detail")
+    @Operation(summary = "상세검색", description = "pill_Id 값으로 하나의 알약에 대해 상세 정보를 조회한다.")
+    public ResponseEntity<?> detailPill(@RequestParam Long pillId) {
+        return ResponseEntity.ok(pillService.detailPill(pillId));
     }
 }

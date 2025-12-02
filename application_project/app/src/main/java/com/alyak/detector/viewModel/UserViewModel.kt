@@ -1,7 +1,7 @@
 package com.alyak.detector.viewModel
 
 import androidx.lifecycle.ViewModel
-import com.alyak.detector.ui.signIn.state.UserInfo
+import com.alyak.detector.feature.auth.ui.signIn.state.UserInfo
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

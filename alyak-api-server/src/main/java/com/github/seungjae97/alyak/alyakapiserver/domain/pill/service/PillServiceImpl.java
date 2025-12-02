@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillAppearanceResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillDetailResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillInfoResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.SimplePillInfo;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
@@ -108,25 +109,19 @@ public class PillServiceImpl implements PillService {
             }
 
             pillRepository.saveAll(pills);
-            pillList = pillRepository.findByPillName(pillName);
         }
         // 2.1 사용자에게 알약 정보 전달
-        List<SimplePillInfo> result = new ArrayList<>();
-        for (Pill pill : pillList) {
-            result.add(SimplePillInfo.builder()
-                    .pillId(pill.getId())
-                    .pillName(pill.getPillName())
-                    .ingredient(pill.getPillIngredient())
-                    .manufacturer(pill.getPillManufacturer())
-                    .build());
-
-        }
-        return result;
+        return pillRepository.findByPillNameWithType(pillName);
     }
 
     @Override
     public List<SimplePillInfo> searchPill(PillSearchRequest pillSearchRequest) {
         return pillRepository.searchAppearance(pillSearchRequest);
+    }
+
+    @Override
+    public PillDetailResponse detailPill(Long pillId) {
+        return pillRepository.detailPill(pillId);
     }
 
     private Boolean callIdentifyAPI(Long itemSeq) {

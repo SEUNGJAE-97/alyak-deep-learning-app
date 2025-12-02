@@ -29,4 +29,6 @@ docker-compose.yml
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+**/valhalla_data/

@@ -1,7 +1,7 @@
- spring:
+spring:
   application:
     name: alyak-api-server
-  
+
   # Redis Configuration
   redis:
     host: ${REDIS_HOST:localhost}
@@ -70,6 +70,10 @@ jwt:
   expiration-time: ${JWT_EXPIRATION_TIME:3600000}
   header: ${JWT_HEADER:Authorization}
   prefix: ${JWT_PREFIX:Bearer }
+
+# Valhalla Configuration
+valhalla:
+  host: ${VALHALLA_HOST:http://localhost:8002}
 
 
 logging:
