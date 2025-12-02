@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -88,6 +89,7 @@ fun PillSearchScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.9f)
+                    .navigationBarsPadding()
                     .padding(16.dp)
             ) {
                 when (searchUiState) {
@@ -95,7 +97,7 @@ fun PillSearchScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(min = 250.dp),
+                                .heightIn(min = 200.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
@@ -126,7 +128,8 @@ fun PillSearchScreen(
                                         classification = "",
                                         manufacturer = "",
                                         pid = "",
-                                        pillType = ""
+                                        pillType = "",
+                                        pillImg = ""
                                     ),
                                     isLoading = true
                                 )
@@ -300,7 +303,8 @@ fun PillSearchScreen(
                                     classification = "",
                                     manufacturer = "",
                                     pid = "",
-                                    pillType = ""
+                                    pillType = "",
+                                    pillImg = ""
                                 ),
                                 isLoading = true
                             )

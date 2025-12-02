@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
@@ -62,17 +61,16 @@ import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 import com.alyak.detector.core.model.MealTime
 import com.alyak.detector.core.model.SpecialCautionType
-import com.alyak.detector.feature.pill.data.model.AdditionalInfoDTO
-import com.alyak.detector.feature.pill.data.model.AlertInfoDTO
-import com.alyak.detector.feature.pill.data.model.DosageInfoDTO
-import com.alyak.detector.feature.pill.data.model.EffectsInfoDTO
-import com.alyak.detector.feature.pill.data.model.MedicineDetailDTO
-import com.alyak.detector.feature.pill.data.model.MedicineInfoDTO
+import com.alyak.detector.feature.pill.data.model.AdditionalInfoDto
+import com.alyak.detector.feature.pill.data.model.AlertInfoDto
+import com.alyak.detector.feature.pill.data.model.DosageInfoDto
+import com.alyak.detector.feature.pill.data.model.EffectsInfoDto
+import com.alyak.detector.feature.pill.data.model.MedicineDetailDto
+import com.alyak.detector.feature.pill.data.model.MedicineInfoDto
 import com.alyak.detector.feature.pill.data.model.MemoDTO
-import com.alyak.detector.feature.pill.data.model.SideEffectsDTO
-import com.alyak.detector.feature.pill.data.model.SpecialCautionDTO
+import com.alyak.detector.feature.pill.data.model.SideEffectsDto
+import com.alyak.detector.feature.pill.data.model.SpecialCautionDto
 import com.alyak.detector.ui.components.StatusBadge
-import com.alyak.detector.feature.pill.ui.PillDetail.components.AdditionalInfoSection
 import com.alyak.detector.ui.theme.CardBackground
 
 @Composable
@@ -248,8 +246,8 @@ fun MemoInputBox() {
 @Composable
 @Preview(showBackground = true, heightDp = 2000)
 fun FullPillDetailScreenPreview() {
-    val medicineDetail = MedicineDetailDTO(
-        medicineInfo = MedicineInfoDTO(
+    val medicineDetail = MedicineDetailDto(
+        medicineInfo = MedicineInfoDto(
             name = "타이레놀 500mg",
             subName = "아세트 아미노펜",
             manufacturer = "한국제약",
@@ -257,28 +255,28 @@ fun FullPillDetailScreenPreview() {
             category = "일반의약품",
             img = R.drawable.pill
         ),
-        dosageInfo = DosageInfoDTO(
+        dosageInfo = DosageInfoDto(
             dosageText = "하루 3회, 식후 30분 내 복용",
             dosageTimes = listOf(MealTime.MORNING, MealTime.LUNCH, MealTime.DINNER)
         ),
-        effectsInfo = EffectsInfoDTO(
+        effectsInfo = EffectsInfoDto(
             tags = listOf("해열", "진통"),
             description = "감기 증상 완화 및 통증 완화에 효과가 있음"
         ),
-        alertInfo = AlertInfoDTO(
+        alertInfo = AlertInfoDto(
             title = "주의사항",
             items = listOf("알레르기 반응 주의", "과다 복용 금지")
         ),
-        specialCaution = SpecialCautionDTO(
+        specialCaution = SpecialCautionDto(
             title = "특별 주의 대상",
             tags = listOf(SpecialCautionType.PREGNANT, SpecialCautionType.DRIVER),
             extraText = "운전 시 주의가 필요"
         ),
-        sideEffects = SideEffectsDTO(
+        sideEffects = SideEffectsDto(
             title = "주요 부작용",
             description = "두통, 어지러움, 위장 장애 등이 발생할 수 있음"
         ),
-        additionalInfo = AdditionalInfoDTO(
+        additionalInfo = AdditionalInfoDto(
             storageMethod = "실온 보관 1~30도",
             expiration = "2026-12-31",
             formulation = "타원형 정제",

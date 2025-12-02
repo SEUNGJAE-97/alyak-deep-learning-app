@@ -2,6 +2,8 @@ package com.alyak.detector.di
 
 import android.content.Context
 import androidx.room.Room
+import coil3.ImageLoader
+import coil3.request.crossfade
 import com.alyak.detector.feature.family.data.api.FamilyService
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
 import com.alyak.detector.feature.map.data.api.MapApi
@@ -10,7 +12,6 @@ import com.alyak.detector.feature.pill.data.model.local.dao.RecentSearchDao
 import com.alyak.detector.feature.pill.data.model.local.database.PillDatabase
 import com.alyak.detector.feature.pill.data.repository.PillRepository
 import com.alyak.detector.feature.pill.data.repository.PillRepositoryImpl
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -67,5 +68,13 @@ object AppModule {
         pillApi: PillApi
     ): PillRepository {
         return PillRepositoryImpl(recentSearchDao, pillApi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideImageLoader(@ApplicationContext context: Context): ImageLoader {
+        return ImageLoader.Builder(context)
+            .crossfade(true)
+            .build()
     }
 }

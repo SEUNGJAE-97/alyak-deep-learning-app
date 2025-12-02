@@ -49,7 +49,8 @@ public class PillRepositoryCustomImpl implements PillRepositoryCustom {
                         pill.pillName.as("pillName"),
                         pillAppearance.pillClassification.as("classification"),
                         pill.pillManufacturer.as("manufacturer"),
-                        pillAppearance.pillType.as("pillType")
+                        pillAppearance.pillType.as("pillType"),
+                        pill.pillImg.as("pillImg")
                 ))
                 .from(pillAppearance)
                 .where(where)
@@ -63,6 +64,7 @@ public class PillRepositoryCustomImpl implements PillRepositoryCustom {
                         pill.id.as("pillId"),
                         pill.pillName.as("pillName"),
                         pill.pillManufacturer.as("manufacturer"),
+                        pill.pillImg.as("pillImg"),
                         pillAppearance.pillType.as("pillType"),
                         pillAppearance.pillClassification.as("classification")
                 ))

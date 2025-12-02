@@ -7,6 +7,7 @@ data class Pill(
     val classification: String?,
     val manufacturer: String?,
     val pillType: String?,
+    val pillImg: String?,
     @SerializedName("pillId") val pid: String,
 )
 

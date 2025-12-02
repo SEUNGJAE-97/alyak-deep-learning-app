@@ -82,6 +82,12 @@ class PillSearchViewModel @Inject constructor(
         }
     }
 
+    fun searchPillDetail(pid : Long){
+        viewModelScope.launch {
+            val result = repository.searchPillDetail(pid)
+        }
+    }
+
     fun clearAllHistory() {
         viewModelScope.launch {
             recentSearchDao.deleteAll()

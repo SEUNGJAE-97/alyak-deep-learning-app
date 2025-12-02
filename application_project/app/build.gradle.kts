@@ -125,4 +125,8 @@ dependencies {
     //shimer
     implementation("com.valentinilk.shimmer:compose-shimmer:1.3.3")
 
+    //coil
+    implementation("io.coil-kt.coil3:coil-compose:3.2.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.2.0")
+
 }

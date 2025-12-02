@@ -10,6 +10,7 @@ data class RecentSearchEntity(
     val manufacturer: String?,
     val type: String?,
     val classification: String?,
+    val img : String?,
     val timestamp: Long = System.currentTimeMillis() // 정렬용 시간
 )
 

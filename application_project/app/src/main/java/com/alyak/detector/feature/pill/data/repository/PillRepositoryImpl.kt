@@ -1,6 +1,7 @@
 package com.alyak.detector.feature.pill.data.repository
 
 import com.alyak.detector.feature.pill.data.api.PillApi
+import com.alyak.detector.feature.pill.data.model.MedicineDetailDto
 import com.alyak.detector.feature.pill.data.model.Pill
 import com.alyak.detector.feature.pill.data.model.local.dao.RecentSearchDao
 import com.alyak.detector.feature.pill.data.model.local.entity.RecentSearchEntity
@@ -28,6 +29,12 @@ class PillRepositoryImpl @Inject constructor(
     }
 
     /**
+     * pid로 약품의 상세정보를 가져온다.
+     * */
+    override suspend fun searchPillDetail(pid: Long): MedicineDetailDto {
+        return api.getPillDetail(pid)
+    }
+    /**
      * Entity -> Pill 변환
      * */
     override fun fetchRecentPills(): Flow<List<Pill>> {
@@ -38,7 +45,8 @@ class PillRepositoryImpl @Inject constructor(
                     classification = entity.classification,
                     manufacturer = entity.manufacturer,
                     pillType = entity.type,
-                    pid = entity.id.toString()
+                    pid = entity.id.toString(),
+                    pillImg = entity.img
                 )
             }
         }
@@ -54,7 +62,8 @@ class PillRepositoryImpl @Inject constructor(
             manufacturer = pill.manufacturer,
             type = pill.pillType,
             classification = pill.classification,
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
+            img = pill.pillImg
         )
         recentSearchDao.insertSearch(entity)
     }

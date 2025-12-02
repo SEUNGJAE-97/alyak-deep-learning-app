@@ -19,7 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
-import com.alyak.detector.feature.pill.data.model.AdditionalInfoDTO
+import com.alyak.detector.feature.pill.data.model.AdditionalInfoDto
 
 @Composable
 fun AdditionalInfoBox(
@@ -60,7 +60,7 @@ fun AdditionalInfoBox(
 
 
 @Composable
-fun AdditionalInfoSection(info: AdditionalInfoDTO) {
+fun AdditionalInfoSection(info: AdditionalInfoDto) {
     Column {
         Row(
             modifier = Modifier
@@ -106,7 +106,7 @@ fun AdditionalInfoSection(info: AdditionalInfoDTO) {
 @Preview(showBackground = true)
 fun AdditionalInfoPrev() {
     AdditionalInfoSection(
-        AdditionalInfoDTO(
+        AdditionalInfoDto(
             storageMethod = "실온 보관 1~30도",
             expiration = "2026-12-31",
             formulation = "타원형 정제",

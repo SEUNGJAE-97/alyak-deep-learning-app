@@ -13,17 +13,15 @@ import com.alyak.detector.core.model.SpecialCautionType
  * @property specialCaution 특별 주의 대상 정보
  * @property sideEffects 주요 부작용 설명
  * @property additionalInfo 보관 방법, 유효기간 등의 추가 정보
- * @property memo 사용자 메모 정보
  */
-data class MedicineDetailDTO(
-    val medicineInfo: MedicineInfoDTO,
-    val dosageInfo: DosageInfoDTO,
-    val effectsInfo: EffectsInfoDTO,
-    val alertInfo: AlertInfoDTO,
-    val specialCaution: SpecialCautionDTO,
-    val sideEffects: SideEffectsDTO,
-    val additionalInfo: AdditionalInfoDTO,
-    val memo: MemoDTO
+data class MedicineDetailDto(
+    val medicineInfo: MedicineInfoDto,
+    val dosageInfo: DosageInfoDto,
+    val effectsInfo: EffectsInfoDto,
+    val alertInfo: AlertInfoDto,
+    val specialCaution: SpecialCautionDto,
+    val sideEffects: SideEffectsDto,
+    val additionalInfo: AdditionalInfoDto,
 )
 
 /**
@@ -35,7 +33,7 @@ data class MedicineDetailDTO(
  * @property code 식별코드
  * @property category 약 분류 (예: 일반의약품)
  */
-data class MedicineInfoDTO(
+data class MedicineInfoDto(
     val name: String,
     val subName: String,
     val manufacturer: String,
@@ -50,7 +48,7 @@ data class MedicineInfoDTO(
  * @property dosageText 복용 관련 설명 텍스트
  * @property dosageTimes 복용 시간대나 특이사항 리스트
  */
-data class DosageInfoDTO(
+data class DosageInfoDto(
     val dosageText: String,
     val dosageTimes: List<MealTime>
 )
@@ -61,7 +59,7 @@ data class DosageInfoDTO(
  * @property tags 효능 태그 목록 (예: 해열, 진통)
  * @property description 효능 상세 설명
  */
-data class EffectsInfoDTO(
+data class EffectsInfoDto(
     val tags: List<String>,
     val description: String
 )
@@ -71,7 +69,7 @@ data class EffectsInfoDTO(
  * @property title 주의사항 제목
  * @property items 주의사항 목록
  */
-data class AlertInfoDTO(
+data class AlertInfoDto(
     val title: String,
     val items: List<String>
 )
@@ -83,7 +81,7 @@ data class AlertInfoDTO(
  * @property tags 주의 대상 태그 리스트 (예: 임산부, 어린이)
  * @property extraText 추가 안내문 (예: 운전자)
  */
-data class SpecialCautionDTO(
+data class SpecialCautionDto(
     val title: String,
     val tags: List<SpecialCautionType>,
     val extraText: String? = null
@@ -95,7 +93,7 @@ data class SpecialCautionDTO(
  * @property title 부작용 제목
  * @property description 부작용 상세 설명
  */
-data class SideEffectsDTO(
+data class SideEffectsDto(
     val title: String,
     val description: String
 )
@@ -108,19 +106,10 @@ data class SideEffectsDTO(
  * @property formulation 제형 설명 (예: 타원형 정제)
  * @property packaging 포장 단위 (예: 10정, 20정, 100정)
  */
-data class AdditionalInfoDTO(
+data class AdditionalInfoDto(
     val storageMethod: String,
     val expiration: String,
     val formulation: String,
     val packaging: String
-)
-
-/**
- * 사용자가 남기는 메모 정보를 담는 데이터 클래스.
- *
- * @property content 메모 내용 텍스트
- */
-data class MemoDTO(
-    val content: String
 )
 
