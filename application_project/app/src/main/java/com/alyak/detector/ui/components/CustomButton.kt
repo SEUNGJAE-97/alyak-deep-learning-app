@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,8 +30,8 @@ fun CustomButton(
     modifier: Modifier = Modifier,
     image: Painter? = null,
     contentDescription: String? = null,
-    containerColor: Color = Color.Gray,
-    contentColor: Color = Color.White,
+    containerColor: Color? = null,
+    contentColor: Color? = null,
     shape: Shape = RoundedCornerShape(24.dp),
     textColor: Color = Color.Gray,
     imageSize: Dp = 32.dp
@@ -39,11 +40,11 @@ fun CustomButton(
         onClick = onClick,
         modifier = modifier.padding(8.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor,
-            contentColor = contentColor
+            containerColor = containerColor ?: MaterialTheme.colorScheme.primary,
+            contentColor = contentColor ?: MaterialTheme.colorScheme.onPrimary
         ),
         shape = shape,
-        contentPadding = PaddingValues(15.dp)
+        contentPadding = PaddingValues(15.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (image != null) {
@@ -71,7 +72,9 @@ fun CustomButton(
 @Composable
 fun CustomButtonPreview() {
     CustomButton(
-        text = "미리보기 버튼",
-        onClick = {}
+        text = "",
+        onClick = {},
+        containerColor = Color.White,
+        contentColor = Color.Black,
     )
 }

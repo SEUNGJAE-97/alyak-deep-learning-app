@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: alyak-api-server
+
+  # Redis Configuration
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DATABASE:0}
+  
+  # Email Configuration
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        debug: ${SPRING_MAIL_PROPERTIES_MAIL_DEBUG:true}
+        smtp:
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
+            required: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED:true}
+          ssl:
+            trust: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_TRUST:smtp.gmail.com}
+  
+  # Database Configuration (will be overridden by environment variables in Docker)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/alyak?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
+  
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SPRING_JPA_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: ${SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL:true}
+        dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.MySQL8Dialect}
+    # Ensure data.sql runs AFTER Hibernate creates tables
+    defer-datasource-initialization: true
+
+  # SQL initialization configuration
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+
+# Swagger Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:local-dev-secret-please-change-at-least-32-bytes-long-xxxx}
+  expiration-time: ${JWT_EXPIRATION_TIME:3600000}
+  header: ${JWT_HEADER:Authorization}
+  prefix: ${JWT_PREFIX:Bearer }
+
+# Valhalla Configuration
+valhalla:
+  host: ${VALHALLA_HOST:http://localhost:8002}
+
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web.filter: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
+    com.github.seungjae97.alyak.alyakapiserver.domain.auth: DEBUG
+    com.github.seungjae97.alyak.alyakapiserver.config: DEBUG

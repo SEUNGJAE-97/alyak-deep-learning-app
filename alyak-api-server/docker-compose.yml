@@ -1,0 +1,107 @@
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: alyak-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: alyak
+      MYSQL_USER: alyak_user
+      MYSQL_PASSWORD: alyak_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - alyak-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: alyak-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - alyak-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      timeout: 20s
+      retries: 10
+
+  # Spring Boot Application
+  alyak-api:
+    env_file: .env
+    build: .
+    container_name: alyak-api-server
+    ports:
+      - "8080:8080"
+    environment:
+      # Database Configuration
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/alyak?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: alyak_user
+      SPRING_DATASOURCE_PASSWORD: alyak_password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+      
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD:
+      REDIS_DATABASE: 0
+      
+      # Email Configuration
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: sjhahaha53@gmail.com
+      SPRING_MAIL_PASSWORD: zxdhpueaufcqzyft
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
+      
+      # JWT Configuration
+      JWT_SECRET: your-super-secret-key-here-change-in-production
+      JWT_EXPIRATION_TIME: 3600000
+      JWT_HEADER: Authorization
+      JWT_PREFIX: Bearer
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - alyak-network
+    restart: unless-stopped
+
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    container_name: alyak-valhalla
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./valhalla_data:/custom_files
+    environment:
+      # 한국 지도 데이터 자동 다운로드 및 빌드 설정
+      - tile_urls=https://download.geofabrik.de/asia/south-korea-latest.osm.pbf
+      - build_elevation=True  # 도보 경로를 위한 고도 데이터 포함
+      - build_admins=True     # 행정 구역 데이터
+      - build_time_zones=True
+      - server_threads=2      # CPU 사용량에 따라 조절 (기본 2)
+    networks:
+      - alyak-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  alyak-network:
+    driver: bridge 

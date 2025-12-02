@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">application_project</string>
-    <string name="kakao_map_key">6814252d83b8e8a3d121190e2089e8ac</string>
-    <string name="REST_API_KEY">01fe7b3be8f041eee450888fae77fc21</string>
-
+    <string name="caution_pregnant">임산부</string>
+    <string name="caution_child">어린이</string>
+    <string name="caution_elderly">고령자</string>
+    <string name="caution_driver">운전자</string>
 </resources>
