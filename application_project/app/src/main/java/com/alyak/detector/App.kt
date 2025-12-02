@@ -8,6 +8,6 @@ import dagger.hilt.android.HiltAndroidApp
 class App : Application(){
     override fun onCreate() {
         super.onCreate()
-        KakaoMapSdk.init(this, getString(R.string.kakao_map_key));
+        KakaoMapSdk.init(this, BuildConfig.KAKAO_MAP_KEY);
     }
 }

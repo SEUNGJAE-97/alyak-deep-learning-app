@@ -26,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.alyak.detector.BuildConfig
 import com.alyak.detector.R
 import com.alyak.detector.feature.map.data.model.LocationDto
 import com.kakao.vectormap.KakaoMap
@@ -88,7 +89,7 @@ fun KakaoMapView(
             val position = LatLng.from(loc.latitude, loc.longitude)
             kakaoMap.moveCamera(CameraUpdateFactory.newCenterPosition(position, 15))
 
-            val apiKey = "KakaoAK ${context.getString(R.string.REST_API_KEY)}"
+            val apiKey = "KakaoAK ${BuildConfig.REST_API_KEY}"
             val categoryGroupCode = "HP8"
             val radius = 2000
             viewModel.fetchPlaces(
@@ -140,7 +141,7 @@ fun KakaoMapView(
                 val cameraAnimation = CameraAnimation.from(500)
                 kakaoMap.moveCamera(cameraUpdate, cameraAnimation)
                 // 위치 갱신 시 주변 장소 갱신
-                val apiKey = "KakaoAK ${context.getString(R.string.REST_API_KEY)}"
+                val apiKey = "KakaoAK ${BuildConfig.REST_API_KEY}"
                 viewModel.fetchPlaces(apiKey, "HP8", location.longitude.toString(), location.latitude.toString(), 2000)
             }
         }
