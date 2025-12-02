@@ -34,4 +34,10 @@ public class PillController {
     ) {
         return ResponseEntity.ok(pillService.searchPill(req));
     }
+
+    @GetMapping("/detail")
+    @Operation(summary = "상세검색", description = "pill_Id 값으로 하나의 알약에 대해 상세 정보를 조회한다.")
+    public ResponseEntity<?> detailPill(@RequestParam Long pillId) {
+        return ResponseEntity.ok(pillService.detailPill(pillId));
+    }
 }

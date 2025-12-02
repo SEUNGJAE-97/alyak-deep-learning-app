@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillAppearanceResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillDetailResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillInfoResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.SimplePillInfo;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
@@ -116,6 +117,11 @@ public class PillServiceImpl implements PillService {
     @Override
     public List<SimplePillInfo> searchPill(PillSearchRequest pillSearchRequest) {
         return pillRepository.searchAppearance(pillSearchRequest);
+    }
+
+    @Override
+    public PillDetailResponse detailPill(Long pillId) {
+        return pillRepository.detailPill(pillId);
     }
 
     private Boolean callIdentifyAPI(Long itemSeq) {
