@@ -309,11 +309,26 @@ fun PillSearchScreen(
                 }
 
                 is RecentSearchUiState.Error -> {
-                    Text(
-                        text = "데이터를 불러오지 못했습니다.",
-                        color = Color.Red,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 250.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(120.dp)
+                                .padding(bottom = 16.dp)
+                        )
+                        Text(
+                            text = "데이터를 불러오지 못했습니다.",
+                            fontSize = 16.sp,
+                            color = Color.Gray
+                        )
+                    }
                 }
 
                 is RecentSearchUiState.Success -> {

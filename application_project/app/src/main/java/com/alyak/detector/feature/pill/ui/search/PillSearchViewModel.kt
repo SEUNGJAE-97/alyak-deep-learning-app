@@ -3,6 +3,7 @@ package com.alyak.detector.feature.pill.ui.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alyak.detector.feature.pill.data.model.Pill
+import com.alyak.detector.feature.pill.data.model.local.dao.RecentSearchDao
 import com.alyak.detector.feature.pill.data.repository.PillRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
@@ -33,7 +34,8 @@ sealed interface SearchUiState {
 
 @HiltViewModel
 class PillSearchViewModel @Inject constructor(
-    private val repository: PillRepository
+    private val repository: PillRepository,
+    private val recentSearchDao: RecentSearchDao
 ) : ViewModel() {
     val recentSearchState: StateFlow<RecentSearchUiState> = repository.fetchRecentPills()
         .map { pills ->
@@ -51,7 +53,8 @@ class PillSearchViewModel @Inject constructor(
             initialValue = RecentSearchUiState.Loading
         )
 
-    private val _searchUiState: MutableStateFlow<SearchUiState> = MutableStateFlow(SearchUiState.Idle)
+    private val _searchUiState: MutableStateFlow<SearchUiState> =
+        MutableStateFlow(SearchUiState.Idle)
     val searchUiState: StateFlow<SearchUiState> = _searchUiState.asStateFlow()
 
     fun searchPills(shape: String, color: String, line: String) {
@@ -76,6 +79,12 @@ class PillSearchViewModel @Inject constructor(
             } catch (e: Exception) {
                 _searchUiState.value = SearchUiState.Error(e.message ?: "Unknown Error")
             }
+        }
+    }
+
+    fun clearAllHistory() {
+        viewModelScope.launch {
+            recentSearchDao.deleteAll()
         }
     }
 }
