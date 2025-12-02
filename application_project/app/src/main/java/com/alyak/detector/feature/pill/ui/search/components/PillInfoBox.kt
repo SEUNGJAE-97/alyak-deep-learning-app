@@ -80,7 +80,7 @@ fun PillInfoBox(
                 if (isLoading) {
                     TextPlaceholder(height = 16.dp, widthFraction = 0.5f)
                 } else {
-                    Text(pillInfo.classification, fontWeight = FontWeight.Thin)
+                    Text(pillInfo.classification ?: "정보없음", fontWeight = FontWeight.Thin)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -101,7 +101,7 @@ fun PillInfoBox(
                         )
                     } else {
                         Text(
-                            "제조사 : ${pillInfo.manufacturer}",
+                            "제조사 : ${pillInfo.manufacturer ?: "정보없음"}",
                             fontWeight = FontWeight.Thin,
                             fontSize = 10.sp
                         )
@@ -132,7 +132,7 @@ fun PillInfoBox(
                     )
                 } else {
                     StatusBadge(
-                        text = pillInfo.pillType,
+                        text = pillInfo.pillType ?: " ",
                         backgroundColor = colorResource(R.color.primaryBlue),
                         textColor = colorResource(R.color.white)
                     )

@@ -7,9 +7,9 @@ import androidx.room.PrimaryKey
 data class RecentSearchEntity(
     @PrimaryKey(autoGenerate = false) val id: Long,
     val pillName: String,
-    val manufacturer: String,
-    val type: String,
-    val classification: String,
+    val manufacturer: String?,
+    val type: String?,
+    val classification: String?,
     val timestamp: Long = System.currentTimeMillis() // 정렬용 시간
 )
 

@@ -196,7 +196,7 @@ fun PillSearchScreen(
                 onQueryChange = { searchQuery = it },
                 onSearch = { text ->
                     if (text.isNotBlank()) {
-                        viewModel.findPillsByName(text)
+                        viewModel.findPillsByName(text.trim())
                         scope.launch {
                             scaffoldState.bottomSheetState.expand()
                         }
@@ -317,10 +317,33 @@ fun PillSearchScreen(
                 }
 
                 is RecentSearchUiState.Success -> {
-                    RecentSearch(
-                        recentPills = state.pills,
-                        onItemClick = { /* 이벤트 처리 */ }
-                    )
+                    if (state.pills.isEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 250.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .padding(bottom = 16.dp)
+                            )
+                            Text(
+                                text = "최근 검색 기록이 존재하지 않습니다.",
+                                fontSize = 16.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    } else {
+                        RecentSearch(
+                            recentPills = state.pills,
+                            onItemClick = { /* 이벤트 처리 */ }
+                        )
+                    }
                 }
             }
         }
