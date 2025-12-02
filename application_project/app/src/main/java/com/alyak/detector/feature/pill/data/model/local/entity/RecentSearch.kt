@@ -9,7 +9,7 @@ data class RecentSearchEntity(
     val pillName: String,
     val manufacturer: String,
     val type: String,
-    val ingredient: String,
+    val classification: String,
     val timestamp: Long = System.currentTimeMillis() // 정렬용 시간
 )
 

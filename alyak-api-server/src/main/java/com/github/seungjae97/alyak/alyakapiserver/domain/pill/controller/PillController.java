@@ -24,8 +24,7 @@ public class PillController {
     @GetMapping("/find")
     @Operation(summary = "검색", description = "알약명을 기준으로 세부정보를 조회한다.")
     public ResponseEntity<?> findPill(@RequestParam String pillName) {
-        pillService.findPill(pillName);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(pillService.findPill(pillName));
     }
 
     @GetMapping("/search")

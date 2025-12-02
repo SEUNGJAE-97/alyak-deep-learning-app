@@ -46,11 +46,28 @@ public class PillRepositoryCustomImpl implements PillRepositoryCustom {
                 .select(Projections.fields(SimplePillInfo.class,
                         pillAppearance.pillId.as("pillId"),
                         pill.pillName.as("pillName"),
-                        pill.pillIngredient.as("ingredient"),
-                        pill.pillManufacturer.as("manufacturer")
+                        pillAppearance.pillClassification.as("classification"),
+                        pill.pillManufacturer.as("manufacturer"),
+                        pillAppearance.pillType.as("pillType")
                 ))
                 .from(pillAppearance)
                 .where(where)
+                .fetch();
+    }
+
+    @Override
+    public List<SimplePillInfo> findByPillNameWithType(String pillName) {
+        return queryFactory
+                .select(Projections.fields(SimplePillInfo.class,
+                        pill.id.as("pillId"),
+                        pill.pillName.as("pillName"),
+                        pill.pillManufacturer.as("manufacturer"),
+                        pillAppearance.pillType.as("pillType"),
+                        pillAppearance.pillClassification.as("classification")
+                ))
+                .from(pill)
+                .leftJoin(pillAppearance).on(pill.id.eq(pillAppearance.pillId))
+                .where(pill.pillName.containsIgnoreCase(pillName))
                 .fetch();
     }
 }

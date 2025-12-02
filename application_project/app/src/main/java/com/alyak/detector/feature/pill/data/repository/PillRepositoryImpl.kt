@@ -1,9 +1,9 @@
 package com.alyak.detector.feature.pill.data.repository
 
 import com.alyak.detector.feature.pill.data.api.PillApi
-import com.alyak.detector.feature.pill.data.model.local.entity.RecentSearchEntity
 import com.alyak.detector.feature.pill.data.model.Pill
 import com.alyak.detector.feature.pill.data.model.local.dao.RecentSearchDao
+import com.alyak.detector.feature.pill.data.model.local.entity.RecentSearchEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -35,9 +35,9 @@ class PillRepositoryImpl @Inject constructor(
             entities.map { entity ->
                 Pill(
                     name = entity.pillName,
-                    ingredient = entity.ingredient,
+                    classification = entity.classification,
                     manufacturer = entity.manufacturer,
-                    category = entity.type,
+                    pillType = entity.type,
                     pid = entity.id.toString()
                 )
             }
@@ -52,8 +52,8 @@ class PillRepositoryImpl @Inject constructor(
             id = pill.pid.toLongOrNull() ?: 0L,
             pillName = pill.name,
             manufacturer = pill.manufacturer,
-            type = pill.category,
-            ingredient = pill.ingredient,
+            type = pill.pillType,
+            classification = pill.classification,
             timestamp = System.currentTimeMillis()
         )
         recentSearchDao.insertSearch(entity)

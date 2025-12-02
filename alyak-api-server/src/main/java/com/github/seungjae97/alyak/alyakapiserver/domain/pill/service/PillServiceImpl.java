@@ -108,20 +108,9 @@ public class PillServiceImpl implements PillService {
             }
 
             pillRepository.saveAll(pills);
-            pillList = pillRepository.findByPillName(pillName);
         }
         // 2.1 사용자에게 알약 정보 전달
-        List<SimplePillInfo> result = new ArrayList<>();
-        for (Pill pill : pillList) {
-            result.add(SimplePillInfo.builder()
-                    .pillId(pill.getId())
-                    .pillName(pill.getPillName())
-                    .ingredient(pill.getPillIngredient())
-                    .manufacturer(pill.getPillManufacturer())
-                    .build());
-
-        }
-        return result;
+        return pillRepository.findByPillNameWithType(pillName);
     }
 
     @Override

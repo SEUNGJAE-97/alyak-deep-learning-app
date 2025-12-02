@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface PillRepositoryCustom {
     List<SimplePillInfo> searchAppearance(PillSearchRequest pillSearchRequest);
+    List<SimplePillInfo> findByPillNameWithType(String pillName);
 }

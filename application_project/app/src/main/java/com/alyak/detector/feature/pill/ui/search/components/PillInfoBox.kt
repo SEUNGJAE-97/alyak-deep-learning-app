@@ -80,19 +80,37 @@ fun PillInfoBox(
                 if (isLoading) {
                     TextPlaceholder(height = 16.dp, widthFraction = 0.5f)
                 } else {
-                    Text(pillInfo.ingredient, fontWeight = FontWeight.Thin)
+                    Text(pillInfo.classification, fontWeight = FontWeight.Thin)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row {
                     if (isLoading) {
-                        Box(modifier = Modifier.width(80.dp).height(12.dp).background(Color.LightGray))
+                        Box(
+                            modifier = Modifier
+                                .width(80.dp)
+                                .height(12.dp)
+                                .background(Color.LightGray)
+                        )
                         Spacer(modifier = Modifier.width(10.dp))
-                        Box(modifier = Modifier.width(80.dp).height(12.dp).background(Color.LightGray))
+                        Box(
+                            modifier = Modifier
+                                .width(80.dp)
+                                .height(12.dp)
+                                .background(Color.LightGray)
+                        )
                     } else {
-                        Text("제조사 : ${pillInfo.manufacturer}", fontWeight = FontWeight.Thin, fontSize = 10.sp)
+                        Text(
+                            "제조사 : ${pillInfo.manufacturer}",
+                            fontWeight = FontWeight.Thin,
+                            fontSize = 10.sp
+                        )
                         Spacer(modifier = Modifier.width(5.dp))
-                        Text("식별 코드 : ${pillInfo.pid}", fontWeight = FontWeight.Thin, fontSize = 10.sp)
+                        Text(
+                            "식별 코드 : ${pillInfo.pid}",
+                            fontWeight = FontWeight.Thin,
+                            fontSize = 10.sp
+                        )
                     }
                 }
             }
@@ -106,10 +124,15 @@ fun PillInfoBox(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (isLoading) {
-                    Box(modifier = Modifier.height(20.dp).width(50.dp).background(Color.LightGray))
+                    Box(
+                        modifier = Modifier
+                            .height(20.dp)
+                            .width(50.dp)
+                            .background(Color.LightGray)
+                    )
                 } else {
                     StatusBadge(
-                        text = pillInfo.category,
+                        text = pillInfo.pillType,
                         backgroundColor = colorResource(R.color.primaryBlue),
                         textColor = colorResource(R.color.white)
                     )
@@ -118,6 +141,7 @@ fun PillInfoBox(
         }
     }
 }
+
 @Composable
 fun TextPlaceholder(height: Dp, widthFraction: Float) {
     Box(

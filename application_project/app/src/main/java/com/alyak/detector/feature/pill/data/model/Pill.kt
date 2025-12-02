@@ -1,10 +1,12 @@
 package com.alyak.detector.feature.pill.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class Pill(
-    val name: String,
-    val ingredient: String,
+    @SerializedName("pillName") val name: String,
+    val classification: String,
     val manufacturer: String,
-    val category: String,
-    val pid: String,
+    val pillType: String,
+    @SerializedName("pillId") val pid: String,
 )
 
