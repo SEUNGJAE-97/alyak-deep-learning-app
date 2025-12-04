@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,6 +23,13 @@ public class PillDetailResponse {
     private String pillInteractive;
     private String pillAdverseReaction;
     private String manufacturer;
+
+    // 누락된 속성값
+    private String pillClassification;
+    private String pillType;
+    private List<String> efficacyTags;
+    private List<String> specialCautionTags;
+    private List<String> alertItems;
 }
 
 

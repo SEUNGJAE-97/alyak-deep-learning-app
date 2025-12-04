@@ -1,6 +1,5 @@
 package com.alyak.detector.feature.pill.data.model
 
-import com.alyak.detector.core.model.MealTime
 import com.alyak.detector.core.model.SpecialCautionType
 
 /**
@@ -12,7 +11,6 @@ import com.alyak.detector.core.model.SpecialCautionType
  * @property alertInfo 주의사항 및 부작용 정보
  * @property specialCaution 특별 주의 대상 정보
  * @property sideEffects 주요 부작용 설명
- * @property additionalInfo 보관 방법, 유효기간 등의 추가 정보
  */
 data class MedicineDetailDto(
     val medicineInfo: MedicineInfoDto,
@@ -21,36 +19,33 @@ data class MedicineDetailDto(
     val alertInfo: AlertInfoDto,
     val specialCaution: SpecialCautionDto,
     val sideEffects: SideEffectsDto,
-    val additionalInfo: AdditionalInfoDto,
 )
 
 /**
  * 약 기본 정보를 담는 데이터 클래스.
  *
  * @property name 약품명 (예: 타이레놀 500mg)
- * @property subName 부가적인 보조명칭 (예: 아세트 아미노펜)
+ * @property classification 분류(해열, 진통, 소염제)
  * @property manufacturer 제조사 이름
- * @property code 식별코드
+ * @property pillId 식별코드
  * @property category 약 분류 (예: 일반의약품)
  */
 data class MedicineInfoDto(
     val name: String,
-    val subName: String,
+    val classification: String,
     val manufacturer: String,
-    val code: String,
+    val pillId: Long,
     val category: String,
-    val img: Int
+    val img: String?
 )
 
 /**
  * 복용 정보를 담는 데이터 클래스.
  *
  * @property dosageText 복용 관련 설명 텍스트
- * @property dosageTimes 복용 시간대나 특이사항 리스트
  */
 data class DosageInfoDto(
     val dosageText: String,
-    val dosageTimes: List<MealTime>
 )
 
 /**
@@ -98,18 +93,60 @@ data class SideEffectsDto(
     val description: String
 )
 
-/**
- * 추가적인 약 정보를 담는 데이터 클래스.
- *
- * @property storageMethod 보관 방법 (예: 실온 보관 1~30도)
- * @property expiration 유효기간 날짜
- * @property formulation 제형 설명 (예: 타원형 정제)
- * @property packaging 포장 단위 (예: 10정, 20정, 100정)
- */
-data class AdditionalInfoDto(
-    val storageMethod: String,
-    val expiration: String,
-    val formulation: String,
-    val packaging: String
+data class ServerResponsePillDetail(
+    val pillId: Long,
+    val pillName: String,
+    val pillImg: String?,
+    val pillDescription: String,
+    val userMethod: String,
+    val pillEfficacy: String,
+    val pillWarn: String,
+    val pillCaution: String,
+    val pillInteractive: String,
+    val pillAdverseReaction: String,
+    val manufacturer: String,
+    val pillClassification: String?,
+    val pillType: String?,
+    val efficacyTags: List<String>?,
+    val specialCautionTags: List<String>?,
+    val alertItems: List<String>?
 )
 
+fun ServerResponsePillDetail.toDomain(): MedicineDetailDto {
+    return MedicineDetailDto(
+        medicineInfo = MedicineInfoDto(
+            name = this.pillName,
+            classification = this.pillClassification ?: "",
+            manufacturer = this.manufacturer,
+            pillId = this.pillId,
+            category = this.pillType ?: "",
+            img = this.pillImg
+        ),
+        dosageInfo = DosageInfoDto(
+            dosageText = this.userMethod,
+        ),
+        effectsInfo = EffectsInfoDto(
+            tags = this.efficacyTags ?: emptyList(),
+            description = this.pillDescription
+        ),
+        alertInfo = AlertInfoDto(
+            title = "주의사항",
+            items = this.alertItems ?: emptyList()
+        ),
+        specialCaution = SpecialCautionDto(
+            title = "특별 주의 대상",
+            tags = this.specialCautionTags?.map { tag ->
+                when (tag) {
+                    "임산부/수유부" -> SpecialCautionType.PREGNANT
+                    else -> SpecialCautionType.PREGNANT
+                }
+            } ?: emptyList(),
+            extraText = null
+        ),
+        sideEffects = SideEffectsDto(
+            title = "주요 부작용",
+            description = this.pillAdverseReaction
+        )
+    )
+
+}

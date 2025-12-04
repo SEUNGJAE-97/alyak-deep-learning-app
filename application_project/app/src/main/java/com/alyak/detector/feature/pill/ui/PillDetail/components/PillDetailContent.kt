@@ -1,6 +1,5 @@
 package com.alyak.detector.feature.pill.ui.PillDetail.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,241 +19,36 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.alyak.detector.R
-import com.alyak.detector.core.model.MealTime
-import com.alyak.detector.core.model.SpecialCautionType
-import com.alyak.detector.feature.pill.data.model.AlertInfoDto
-import com.alyak.detector.feature.pill.data.model.DosageInfoDto
-import com.alyak.detector.feature.pill.data.model.EffectsInfoDto
 import com.alyak.detector.feature.pill.data.model.MedicineDetailDto
-import com.alyak.detector.feature.pill.data.model.MedicineInfoDto
-import com.alyak.detector.feature.pill.data.model.SideEffectsDto
-import com.alyak.detector.feature.pill.data.model.SpecialCautionDto
-import com.alyak.detector.ui.components.StatusBadge
-import com.alyak.detector.ui.theme.CardBackground
 
 @Composable
-fun CardBox(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+fun PillDetailContent(
+    medicineDetail: MedicineDetailDto
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(colorResource(R.color.white))
-            .padding(vertical = 8.dp),
-        shape = RoundedCornerShape(26.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Box(Modifier.padding(20.dp)) {
-            content()
-        }
-    }
-}
-
-/**
- * @param icon : 아이콘
- * @param title : 제목
- * @param content : 내용
- * */
-@Composable
-fun TitledSection(
-    icon: ImageVector,
-    title: String,
-    content: @Composable () -> Unit
-) {
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = colorResource(R.color.primaryBlue))
-            Spacer(Modifier.width(8.dp))
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        }
-        Spacer(Modifier.height(8.dp))
-        content()
-    }
-}
-
-/**
- *@param tags : StatusBadge에 tags를 담아 출력
- * */
-@Composable
-fun <T> TagList(
-    tags: List<T>,
-    labelMapper: @Composable (T) -> Pair<String, Painter?>
-) {
-    Row(Modifier.horizontalScroll(rememberScrollState())) {
-        tags.forEach { tag ->
-            val (text, icon) = labelMapper(tag)
-            StatusBadge(
-                text,
-                icon,
-                colorResource(R.color.primaryBlue).copy(alpha = 0.5f),
-                colorResource(R.color.primaryBlue)
-            )
-            Spacer(Modifier.width(6.dp))
-        }
-    }
-}
-
-/**
- * 복용 알림 등록, 이력 확인 버튼
- * */
-@Composable
-fun FunctionButtonRow() {
-    Column(Modifier.fillMaxWidth()) {
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.primaryBlue)),
-            onClick = { }
-        ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.Notifications,
-                    contentDescription = null,
-                    Modifier.size(20.dp),
-                    tint = colorResource(R.color.white)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text("복약 알림 등록", color = Color.White, modifier = Modifier.weight(1f))
-                Icon(
-                    Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    modifier = Modifier.size(30.dp),
-                    tint = colorResource(R.color.white)
-                )
-            }
-
-        }
-        Spacer(Modifier.height(6.dp))
-        OutlinedButton(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            onClick = { },
-        ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                Icon(
-                    painterResource(R.drawable.history),
-                    contentDescription = null,
-                    Modifier.size(20.dp),
-                    tint = colorResource(R.color.primaryBlue)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text("복용 이력 확인", color = colorResource(R.color.primaryBlue), modifier = Modifier.weight(1f))
-                Icon(
-                    Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    modifier = Modifier.size(30.dp),
-                    tint = colorResource(R.color.primaryBlue)
-                )
-            }
-        }
-    }
-}
-
-/**
- * @param title 주의 사항
- * @param items 주의 사항 세부 정보 (알레르기 반응 주의, 과다 복용 금지)
- * */
-@Composable
-fun AlertBox(
-    title: String,
-    items: List<String>
-) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFFDF0F0), RoundedCornerShape(16.dp))
-            .padding(16.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFD65A54))
-            Spacer(Modifier.width(8.dp))
-            Text(title, fontWeight = FontWeight.Bold, color = Color(0xFFD65A54))
-        }
-        Spacer(Modifier.height(8.dp))
-        Column {
-            items.forEach {
-                Text("• $it", fontSize = 15.sp, color = Color(0xFFD65A54))
-            }
-        }
-    }
-}
-
-
-@Composable
-@Preview(showBackground = true, heightDp = 2000)
-fun FullPillDetailScreenPreview() {
-    val medicineDetail = MedicineDetailDto(
-        medicineInfo = MedicineInfoDto(
-            name = "타이레놀 500mg",
-            classification = "아세트 아미노펜",
-            manufacturer = "한국제약",
-            pillId = 8884888,
-            category = "일반의약품",
-            img = "R.drawable.pill"
-        ),
-        dosageInfo = DosageInfoDto(
-            dosageText = "하루 3회, 식후 30분 내 복용",
-        ),
-        effectsInfo = EffectsInfoDto(
-            tags = listOf("해열", "진통"),
-            description = "감기 증상 완화 및 통증 완화에 효과가 있음"
-        ),
-        alertInfo = AlertInfoDto(
-            title = "주의사항",
-            items = listOf("알레르기 반응 주의", "과다 복용 금지")
-        ),
-        specialCaution = SpecialCautionDto(
-            title = "특별 주의 대상",
-            tags = listOf(SpecialCautionType.PREGNANT, SpecialCautionType.DRIVER),
-            extraText = "운전 시 주의가 필요"
-        ),
-        sideEffects = SideEffectsDto(
-            title = "주요 부작용",
-            description = "두통, 어지러움, 위장 장애 등이 발생할 수 있음"
-        ),
-    )
-
     Column(
         Modifier
             .verticalScroll(rememberScrollState())
@@ -344,6 +137,7 @@ fun FullPillDetailScreenPreview() {
                         Text(medicineDetail.dosageInfo.dosageText, fontSize = 15.sp)
                         Spacer(Modifier.height(10.dp))
                     }
+                    // dosageTimes가 emptyList()로 오더라도 구조는 유지합니다.
                     Row(
                         modifier = Modifier.padding(4.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -356,7 +150,7 @@ fun FullPillDetailScreenPreview() {
                             modifier = Modifier.padding(end = 8.dp)
                         )
                         Spacer(Modifier.width(18.dp))
-
+                        // medicineDetail.dosageInfo.dosageTimes를 사용하여 시간대 태그 표시
                     }
                     Row(
                         modifier = Modifier.padding(4.dp)
@@ -407,7 +201,7 @@ fun FullPillDetailScreenPreview() {
                     medicineDetail.specialCaution.tags,
                     { tag -> Pair(stringResource(tag.labelResId), painterResource(tag.iconResId)) })
                 Spacer(Modifier.height(8.dp))
-
+                // medicineDetail.specialCaution.extraText (null일 수 있음) 처리 로직 추가 가능
             }
         }
 

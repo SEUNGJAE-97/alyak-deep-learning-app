@@ -174,7 +174,12 @@ fun PillSearchScreen(
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 items(pills) { pill ->
-                                    PillInfoBox(pill, onClick = {viewModel.searchPillDetail(pill.pid.toLong())})
+                                    PillInfoBox(
+                                        pill,
+                                        onClick = {
+                                            navController.navigate("PillDetailScreen/${pill.pid}")
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -360,7 +365,9 @@ fun PillSearchScreen(
                     } else {
                         RecentSearch(
                             recentPills = state.pills,
-                            onItemClick = { pill ->  viewModel.searchPillDetail(pill.pid.toLong()) }
+                            onItemClick = { pill ->
+                                navController.navigate("PillDetailScreen/${pill.pid}")
+                            }
                         )
                     }
                 }
