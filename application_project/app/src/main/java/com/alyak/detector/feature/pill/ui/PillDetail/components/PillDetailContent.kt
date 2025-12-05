@@ -1,5 +1,6 @@
 package com.alyak.detector.feature.pill.ui.PillDetail.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -31,6 +32,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,6 +54,8 @@ import com.alyak.detector.feature.pill.data.model.MedicineDetailDto
 fun PillDetailContent(
     medicineDetail: MedicineDetailDto
 ) {
+    var isSideEffectExpanded by remember { mutableStateOf(false) }
+
     Column(
         Modifier
             .verticalScroll(rememberScrollState())
@@ -128,40 +135,8 @@ fun PillDetailContent(
                         modifier = Modifier.padding(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Default.Schedule,
-                            contentDescription = null,
-                            tint = colorResource(R.color.primaryBlue),
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
                         Text(medicineDetail.dosageInfo.dosageText, fontSize = 15.sp)
                         Spacer(Modifier.height(10.dp))
-                    }
-                    // dosageTimes가 emptyList()로 오더라도 구조는 유지합니다.
-                    Row(
-                        modifier = Modifier.padding(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.CalendarMonth,
-                            contentDescription = null,
-                            tint = colorResource(R.color.primaryBlue),
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                        Spacer(Modifier.width(18.dp))
-                        // medicineDetail.dosageInfo.dosageTimes를 사용하여 시간대 태그 표시
-                    }
-                    Row(
-                        modifier = Modifier.padding(4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.WaterDrop,
-                            contentDescription = null,
-                            tint = Color(0xFF7262FD)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("충분한 물과 함께 복용")
                     }
                 }
             }
@@ -201,25 +176,30 @@ fun PillDetailContent(
                     medicineDetail.specialCaution.tags,
                     { tag -> Pair(stringResource(tag.labelResId), painterResource(tag.iconResId)) })
                 Spacer(Modifier.height(8.dp))
-                // medicineDetail.specialCaution.extraText (null일 수 있음) 처리 로직 추가 가능
             }
         }
 
         //  주요 부작용
         CardBox {
             TitledSection(Icons.Default.ReportProblem, medicineDetail.sideEffects.title) {
-                Column {
-                    Text(medicineDetail.sideEffects.description, fontSize = 14.sp)
+                Column(
+                    modifier = Modifier.animateContentSize()
+                ) {
+                    Text(
+                        medicineDetail.sideEffects.description,
+                        fontSize = 14.sp,
+                        maxLines = if (isSideEffectExpanded) Int.MAX_VALUE else 3,
+                    )
                     Spacer(Modifier.height(6.dp))
                     Button(
-                        onClick = { /* TODO: 더보기 기능 */ },
+                        onClick = { isSideEffectExpanded = !isSideEffectExpanded },
                         modifier = Modifier
                             .align(Alignment.End)
                             .fillMaxWidth(),
                         shape = RoundedCornerShape(24),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F5F9))
                     ) {
-                        Text("더 많은 주의사항 보기", color = Color(0xFF7262FD), fontSize = 13.sp)
+                        Text(if (isSideEffectExpanded) "접기" else "더 많은 주의사항 보기", color = Color(0xFF7262FD), fontSize = 13.sp)
                     }
                 }
             }

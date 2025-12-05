@@ -156,34 +156,16 @@ public class PillServiceImpl implements PillService {
 
     @Override
     public PillDetailResponse detailPill(Long pillId) {
-        Pill pill = pillRepository.findById(pillId)
+        PillDetailResponse response = pillRepository.detailPill(pillId)
                 .orElseThrow(() -> new BusinessException(BusinessError.DONT_EXIST_PILL));
+        List<String> efficacyTags = extractEfficacyTags(response.getPillEfficacy());
+        List<String> specialCautionTags = extractSpecialCautionTags(response.getPillCaution());
+        List<String> alertItems = parseAlertItems(response.getPillWarn(), response.getPillInteractive());
 
-        PillAppearance pillAppearance = pillAppearanceRepository.findById(pillId).orElseThrow(() -> new BusinessException(BusinessError.DONT_EXIST_PILL));
-
-        List<String> efficacyTags = extractEfficacyTags(pill.getPillEfficacy());
-        List<String> specialCautionTags = extractSpecialCautionTags(pill.getPillCaution());
-        List<String> alertItems = parseAlertItems(pill.getPillWarn(), pill.getPillInteractive());
-
-
-        return PillDetailResponse.builder()
-                .pillId(pill.getId())
-                .pillName(pill.getPillName())
-                .pillImg(pill.getPillImg())
-                .pillDescription(pill.getPillDescription())
-                .userMethod(pill.getUserMethod())
-                .pillEfficacy(pill.getPillEfficacy())
-                .pillWarn(pill.getPillWarn())
-                .pillCaution(pill.getPillCaution())
-                .pillInteractive(pill.getPillInteractive())
-                .pillAdverseReaction(pill.getPillAdverseReaction())
-                .manufacturer(pill.getPillManufacturer())
-                .pillClassification(pillAppearance.getPillClassification())
-                .pillType(pillAppearance.getPillType())
-                .efficacyTags(efficacyTags)
-                .specialCautionTags(specialCautionTags)
-                .alertItems(alertItems)
-                .build();
+        response.setEfficacyTags(efficacyTags);
+        response.setSpecialCautionTags(specialCautionTags);
+        response.setAlertItems(alertItems);
+        return response;
     }
 
     private Boolean callIdentifyAPI(Long itemSeq) {
