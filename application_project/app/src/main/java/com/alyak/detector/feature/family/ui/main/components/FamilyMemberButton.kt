@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -56,7 +57,7 @@ fun FamilyMemberButton(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            androidx.compose.material3.Icon(
+            Icon(
                 imageVector = androidx.compose.material.icons.Icons.Default.Person,
                 contentDescription = null,
                 tint = if (isSelected) selectedColor else Color(0xFF757575),
@@ -68,12 +69,12 @@ fun FamilyMemberButton(
             text = role,
             fontWeight = FontWeight.Bold,
             color = if (isSelected) selectedColor else unselectedText,
-            fontSize = 20.sp
+            fontSize = 15.sp
         )
         Text(
             text = name,
             color = if (isSelected) Color.Black else unselectedText,
-            fontSize = 16.sp
+            fontSize = 12.sp
         )
     }
 

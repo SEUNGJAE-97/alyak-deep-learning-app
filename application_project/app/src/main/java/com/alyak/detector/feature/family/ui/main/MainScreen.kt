@@ -1,5 +1,8 @@
 package com.alyak.detector.feature.family.ui.main
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -56,13 +59,21 @@ fun MainScreen(
         Text("가족 정보를 불러오는 중 입니다. ")
         return
     }
+
+    val targetRate = familyMembers[selectedIndex].stats.successRate
+    val animatedRate by animateIntAsState(
+        targetValue = targetRate,
+        animationSpec = tween(
+            durationMillis = 800,
+            easing = FastOutSlowInEasing
+        ),
+        label = "successRateAnim"
+    )
+
     Scaffold(
         topBar = {
             HeaderForm(name ?: "No Name")
         },
-        floatingActionButton = {
-            MultiFloatingActionButton(navController)
-        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -71,7 +82,7 @@ fun MainScreen(
         ) {
             // 가족 리스트
             Row(
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
                 modifier = Modifier.padding(16.dp)
             ) {
                 familyMembers.forEachIndexed { index, member ->
@@ -132,7 +143,7 @@ fun MainScreen(
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
                         Text(
-                            "${familyMembers[selectedIndex].stats.successRate}",
+                            "$animatedRate %",
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
                             color = colorResource(R.color.primaryBlue)
@@ -224,5 +235,6 @@ fun MainScreen(
             }
         }
     }
+    MultiFloatingActionButton(navController)
 }
 

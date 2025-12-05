@@ -48,9 +48,6 @@ fun PillDetailScreen(
         topBar = {
             HeaderForm("김민수")
         },
-        floatingActionButton = {
-            MultiFloatingActionButton(navController)
-        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -75,4 +72,5 @@ fun PillDetailScreen(
             }
         }
     }
+    MultiFloatingActionButton(navController)
 }
