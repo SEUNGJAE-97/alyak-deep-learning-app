@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.core.network.ApiResult
+import com.alyak.detector.core.util.AlarmScheduler
 import com.alyak.detector.feature.family.data.model.DailyMedicationStat
 import com.alyak.detector.feature.family.data.model.FamilyMember
 import com.alyak.detector.feature.family.data.model.MedicineSchedule
@@ -28,7 +29,8 @@ import java.util.Locale
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val familyRepo: FamilyRepo,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val alarmScheduler: AlarmScheduler
 ) : ViewModel() {
 
     private val _familyMembers: SnapshotStateList<FamilyMember> = mutableStateListOf()
@@ -151,5 +153,11 @@ class MainViewModel @Inject constructor(
             .minByOrNull { it.scheduledTime.time - now.time }
     }
 
+
+    fun setAlarmForMedicine(timeLeftString: String) {
+        val minutes = timeLeftString.toIntOrNull() ?: return
+        alarmScheduler.scheduleAlarm(minutes)
+
+    }
 
 }

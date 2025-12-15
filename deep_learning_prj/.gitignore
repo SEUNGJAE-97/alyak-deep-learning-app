@@ -1,0 +1,44 @@
+# 원본 데이터 (압축파일 등)
+datasets/**
+
+# 학습된 모델 파일
+checkpoints/*.pt
+checkpoints/*.pth
+checkpoints/*.ckpt
+!checkpoints/.gitkeep
+
+# 로그 파일
+logs/*
+!logs/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# AI-Hub 다운로드 임시 파일
+download.tar
+download_*.tar
+file_list.json
+*.part*
+

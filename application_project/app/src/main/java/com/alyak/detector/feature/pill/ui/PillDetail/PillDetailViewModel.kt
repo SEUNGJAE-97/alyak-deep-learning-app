@@ -3,15 +3,7 @@ package com.alyak.detector.feature.pill.ui.PillDetail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alyak.detector.core.model.SpecialCautionType
-import com.alyak.detector.feature.pill.data.model.AlertInfoDto
-import com.alyak.detector.feature.pill.data.model.DosageInfoDto
-import com.alyak.detector.feature.pill.data.model.EffectsInfoDto
 import com.alyak.detector.feature.pill.data.model.MedicineDetailDto
-import com.alyak.detector.feature.pill.data.model.MedicineInfoDto
-import com.alyak.detector.feature.pill.data.model.ServerResponsePillDetail
-import com.alyak.detector.feature.pill.data.model.SideEffectsDto
-import com.alyak.detector.feature.pill.data.model.SpecialCautionDto
 import com.alyak.detector.feature.pill.data.repository.PillRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject

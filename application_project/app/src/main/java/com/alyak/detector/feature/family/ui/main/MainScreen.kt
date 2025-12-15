@@ -3,6 +3,7 @@ package com.alyak.detector.feature.family.ui.main
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -214,9 +215,12 @@ fun MainScreen(
                 if (schedule != null) {
                     ScheduleCard(
                         doseTime = "${schedule.scheduledTime}",
-                        medicine = schedule.pillName ?: "null",
-                        detail = schedule.detail ?: "null",
-                        timeLeft = schedule.pillDosage?.toString() ?: "null"
+                        medicine = schedule.pillName,
+                        detail = schedule.detail,
+                        timeLeft = schedule.pillDosage.toString(),
+                        onAlarmClick = {
+                            viewModel.setAlarmForMedicine(schedule.pillDosage.toString())
+                        }
                     )
                 } else {
                     ScheduleCard(
