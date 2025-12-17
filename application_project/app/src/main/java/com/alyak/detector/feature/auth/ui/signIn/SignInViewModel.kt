@@ -4,9 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.core.network.ApiResult
-import com.alyak.detector.core.network.safeCall
-import com.alyak.detector.feature.auth.data.api.AuthApi
 import com.alyak.detector.feature.auth.data.model.SignInResponse
+import com.alyak.detector.feature.auth.repository.AuthRepository
 import com.alyak.detector.feature.auth.ui.signIn.state.SignInState
 import com.alyak.detector.feature.auth.ui.signIn.state.UserInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +16,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class SignInViewModel @Inject constructor(
-    private val authApi: AuthApi,
+    private val authRepository: AuthRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
     private val _state = MutableStateFlow(SignInState())
@@ -31,7 +30,7 @@ class SignInViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, loginError = false)
 
             // ========== 임시: tempLogin 사용 (나중에 실제 signIn으로 교체) ==========
-            when (val result = safeCall { authApi.tempLogin() }) {
+            when (val result = authRepository.tempLogin()) {
                 is ApiResult.Success -> {
                     val tempLoginResponse = result.data
 
@@ -125,6 +124,41 @@ class SignInViewModel @Inject constructor(
                 }
             }
             */
+        }
+    }
+
+    fun startKakaoLogin() {
+        viewModelScope.launch {
+            when (val result = authRepository.kakaoLogin()) {
+                is ApiResult.Success -> {
+                    // TODO: 카카오 로그인 성공 처리 (토큰 저장, 화면 전환 등)
+                    val url = result.data.authorizationUrl
+
+                }
+                is ApiResult.Error -> {
+                    // TODO: 에러 처리
+                }
+                is ApiResult.Exception -> {
+                    // TODO: 예외 처리
+                }
+            }
+        }
+    }
+
+    fun startGoogleLogin() {
+        viewModelScope.launch {
+            when (val result = authRepository.googleLogin()) {
+                is ApiResult.Success -> {
+                    val loginResponse = result.data
+                    // TODO: 구글 로그인 성공 처리 (토큰 저장, 화면 전환 등)
+                }
+                is ApiResult.Error -> {
+                    // TODO: 에러 처리
+                }
+                is ApiResult.Exception -> {
+                    // TODO: 예외 처리
+                }
+            }
         }
     }
 }

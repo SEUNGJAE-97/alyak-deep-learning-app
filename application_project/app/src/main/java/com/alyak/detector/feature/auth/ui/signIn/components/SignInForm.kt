@@ -43,6 +43,8 @@ import com.alyak.detector.feature.auth.ui.signIn.state.SignInState
 fun SignInForm(
     onNavigateToSignUp: () -> Unit,
     onNavigateToFindPassword: () -> Unit,
+    onKakaoLoginClick: () -> Unit,
+    onGoogleLoginClick: () -> Unit,
     state: SignInState,
     navController: NavController,
     viewModel: SignInViewModel
@@ -163,8 +165,7 @@ fun SignInForm(
                 text = "카카오 로그인",
                 textColor = colorResource(R.color.black),
                 onClick = {
-                    //TODO : 카카오 로그인
-
+                    onKakaoLoginClick()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -176,7 +177,9 @@ fun SignInForm(
             CustomButton(
                 text = "구글 로그인",
                 textColor = colorResource(R.color.black),
-                onClick = {},
+                onClick = {
+                    onGoogleLoginClick()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(5f),

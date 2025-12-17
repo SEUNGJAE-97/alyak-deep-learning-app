@@ -74,7 +74,6 @@ fun SignInScreen(
 
         Spacer(modifier = Modifier.height(70.dp))
 
-        // Fragment-like content switching
         when (screenState) {
             is ContentState.Login -> {
                 SignInForm(
@@ -82,7 +81,9 @@ fun SignInScreen(
                     onNavigateToFindPassword = { screenState = ContentState.FindPassword },
                     state = state,
                     navController = navController,
-                    viewModel = signInViewModel
+                    viewModel = signInViewModel,
+                    onKakaoLoginClick = { signInViewModel.startKakaoLogin() },
+                    onGoogleLoginClick = { signInViewModel.startGoogleLogin() }
                 )
             }
 

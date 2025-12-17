@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import coil3.ImageLoader
 import coil3.request.crossfade
+import com.alyak.detector.feature.auth.data.api.AuthApi
+import com.alyak.detector.feature.auth.repository.AuthRepository
 import com.alyak.detector.feature.family.data.api.FamilyService
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
 import com.alyak.detector.feature.map.data.api.MapApi
@@ -68,6 +70,12 @@ object AppModule {
         pillApi: PillApi
     ): PillRepository {
         return PillRepositoryImpl(recentSearchDao, pillApi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthRepository(authApi: AuthApi): AuthRepository {
+        return AuthRepository(authApi)
     }
 
     @Provides
