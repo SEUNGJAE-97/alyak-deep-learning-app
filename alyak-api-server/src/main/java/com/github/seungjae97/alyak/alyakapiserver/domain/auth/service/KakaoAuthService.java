@@ -66,15 +66,21 @@ public class KakaoAuthService implements OAuthService {
      * @param state : uuid
      * @return redirectUrl
      */
-    public String buildAuthorizationUrl(String state) {
+    public String buildAuthorizationUrl(String state, String currentBaseUrl) {
+        String dynamicRedirectUri = currentBaseUrl + "/auth/kakao/callback";
         OAuthCodeRequest builder = OAuthCodeRequest.builder()
                 .clientId(kakaoClientId)
-                .redirectUri(kakaoRedirectUri)
+                .redirectUri(dynamicRedirectUri)
                 .responseType("code")
                 .state(state)
                 .build();
 
         return builder.toUriString(kakaoAuthorUrl);
+    }
+
+    @Override
+    public String buildAuthorizationUrl(String state) {
+        return "";
     }
 
     /**
@@ -83,11 +89,12 @@ public class KakaoAuthService implements OAuthService {
      * @param code : 카카오 서버에서 주는 code
      * @return token, refresh token 값 반환
      */
-    public KakoAuthTokenResponse requestAccessToken(String code) {
+    public KakoAuthTokenResponse requestAccessToken(String code, String redirectUri) {
         OAuthTokenRequest oAuthTokenRequest = OAuthTokenRequest.builder()
                 .grant_type("authorization_code")
                 .client_id(kakaoClientId)
-                .redirect_uri(kakaoRedirectUri)
+//                .redirect_uri(kakaoRedirectUri)
+                .redirect_uri(redirectUri)
                 .code(code)
                 .client_secret(kakaoClientSecret)
                 .build();
@@ -121,47 +128,49 @@ public class KakaoAuthService implements OAuthService {
 
     @Transactional
     public TokenResponse saveOrUpdateUser(KakaoUserResponse userInfo) {
+        String email = userInfo.getKakaoAccount().getEmail();
+
         // email 존재 유무 확인
-        if (userInfo.getKakaoAccount().getEmail() == null) {
+        if (email == null) {
             throw new BusinessException(BusinessError.EMAIL_NOT_EXIST);
         }
-        // 이미 가입한 사람인지 확인
-        if (userRepository.existsByEmail(userInfo.getKakaoAccount().getEmail())) {
-            throw new BusinessException(BusinessError.EMAIL_ALREADY_EXISTS);
-        }
-        //신규 가입 처리
-        User newUser = User.builder()
-                .email(userInfo.getKakaoAccount().getEmail())
-                .name(userInfo.getKakaoAccount().getProfile().getNickname())
-                .build();
-        newUser = userRepository.save(newUser);
+        // 만약 신규유저라면
+        User user = userRepository.findByEmail(email).orElseGet(() -> {
+            User newUser = User.builder()
+                    .email(email)
+                    .name(userInfo.getKakaoAccount().getProfile().getNickname())
+                    .build();
+            userRepository.save(newUser);
 
-        // 기본 역할 부여 (USER 역할)
-        Role defaultRole = roleRepository.findById(2)
-                .orElseThrow(() -> new IllegalArgumentException("기본 역할 정보 없음"));
-        
-        // UserRoleId
-        UserRoleId userRoleId = new UserRoleId(newUser.getUserId(), defaultRole.getId());
-        
-        UserRole userRole = UserRole.builder()
-                .id(userRoleId)
-                .user(newUser)
-                .role(defaultRole)
-                .build();
-        userRoleRepository.save(userRole);
+            // 기본 역할 부여
+            Role defaultRole = roleRepository.findById(2)
+                    .orElseThrow(() -> new IllegalArgumentException("기본 역할 정보 없음"));
 
-        ProviderId providerId = new ProviderId("KAKAO", newUser.getUserId());
-        Provider provider = Provider.builder()
-                .id(providerId)
-                .user(newUser)
-                .build();
-        providerRepository.save(provider);
-        String jwtToken = jwtTokenProvider.generateToken(newUser);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(newUser);
+            UserRoleId userRoleId = new UserRoleId(newUser.getUserId(), defaultRole.getId());
+            UserRole userRole = UserRole.builder()
+                    .id(userRoleId)
+                    .user(newUser)
+                    .role(defaultRole)
+                    .build();
+            userRoleRepository.save(userRole);
+
+            // 제공자 정보 저장
+            ProviderId providerId = new ProviderId("KAKAO", newUser.getUserId());
+            Provider provider = Provider.builder()
+                    .id(providerId)
+                    .user(newUser)
+                    .build();
+            providerRepository.save(provider);
+
+            return newUser;
+        });
+
+        String jwtToken = jwtTokenProvider.generateToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
         return TokenResponse.builder()
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
-                .email(userRole.getUser().getEmail())
+                .email(user.getEmail())
                 .build();
     }
 

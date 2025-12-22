@@ -56,6 +56,11 @@ public class GoogleAuthService implements OAuthService {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
+    public String buildAuthorizationUrl(String state, String redirectUri) {
+        return "";
+    }
+
+    @Override
     public String buildAuthorizationUrl(String state) {
         OAuthCodeRequest builder = OAuthCodeRequest.builder()
                 .clientId(googleClientId)

@@ -2,12 +2,15 @@ package com.alyak.detector.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.core.util.PermissionManager
 import com.alyak.detector.feature.auth.ui.signIn.SignInScreen
 import com.alyak.detector.feature.auth.ui.signIn.SignInViewModel
@@ -20,7 +23,7 @@ import com.alyak.detector.feature.pill.ui.search.PillSearchScreen
 import com.alyak.detector.feature.splash.ui.SplashScreen
 
 @Composable
-fun Navigator(permissionManager : PermissionManager) {
+fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager) {
     LaunchedEffect(Unit) {
         permissionManager.setOnGrantedListener {
             // 권한 허용 후 실행할 작업
@@ -28,13 +31,13 @@ fun Navigator(permissionManager : PermissionManager) {
         permissionManager.requestPermissions()
     }
 
-    //NavController
+    val accessToken by tokenManager.accessTokenFlow.collectAsState(initial = null)
     val navController = rememberNavController()
 
     //NavHost
     NavHost(
         navController = navController,
-        startDestination = "SignInScreen"
+        startDestination = if(accessToken == null) "SignInScreen" else "MainScreen"
     ) {
         composable("SplashScreen") {
             SplashScreen(navController)

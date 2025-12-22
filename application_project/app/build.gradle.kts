@@ -132,4 +132,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
     implementation("com.google.firebase:firebase-messaging")
 
+    //chrome custom tabs
+    implementation("androidx.browser:browser:1.5.0")
+
 }

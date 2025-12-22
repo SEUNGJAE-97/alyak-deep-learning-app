@@ -10,8 +10,10 @@ import com.alyak.detector.feature.auth.ui.signIn.state.SignInState
 import com.alyak.detector.feature.auth.ui.signIn.state.UserInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -23,6 +25,8 @@ class SignInViewModel @Inject constructor(
     val state: StateFlow<SignInState> = _state
     private val _signInResult = MutableStateFlow<Result<SignInResponse>?>(null)
     val signInResult: StateFlow<Result<SignInResponse>?> = _signInResult
+    private val _loginEvent = MutableSharedFlow<String>()
+    val loginEvent = _loginEvent.asSharedFlow()
 
     //Login logic
     fun signIn(email: String, password: String) {
@@ -132,8 +136,7 @@ class SignInViewModel @Inject constructor(
             when (val result = authRepository.kakaoLogin()) {
                 is ApiResult.Success -> {
                     // TODO: 카카오 로그인 성공 처리 (토큰 저장, 화면 전환 등)
-                    val url = result.data.authorizationUrl
-
+                    _loginEvent.emit(result.data.authorizationUrl)
                 }
                 is ApiResult.Error -> {
                     // TODO: 에러 처리
@@ -149,8 +152,8 @@ class SignInViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = authRepository.googleLogin()) {
                 is ApiResult.Success -> {
-                    val loginResponse = result.data
                     // TODO: 구글 로그인 성공 처리 (토큰 저장, 화면 전환 등)
+                    _loginEvent.emit(result.data.authorizationUrl)
                 }
                 is ApiResult.Error -> {
                     // TODO: 에러 처리
