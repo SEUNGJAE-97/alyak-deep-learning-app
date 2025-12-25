@@ -33,8 +33,6 @@ class MainViewModel @Inject constructor(
     private val alarmScheduler: AlarmScheduler
 ) : ViewModel() {
 
-    private val _familyMembers: SnapshotStateList<FamilyMember> = mutableStateListOf()
-    val familyMembers: List<FamilyMember> get() = _familyMembers
     private var _selectedIndex by mutableIntStateOf(0)
     val selectedIndex: Int get() = _selectedIndex
     private var successRate by mutableIntStateOf(0)
@@ -51,6 +49,12 @@ class MainViewModel @Inject constructor(
     val nearestSchedule: State<MedicineSchedule?> = _nearestSchedule
     private val _name = MutableStateFlow<String?>(null)
     val name: StateFlow<String?> = _name
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
+    private val _familyMembers = mutableStateListOf<FamilyMember>()
+    val familyMembers: List<FamilyMember> get() = _familyMembers
 
     /**
      * 선택된 멤버의 주간 통계 데이터
@@ -77,36 +81,33 @@ class MainViewModel @Inject constructor(
     }
 
     private fun fetchFamilyMembers() {
-        //TODO : API 호출
         viewModelScope.launch {
-            // 1. familyRepo.fetchMembers()를 호출하고 그 결과를 apiResult 변수에 저장합니다.
+            _isLoading.value = true
+            _errorMessage.value = null
+
             val apiResult = familyRepo.fetchMembers()
 
-            // 2. when 표현식을 사용해 ApiResult의 상태를 확인합니다.
             when (apiResult) {
-                // 3. API 호출이 성공한 경우 (ApiResult.Success)
+                // 1. API 호출이 성공한 경우
                 is ApiResult.Success -> {
-                    // '포장지'에서 '선물(데이터)'을 꺼냅니다 (apiResult.data).
-                    val fetchedMembers = apiResult.data
                     _familyMembers.clear()
-                    // 이제 올바른 타입의 List를 addAll에 전달합니다.
-                    _familyMembers.addAll(fetchedMembers)
-
+                    _familyMembers.addAll(apiResult.data)
                     if (_familyMembers.isNotEmpty()) {
                         loadUserChartData()
                     }
+                    _isLoading.value = false
                 }
 
-                // 4. API 호출이 실패한 경우 (ApiResult.Error)
+                // 2. API 호출이 실패한 경우
                 is ApiResult.Error -> {
-                    // 에러 상황을 처리합니다. (예: 로그 출력, 사용자에게 메시지 표시)
-                    Log.e("MainViewModel", "API Error: ${apiResult.code} - ${apiResult.message}")
+                    _errorMessage.value = apiResult.message
+                    _isLoading.value = false
                 }
 
-                // 5. 네트워크 예외 등 다른 예외가 발생한 경우 (ApiResult.Exception)
+                // 5. 예외 처리
                 is ApiResult.Exception -> {
-                    // 예외 상황을 처리합니다.
-                    Log.e("MainViewModel", "Network Exception: ${apiResult.throwable.message}")
+                    _errorMessage.value = "네트워크 연결을 확인해주세요."
+                    _isLoading.value = false
                 }
             }
         }

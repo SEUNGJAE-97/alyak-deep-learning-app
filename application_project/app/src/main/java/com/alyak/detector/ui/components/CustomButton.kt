@@ -72,7 +72,7 @@ fun CustomButton(
 @Composable
 fun CustomButtonPreview() {
     CustomButton(
-        text = "",
+        text = "로그아웃",
         onClick = {},
         containerColor = Color.White,
         contentColor = Color.Black,

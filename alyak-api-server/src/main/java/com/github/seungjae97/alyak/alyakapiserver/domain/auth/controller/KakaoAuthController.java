@@ -73,8 +73,11 @@ public class KakaoAuthController {
                 .queryParam("accessToken", tokenResponse.getAccessToken())
                 .queryParam("refreshToken", tokenResponse.getRefreshToken())
                 .queryParam("email", tokenResponse.getEmail())
+                .queryParam("userId", tokenResponse.getUserId())
+                .queryParam("userName", tokenResponse.getUserName())
+                .encode()
                 .build().toUriString();
-        log.info("Redirecting to App: {}", redirectUrl);
+
         response.sendRedirect(redirectUrl);
     }
 }

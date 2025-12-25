@@ -21,6 +21,7 @@ import com.alyak.detector.feature.map.ui.MapScreen
 import com.alyak.detector.feature.pill.ui.PillDetail.PillDetailScreen
 import com.alyak.detector.feature.pill.ui.search.PillSearchScreen
 import com.alyak.detector.feature.splash.ui.SplashScreen
+import com.alyak.detector.feature.user.ui.UserScreen
 
 @Composable
 fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager) {
@@ -75,5 +76,9 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
                 navController = navController
             )
         }
+        composable("UserScreen") {
+            UserScreen(navController)
+        }
+
     }
 }

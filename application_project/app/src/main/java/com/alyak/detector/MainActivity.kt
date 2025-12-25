@@ -67,17 +67,17 @@ class MainActivity : ComponentActivity() {
                 val accessToken = uri.getQueryParameter("accessToken")
                 val refreshToken = uri.getQueryParameter("refreshToken")
                 val email = uri.getQueryParameter("email")
+                val name = uri.getQueryParameter("userName")
+                val userId = uri.getQueryParameter("userId")
 
-                if (accessToken != null && refreshToken != null && email != null) {
-                    // 비동기로 토큰 저장
+                if (accessToken != null && refreshToken != null && email != null && name != null && userId != null) {
                     lifecycleScope.launch {
-                        // 기존에 만들어두신 saveToken 메서드 활용
                         tokenManager.saveToken(
                             TempLoginResponse(accessToken, refreshToken, email),
                             expiresIn = 2592000L,
-                            userId = 1L
+                            userId = userId.toLong()
                         )
-                        email?.let { tokenManager.saveUserInfo(it) }
+                        email.let { tokenManager.saveUserInfo(email, name) }
 
                         Toast.makeText(this@MainActivity, "로그인에 성공했습니다.", Toast.LENGTH_SHORT).show()
                     }

@@ -41,10 +41,10 @@ class SignInViewModel @Inject constructor(
                     // TempLoginResponse를 받는 오버로딩된 saveToken 사용
                     tokenManager.saveToken(tempLoginResponse)
 
-                    // 사용자 정보 저장 (이메일은 tempLoginResponse에서 가져오거나 파라미터로 받은 email 사용)
+                    // 사용자 정보 저장
                     tokenManager.saveUserInfo(
                         email = tempLoginResponse.email.ifEmpty { email },
-                        name = null // 실제 로그인 API에서는 이름도 받아올 수 있음
+                        name = "name"
                     )
 
                     // TempLoginResponse를 SignInResponse로 변환해서 반환

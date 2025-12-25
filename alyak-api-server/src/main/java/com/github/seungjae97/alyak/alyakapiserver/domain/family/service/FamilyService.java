@@ -30,12 +30,17 @@ public class FamilyService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(BusinessError.USER_NOT_EXIST));
 
-        Long familyId = Optional.ofNullable(user.getFamily())
-                .map(Family::getId)
-                .orElseThrow(() -> new BusinessException(BusinessError.DONT_EXIST_FAMILY));
+        Family family = user.getFamily();
 
-        Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new BusinessException(BusinessError.DONT_EXIST_FAMILY));
+        if (family == null) {
+            FamilyMemberInfoResponse selfResponse = FamilyMemberInfoResponse.from(user);
+            selfResponse.setRole("본인");
+
+            selfResponse.setStats(medicationStatsService.calculateMemberStats(userId));
+            selfResponse.setWeeklyMedicationStats(medicationStatsService.calculateWeeklyStats(userId));
+
+            return List.of(selfResponse); // 본인만 포함된 리스트 반환
+        }
 
         return family.getUsers().stream()
                 .map(member -> {

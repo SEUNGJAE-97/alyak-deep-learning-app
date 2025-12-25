@@ -171,6 +171,8 @@ public class KakaoAuthService implements OAuthService {
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
                 .email(user.getEmail())
+                .userId(user.getUserId())
+                .userName(user.getName())
                 .build();
     }
 

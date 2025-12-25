@@ -124,7 +124,7 @@ fun MultiFloatingActionButton(
                     MiniFabItem(
                         icon = Icons.Outlined.Person,
                         label = "내 정보",
-                        onClick = { /* 동작 */ }
+                        onClick = { navController.navigate("UserScreen") }
                     )
                 }
             }
