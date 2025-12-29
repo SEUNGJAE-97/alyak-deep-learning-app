@@ -55,7 +55,7 @@ fun CustomModalDialog(
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(btnText1, color = Color.White)
+                Text(btnText2, color = Color.White)
             }
         },
         dismissButton = {
@@ -67,7 +67,7 @@ fun CustomModalDialog(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.padding(end = 8.dp)
             ) {
-                Text(btnText2, color = Color.Gray)
+                Text(btnText1, color = Color.Gray)
             }
         }
     )

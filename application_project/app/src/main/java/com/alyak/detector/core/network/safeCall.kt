@@ -1,6 +1,7 @@
 package com.alyak.detector.core.network
 
 import com.google.android.gms.tasks.Tasks.call
+import com.kakao.sdk.friend.m.t
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -21,6 +22,8 @@ suspend fun <T> safeCall(apiCall: suspend () -> retrofit2.Response<T>): ApiResul
                 val body = response.body()
                 if (body != null) {
                     ApiResult.Success(body)
+                }else if(response.code() == 204 || response.code() == 205){
+                    ApiResult.Success(null as T)
                 } else {
                     ApiResult.Error(response.code(), "Empty body")
                 }

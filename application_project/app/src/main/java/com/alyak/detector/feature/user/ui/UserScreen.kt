@@ -58,10 +58,12 @@ fun UserScreen(
     var isAccountDeletionDialogVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel.event) {
         viewModel.event.collect{ event ->
             when(event){
                 is UserEvent.LogoutSuccess, is UserEvent.DeleteAccountSuccess -> {
+                    isLogoutDialogVisible = false
+                    isAccountDeletionDialogVisible = false
                     navController.navigate("SignInScreen") {
                         popUpTo(0) { inclusive = true }
                         launchSingleTop = true
@@ -173,6 +175,7 @@ fun UserScreen(
                     },
                     onConfirm = {
                         viewModel.deleteAccount()
+
                     },
                     mainText = "회원탈퇴 하시겠습니까?",
                     subText = "삭제된 정보는 복구가 불가합니다.",
