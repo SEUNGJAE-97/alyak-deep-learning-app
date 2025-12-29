@@ -1,5 +1,6 @@
 package com.alyak.detector.feature.pill.ui.PillDetail.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,9 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
@@ -39,7 +38,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,20 +57,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.alyak.detector.R
 import com.alyak.detector.core.model.MealTime
 import com.alyak.detector.core.model.SpecialCautionType
-import com.alyak.detector.feature.pill.data.model.AdditionalInfoDTO
-import com.alyak.detector.feature.pill.data.model.AlertInfoDTO
-import com.alyak.detector.feature.pill.data.model.DosageInfoDTO
-import com.alyak.detector.feature.pill.data.model.EffectsInfoDTO
-import com.alyak.detector.feature.pill.data.model.MedicineDetailDTO
-import com.alyak.detector.feature.pill.data.model.MedicineInfoDTO
-import com.alyak.detector.feature.pill.data.model.MemoDTO
-import com.alyak.detector.feature.pill.data.model.SideEffectsDTO
-import com.alyak.detector.feature.pill.data.model.SpecialCautionDTO
+import com.alyak.detector.feature.pill.data.model.AlertInfoDto
+import com.alyak.detector.feature.pill.data.model.DosageInfoDto
+import com.alyak.detector.feature.pill.data.model.EffectsInfoDto
+import com.alyak.detector.feature.pill.data.model.MedicineDetailDto
+import com.alyak.detector.feature.pill.data.model.MedicineInfoDto
+import com.alyak.detector.feature.pill.data.model.SideEffectsDto
+import com.alyak.detector.feature.pill.data.model.SpecialCautionDto
 import com.alyak.detector.ui.components.StatusBadge
-import com.alyak.detector.feature.pill.ui.PillDetail.components.AdditionalInfoSection
 import com.alyak.detector.ui.theme.CardBackground
 
 @Composable
@@ -210,11 +206,16 @@ fun AlertBox(
     title: String,
     items: List<String>
 ) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val visibleItems = if (isExpanded) items else items.take(3)
+    val showButton = items.size > 3
+
     Column(
         Modifier
             .fillMaxWidth()
             .background(Color(0xFFFDF0F0), RoundedCornerShape(16.dp))
             .padding(16.dp)
+            .animateContentSize()
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFD65A54))
@@ -222,71 +223,71 @@ fun AlertBox(
             Text(title, fontWeight = FontWeight.Bold, color = Color(0xFFD65A54))
         }
         Spacer(Modifier.height(8.dp))
-        Column {
-            items.forEach {
-                Text("• $it", fontSize = 15.sp, color = Color(0xFFD65A54))
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            visibleItems.forEach {
+                Row(verticalAlignment = Alignment.Top) {
+                    Text("•", fontSize = 15.sp, color = Color(0xFFD65A54), modifier = Modifier.padding(end = 4.dp))
+                    Text(
+                        text = it,
+                        fontSize = 15.sp,
+                        color = Color(0xFFD65A54)
+                    )
+                }
+            }
+        }
+        if (showButton) {
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { isExpanded = !isExpanded },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                elevation = ButtonDefaults.buttonElevation(0.dp)
+            ) {
+                Text(
+                    text = if (isExpanded) "접기" else "더 많은 주의사항 보기",
+                    color = Color(0xFFD65A54),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
 }
 
-// TODO : 삭제고려
-@Composable
-fun MemoInputBox() {
-    var value by remember { mutableStateOf("") }
-    OutlinedTextField(
-        value = value,
-        onValueChange = { value = it },
-        placeholder = { Text("이 약에 대한 메모를 작성하세요...") },
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(92.dp)
-    )
-}
 
 @Composable
 @Preview(showBackground = true, heightDp = 2000)
 fun FullPillDetailScreenPreview() {
-    val medicineDetail = MedicineDetailDTO(
-        medicineInfo = MedicineInfoDTO(
+    val medicineDetail = MedicineDetailDto(
+        medicineInfo = MedicineInfoDto(
             name = "타이레놀 500mg",
-            subName = "아세트 아미노펜",
+            classification = "아세트 아미노펜",
             manufacturer = "한국제약",
-            code = "TYL500",
+            pillId = 8884888,
             category = "일반의약품",
-            img = R.drawable.pill
+            img = "R.drawable.pill"
         ),
-        dosageInfo = DosageInfoDTO(
+        dosageInfo = DosageInfoDto(
             dosageText = "하루 3회, 식후 30분 내 복용",
-            dosageTimes = listOf(MealTime.MORNING, MealTime.LUNCH, MealTime.DINNER)
         ),
-        effectsInfo = EffectsInfoDTO(
+        effectsInfo = EffectsInfoDto(
             tags = listOf("해열", "진통"),
             description = "감기 증상 완화 및 통증 완화에 효과가 있음"
         ),
-        alertInfo = AlertInfoDTO(
+        alertInfo = AlertInfoDto(
             title = "주의사항",
             items = listOf("알레르기 반응 주의", "과다 복용 금지")
         ),
-        specialCaution = SpecialCautionDTO(
+        specialCaution = SpecialCautionDto(
             title = "특별 주의 대상",
             tags = listOf(SpecialCautionType.PREGNANT, SpecialCautionType.DRIVER),
             extraText = "운전 시 주의가 필요"
         ),
-        sideEffects = SideEffectsDTO(
+        sideEffects = SideEffectsDto(
             title = "주요 부작용",
             description = "두통, 어지러움, 위장 장애 등이 발생할 수 있음"
         ),
-        additionalInfo = AdditionalInfoDTO(
-            storageMethod = "실온 보관 1~30도",
-            expiration = "2026-12-31",
-            formulation = "타원형 정제",
-            packaging = "10정"
-        ),
-        memo = MemoDTO(
-            content = "복용 시간 꼭 지킬 것"
-        )
     )
 
     Column(
@@ -307,11 +308,13 @@ fun FullPillDetailScreenPreview() {
                         .border(2.dp, colorResource(R.color.white), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(medicineDetail.medicineInfo.img),
+                    AsyncImage(
+                        model = medicineDetail.medicineInfo.img,
                         contentDescription = medicineDetail.medicineInfo.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.Fit,
+                        error = painterResource(R.drawable.pill),
+                        placeholder = painterResource(R.drawable.pill),
                     )
                 }
 
@@ -324,7 +327,7 @@ fun FullPillDetailScreenPreview() {
                         fontSize = 20.sp
                     )
                     Text(
-                        "(${medicineDetail.medicineInfo.subName})",
+                        "(${medicineDetail.medicineInfo.classification})",
                         fontSize = 14.sp,
                         color = Color.DarkGray
                     )
@@ -335,7 +338,7 @@ fun FullPillDetailScreenPreview() {
                         color = Color.Gray
                     )
                     Text(
-                        "식별코드: ${medicineDetail.medicineInfo.code}",
+                        "식별코드: ${medicineDetail.medicineInfo.pillId}",
                         fontSize = 13.sp,
                         color = Color.Gray
                     )
@@ -374,52 +377,6 @@ fun FullPillDetailScreenPreview() {
                         )
                         Text(medicineDetail.dosageInfo.dosageText, fontSize = 15.sp)
                         Spacer(Modifier.height(10.dp))
-                    }
-                    Row(
-                        modifier = Modifier.padding(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.CalendarMonth,
-                            contentDescription = null,
-                            tint = colorResource(R.color.primaryBlue),
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        medicineDetail.dosageInfo.dosageTimes.forEach { mealTime ->
-
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(
-                                        colorResource(mealTime.backgroundColor),
-                                        CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = mealTime.icon,
-                                    contentDescription = mealTime.name,
-                                    tint = colorResource(mealTime.tint),
-                                    modifier = Modifier
-                                        .size(20.dp)
-                                )
-                            }
-                        }
-                        Spacer(Modifier.width(18.dp))
-
-                    }
-                    Row(
-                        modifier = Modifier.padding(4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.WaterDrop,
-                            contentDescription = null,
-                            tint = Color(0xFF7262FD)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("충분한 물과 함께 복용")
                     }
                 }
             }
@@ -483,32 +440,7 @@ fun FullPillDetailScreenPreview() {
             }
         }
 
-        //  추가 정보
-        CardBox {
-            TitledSection(Icons.Default.Info, "추가 정보") {
-                AdditionalInfoSection(
-                    medicineDetail.additionalInfo
-                )
-            }
-        }
-
         //  맞춤 기능(알림 등록/이력)
         CardBox { FunctionButtonRow() }
-
-        //  내 메모 입력
-        CardBox {
-            TitledSection(Icons.Default.Edit, "내 메모") {
-                var memoText by remember { mutableStateOf(medicineDetail.memo.content) }
-                OutlinedTextField(
-                    value = memoText,
-                    onValueChange = { memoText = it },
-                    placeholder = { Text("이 약에 대한 메모를 작성하세요...") },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(92.dp)
-                )
-            }
-        }
     }
 }

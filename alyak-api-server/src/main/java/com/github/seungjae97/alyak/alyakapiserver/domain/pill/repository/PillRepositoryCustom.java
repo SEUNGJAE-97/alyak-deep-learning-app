@@ -5,9 +5,10 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillD
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.SimplePillInfo;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PillRepositoryCustom {
     List<SimplePillInfo> searchAppearance(PillSearchRequest pillSearchRequest);
     List<SimplePillInfo> findByPillNameWithType(String pillName);
-    PillDetailResponse detailPill(Long pillId);
+    Optional<PillDetailResponse> detailPill(Long pillId);
 }

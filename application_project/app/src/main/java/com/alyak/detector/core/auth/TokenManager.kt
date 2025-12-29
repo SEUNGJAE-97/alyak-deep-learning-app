@@ -113,14 +113,13 @@ class TokenManager @Inject constructor(
     /**
      * 사용자 정보 저장
      * @param email 사용자 이메일
-     * @param name 사용자 이름 (선택)
+     * @param name 사용자 이름
      */
-    suspend fun saveUserInfo(email: String, name: String? = null) {
+    suspend fun saveUserInfo(email: String, name: String) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.USER_EMAIL] = email
-            name?.let {
-                preferences[PreferencesKeys.USER_NAME] = it
-            }
+            preferences[PreferencesKeys.USER_NAME] = name
+
         }
     }
 

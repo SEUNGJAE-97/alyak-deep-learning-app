@@ -90,9 +90,9 @@ fun RecentSearch(
 @Preview(showBackground = true)
 fun QuickSearchPrev() {
     val samplePills = listOf(
-        Pill("타이레놀 500mg", "아세트아미노펜", "한국얀센", "일반약", "TYLENOL"),
-        Pill("이지엔6애니", "이부프로펜", "대웅제약", "일반약", "EZN6"),
-        Pill("게보린정", "아세트아미노펜", "삼진제약", "일반약", "GEVORIN")
+        Pill("타이레놀 500mg", "아세트아미노펜", "한국얀센", "일반약", "TYLENOL",""),
+        Pill("이지엔6애니", "이부프로펜", "대웅제약", "일반약", "EZN6",""),
+        Pill("게보린정", "아세트아미노펜", "삼진제약", "일반약", "GEVORIN","")
     )
     RecentSearch(
         recentPills = samplePills,

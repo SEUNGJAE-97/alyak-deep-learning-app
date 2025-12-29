@@ -2,6 +2,7 @@ package com.alyak.detector.feature.pill.ui.search.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.alyak.detector.R
 import com.alyak.detector.feature.pill.data.model.Pill
 import com.alyak.detector.ui.components.StatusBadge
@@ -35,7 +38,8 @@ import com.valentinilk.shimmer.shimmer
 @Composable
 fun PillInfoBox(
     pillInfo: Pill,
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    onClick: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -43,6 +47,7 @@ fun PillInfoBox(
             .shadow(2.dp, shape = RoundedCornerShape(24.dp))
             .clip(RoundedCornerShape(24.dp))
             .background(colorResource(R.color.white))
+            .then(if (!isLoading) Modifier.clickable(onClick = onClick) else Modifier)
             .then(if (isLoading) Modifier.shimmer() else Modifier)
 
     ) {
@@ -58,10 +63,13 @@ fun PillInfoBox(
             if (isLoading) {
                 Box(modifier = imageModifier.background(Color.LightGray))
             } else {
-                Image(
-                    painter = painterResource(R.drawable.pill),
-                    contentDescription = null,
-                    modifier = imageModifier
+                AsyncImage(
+                    model = pillInfo.pillImg,
+                    contentDescription = pillInfo.name,
+                    modifier = imageModifier,
+                    contentScale = ContentScale.Fit,
+                    error = painterResource(R.drawable.pill),
+                    placeholder = painterResource(R.drawable.pill),
                 )
             }
             //info
@@ -84,7 +92,7 @@ fun PillInfoBox(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Row {
+                Column {
                     if (isLoading) {
                         Box(
                             modifier = Modifier
@@ -109,7 +117,8 @@ fun PillInfoBox(
                         Text(
                             "식별 코드 : ${pillInfo.pid}",
                             fontWeight = FontWeight.Thin,
-                            fontSize = 10.sp
+                            fontSize = 10.sp,
+                            maxLines = 1
                         )
                     }
                 }
@@ -156,6 +165,6 @@ fun TextPlaceholder(height: Dp, widthFraction: Float) {
 @Composable
 @Preview(showBackground = true)
 fun PillInfoPrev() {
-    val pill = Pill("타이레놀 500mg", "아세트아미노펜", "한국얀센", "일반약", "TYLENOL")
+    val pill = Pill("타이레놀 500mg", "아세트아미노펜", "한국얀센", "일반약", "TYLENOL", "")
     PillInfoBox(pill)
 }
