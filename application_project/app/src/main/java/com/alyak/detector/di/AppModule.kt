@@ -14,6 +14,8 @@ import com.alyak.detector.feature.pill.data.model.local.dao.RecentSearchDao
 import com.alyak.detector.feature.pill.data.model.local.database.PillDatabase
 import com.alyak.detector.feature.pill.data.repository.PillRepository
 import com.alyak.detector.feature.pill.data.repository.PillRepositoryImpl
+import com.alyak.detector.feature.user.data.api.UserService
+import com.alyak.detector.feature.user.repository.UserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -84,5 +86,16 @@ object AppModule {
         return ImageLoader.Builder(context)
             .crossfade(true)
             .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserService(@AppServerRetrofit retrofit: Retrofit) : UserService =
+        retrofit.create(UserService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(userService: UserService): UserRepository {
+        return UserRepository(userService)
     }
 }
