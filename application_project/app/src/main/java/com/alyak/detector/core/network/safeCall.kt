@@ -1,11 +1,5 @@
 package com.alyak.detector.core.network
 
-import com.google.android.gms.tasks.Tasks.call
-import com.kakao.sdk.friend.m.t
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import retrofit2.HttpException
-import java.io.IOException
 
 /**
  * 네트워크 API 호출을 안전하게 실행하고 그 결과를 ApiResult로 래핑하는 고차 함수.
