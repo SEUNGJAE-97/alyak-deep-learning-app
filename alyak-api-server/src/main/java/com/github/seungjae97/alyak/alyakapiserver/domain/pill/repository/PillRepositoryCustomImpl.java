@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.QPillAppearance.pillAppearance;
 import static com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.QPill.pill;
@@ -49,7 +50,8 @@ public class PillRepositoryCustomImpl implements PillRepositoryCustom {
                         pill.pillName.as("pillName"),
                         pillAppearance.pillClassification.as("classification"),
                         pill.pillManufacturer.as("manufacturer"),
-                        pillAppearance.pillType.as("pillType")
+                        pillAppearance.pillType.as("pillType"),
+                        pill.pillImg.as("pillImg")
                 ))
                 .from(pillAppearance)
                 .where(where)
@@ -63,6 +65,7 @@ public class PillRepositoryCustomImpl implements PillRepositoryCustom {
                         pill.id.as("pillId"),
                         pill.pillName.as("pillName"),
                         pill.pillManufacturer.as("manufacturer"),
+                        pill.pillImg.as("pillImg"),
                         pillAppearance.pillType.as("pillType"),
                         pillAppearance.pillClassification.as("classification")
                 ))
@@ -73,26 +76,26 @@ public class PillRepositoryCustomImpl implements PillRepositoryCustom {
     }
 
     @Override
-    public PillDetailResponse detailPill(Long pillId) {
-        return queryFactory.select(Projections.fields(PillDetailResponse.class,
+    public Optional<PillDetailResponse> detailPill(Long pillId) {
+        return Optional.ofNullable(queryFactory.select(Projections.fields(PillDetailResponse.class,
                         pill.id.as("pillId"),
                         pill.pillName.as("pillName"),
                         pill.pillManufacturer.as("manufacturer"),
-                        pillAppearance.pillType.as("pillType"),
-                        pillAppearance.pillClassification.as("classification"),
-                        pill.pillAdverseReaction.as("pillAdverseReaction"),
-                        pill.pillWarn.as("pillWarn"),
-                        pill.pillEfficacy.as("pillEfficacy"),
+                        pill.pillImg.as("pillImg"),
                         pill.pillDescription.as("pillDescription"),
+                        pill.userMethod.as("userMethod"),
+                        pill.pillEfficacy.as("pillEfficacy"),
+                        pill.pillWarn.as("pillWarn"),
                         pill.pillCaution.as("pillCaution"),
                         pill.pillInteractive.as("pillInteractive"),
-                        pill.userMethod.as("userMethod"),
-                        pill.pillImg.as("pillImg")
+                        pill.pillAdverseReaction.as("pillAdverseReaction"),
+                        pillAppearance.pillClassification.as("pillClassification"),
+                        pillAppearance.pillType.as("pillType")
                 ))
                 .from(pill)
                 .leftJoin(pillAppearance).on(pill.id.eq(pillAppearance.pill.id)) // 필요시 조인 추가
                 .where(pill.id.eq(pillId))
-                .fetchOne();
+                .fetchOne());
     }
 
 

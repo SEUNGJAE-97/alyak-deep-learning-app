@@ -18,7 +18,7 @@ sealed class ApiResult<out T> {
      * @property code 서버에서 보낸 에러 코드 (예: 404, 500 등 HTTP 상태 코드 또는 커스텀 코드).
      * @property message 서버에서 보낸 에러 메시지.
      */
-    data class Error(val code: Int, val message: String) : ApiResult<Nothing>()
+    data class Error(val code: Int, val message: String?) : ApiResult<Nothing>()
 
     /**
      * 네트워크 오류, 서버 다운 등 통신 과정에서 예외가 발생한 상태.

@@ -1,5 +1,7 @@
 package com.alyak.detector.feature.auth.ui.signIn
 
+import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,6 +43,14 @@ fun SignInScreen(
 ) {
     val state by signInViewModel.state.collectAsState()
     var screenState by remember { mutableStateOf<ContentState>(ContentState.Login) }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        signInViewModel.loginEvent.collect { url ->
+            val customTabsIntent = CustomTabsIntent.Builder().build()
+            customTabsIntent.launchUrl(context, Uri.parse(url))
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -74,7 +86,6 @@ fun SignInScreen(
 
         Spacer(modifier = Modifier.height(70.dp))
 
-        // Fragment-like content switching
         when (screenState) {
             is ContentState.Login -> {
                 SignInForm(
@@ -82,7 +93,9 @@ fun SignInScreen(
                     onNavigateToFindPassword = { screenState = ContentState.FindPassword },
                     state = state,
                     navController = navController,
-                    viewModel = signInViewModel
+                    viewModel = signInViewModel,
+                    onKakaoLoginClick = { signInViewModel.startKakaoLogin() },
+                    onGoogleLoginClick = { signInViewModel.startGoogleLogin() }
                 )
             }
 

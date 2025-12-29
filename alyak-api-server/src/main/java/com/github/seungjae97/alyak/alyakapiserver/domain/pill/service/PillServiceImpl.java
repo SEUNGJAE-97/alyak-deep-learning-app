@@ -27,12 +27,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -49,6 +48,38 @@ public class PillServiceImpl implements PillService {
     private final TaskScheduler pillIdentifyTaskScheduler;
 
     private static final Duration IDENTIFY_API_DELAY = Duration.ofSeconds(5);
+    private static final Pattern ALERT_SPLIT_PATTERN = Pattern.compile("[.!?]\\s*\\n*");
+    private static final Map<String, String> CAUTION_KEYWORD_MAP;
+    static {
+        Map<String, String> map = new HashMap<>();
+        map.put("임부 또는 수유부", "임산부/수유부");
+        map.put("고령자\\(노인\\)", "노인"); // 정규식 패턴을 위해 괄호 이스케이프
+        map.put("만 \\d+세 미만 소아", "어린이/소아"); // '만 2세 미만 소아' 등
+        map.put("간장애", "간장애 환자");
+        map.put("신장\\(콩팥\\)장애", "신장장애 환자");
+        map.put("심장기능", "심장질환 환자");
+        map.put("혈액이상", "혈액이상 환자");
+        map.put("천식", "천식 환자"); // 아스피린 천식, 기관지 천식 포함
+        map.put("글루타치온", "글루타치온 부족");
+        CAUTION_KEYWORD_MAP = Collections.unmodifiableMap(map);
+    }
+    private static final Map<String, String> EFFICACY_KEYWORD_MAP;
+    static {
+        Map<String, String> map = new HashMap<>();
+        map.put("발열", "해열");
+        map.put("동통", "진통");
+        map.put("두통", "두통");
+        map.put("근육통", "근육통");
+        map.put("관절통", "관절/류마티스 통증");
+        map.put("월경통", "생리통");
+        map.put("월경 전 긴장증", "월경전증후군");
+        map.put("감기의 제증상", "감기 완화");
+        map.put("콧물", "코감기 증상");
+        map.put("코막힘", "코감기 증상");
+        map.put("인후", "목 통증"); // 인후(목구멍)통
+        map.put("오한", "오한");
+        EFFICACY_KEYWORD_MAP = Collections.unmodifiableMap(map);
+    }
 
     @Value("${OPEN_DATA_KEY}")
     private String serviceKey;
@@ -92,6 +123,10 @@ public class PillServiceImpl implements PillService {
             // 2. 만약 외부 API 조회결과가 존재한다면? 새 알약을 DB에 저장
             List<Pill> pills = new ArrayList<>();
             for (PillInfoResponse.Item item : pillInfoResponse.getBody().getItems()) {
+                List<String> efficacyTags = extractEfficacyTags(item.getEfcyQesitm());
+                List<String> specialCautionTags = extractSpecialCautionTags(item.getAtpnQesitm());
+                List<String> alertItems = parseAlertItems(item.getAtpnWarnQesitm(), item.getIntrcQesitm());
+
                 Pill pill = Pill.builder()
                         .id(item.getItemSeq())
                         .pillName(item.getItemName())
@@ -121,7 +156,16 @@ public class PillServiceImpl implements PillService {
 
     @Override
     public PillDetailResponse detailPill(Long pillId) {
-        return pillRepository.detailPill(pillId);
+        PillDetailResponse response = pillRepository.detailPill(pillId)
+                .orElseThrow(() -> new BusinessException(BusinessError.DONT_EXIST_PILL));
+        List<String> efficacyTags = extractEfficacyTags(response.getPillEfficacy());
+        List<String> specialCautionTags = extractSpecialCautionTags(response.getPillCaution());
+        List<String> alertItems = parseAlertItems(response.getPillWarn(), response.getPillInteractive());
+
+        response.setEfficacyTags(efficacyTags);
+        response.setSpecialCautionTags(specialCautionTags);
+        response.setAlertItems(alertItems);
+        return response;
     }
 
     private Boolean callIdentifyAPI(Long itemSeq) {
@@ -215,5 +259,79 @@ public class PillServiceImpl implements PillService {
         return pillShapeRepository.findByShapeName(shapeName)
                 .map(PillShape::getId)
                 .orElse(null);
+    }
+
+    /**
+     * 약의 효능/효과 텍스트에서 주요 효능 태그를 추출합니다.
+     * @param efficacyText pillEfficacy (or pillDescription)
+     * @return 추출된 태그 목록
+     */
+    private List<String> extractEfficacyTags(String efficacyText) {
+        if (efficacyText == null || efficacyText.isBlank()) {
+            return Collections.emptyList();
+        }
+        Set<String> extractedTags = new HashSet<>();
+        for (Map.Entry<String, String> entry : EFFICACY_KEYWORD_MAP.entrySet()) {
+            // 정규식이 아닌 단순 contains를 사용해 매칭 정확도 향상
+            if (efficacyText.contains(entry.getKey())) {
+                extractedTags.add(entry.getValue());
+            }
+        }
+        return new ArrayList<>(extractedTags);
+    }
+
+    /**
+     * 주의사항 텍스트에서 임산부, 노인 등 특별 주의 대상 태그를 추출합니다.
+     * @param cautionText pillCaution
+     * @return 추출된 특별 주의 태그 목록
+     */
+    private List<String> extractSpecialCautionTags(String cautionText) {
+        if (cautionText == null || cautionText.isBlank()) {
+            return Collections.emptyList();
+        }
+        Set<String> extractedTags = new HashSet<>();
+
+        for (Map.Entry<String, String> entry : CAUTION_KEYWORD_MAP.entrySet()) {
+            // 정규식을 사용하여 유연하게 '소아' 또는 '노인' 패턴 매칭
+            Pattern pattern = Pattern.compile(entry.getKey());
+            Matcher matcher = pattern.matcher(cautionText);
+
+            if (matcher.find()) {
+                extractedTags.add(entry.getValue());
+            }
+        }
+        return new ArrayList<>(extractedTags);
+    }
+
+    /**
+     * 경고 및 상호작용 텍스트를 하나의 리스트 항목으로 분리합니다.
+     * 주요 구분자는 문장 종료(`.`, `!`, `?`)와 줄 바꿈입니다.
+     * @param warnText pillWarn (일반 경고)
+     * @param interactiveText pillInteractive (약물 상호작용)
+     * @return 분리된 주의사항 항목 목록
+     */
+    private List<String> parseAlertItems(String warnText, String interactiveText) {
+        String combinedText = "";
+        if (warnText != null) {
+            combinedText += warnText.trim();
+        }
+        if (interactiveText != null) {
+            // 두 텍스트가 명확히 구분되도록 사이에 줄 바꿈 추가
+            if (!combinedText.isEmpty()) {
+                combinedText += "\n";
+            }
+            combinedText += interactiveText.trim();
+        }
+
+        if (combinedText.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String[] rawItems = ALERT_SPLIT_PATTERN.split(combinedText);
+
+        return Arrays.stream(rawItems)
+                .map(String::trim)
+                .filter(s -> !s.isBlank()) // 빈 문자열 제거
+                .collect(Collectors.toList());
     }
 }

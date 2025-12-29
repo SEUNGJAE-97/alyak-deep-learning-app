@@ -15,4 +15,5 @@ public class SimplePillInfo {
     private String manufacturer;
     private String classification;
     private String pillType;
+    private String pillImg;
 }
