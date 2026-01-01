@@ -135,4 +135,9 @@ dependencies {
     //chrome custom tabs
     implementation("androidx.browser:browser:1.5.0")
 
+    // tf
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+
 }
