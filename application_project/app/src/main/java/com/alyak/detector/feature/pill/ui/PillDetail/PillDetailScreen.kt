@@ -46,7 +46,7 @@ fun PillDetailScreen(
 
     Scaffold(
         topBar = {
-            HeaderForm("김민수")
+            HeaderForm{"김민수"}
         },
     ) { paddingValues ->
         Column(

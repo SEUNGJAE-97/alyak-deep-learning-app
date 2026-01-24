@@ -68,7 +68,7 @@ fun MapScreen(
         sheetContent = {
             HospitalListContent(places, viewModel)
         },
-        topBar = { HeaderForm("No Name") },
+        topBar = { HeaderForm{ "No Name" } },
         sheetDragHandle = { DragHandler() }
     ) { paddingValues ->
         Column {

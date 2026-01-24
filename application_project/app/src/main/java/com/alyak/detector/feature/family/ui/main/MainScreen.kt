@@ -70,7 +70,7 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            HeaderForm(name ?: "No Name")
+            HeaderForm{ name ?: "No Name" }
         },
     ) { paddingValues ->
         Column(

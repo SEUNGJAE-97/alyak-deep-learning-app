@@ -77,7 +77,7 @@ fun PillSearchScreen(
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         topBar = {
-            HeaderForm("No name")
+            HeaderForm{"No name"}
         },
         sheetPeekHeight = 100.dp,
         sheetContainerColor = Color.White,
