@@ -17,10 +17,15 @@ import com.alyak.detector.feature.family.data.model.DailyMedicationStat
 import com.alyak.detector.feature.family.data.model.FamilyMember
 import com.alyak.detector.feature.family.data.model.MedicineSchedule
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
+import com.alyak.detector.core.auth.SessionManager
+import com.alyak.detector.core.auth.UserSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -30,7 +35,8 @@ import java.util.Locale
 class MainViewModel @Inject constructor(
     private val familyRepo: FamilyRepo,
     private val tokenManager: TokenManager,
-    private val alarmScheduler: AlarmScheduler
+    private val alarmScheduler: AlarmScheduler,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private var _selectedIndex by mutableIntStateOf(0)
@@ -47,15 +53,24 @@ class MainViewModel @Inject constructor(
     private val _familySchedules: SnapshotStateList<MedicineSchedule> = mutableStateListOf()
     private val _nearestSchedule = mutableStateOf<MedicineSchedule?>(null)
     val nearestSchedule: State<MedicineSchedule?> = _nearestSchedule
-    private val _name = MutableStateFlow<String?>(null)
-    val name: StateFlow<String?> = _name
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
     private val _familyMembers = mutableStateListOf<FamilyMember>()
     val familyMembers: List<FamilyMember> get() = _familyMembers
-
+    val userName : StateFlow<String> = sessionManager.userSession
+        .map { session ->
+            when (session) {
+                is UserSession.Authenticated -> session.userInfo.name
+                else -> "로딩 중.."
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "로딩 중.."
+        )
     /**
      * 선택된 멤버의 주간 통계 데이터
      * UI에서 dailyStatToBarSegments 함수로 BarSegments로 변환
@@ -64,7 +79,6 @@ class MainViewModel @Inject constructor(
         get() = if (_familyMembers.isNotEmpty()) _familyMembers[_selectedIndex].weeklyMedicationStats else emptyList()
 
     init {
-        fetchName()
         fetchFamilyMembers()
         fetchSchedules()
     }
@@ -72,12 +86,6 @@ class MainViewModel @Inject constructor(
     fun onItemSelected(index: Int) {
         _selectedIndex = index
         loadUserChartData()
-    }
-
-    private fun fetchName() {
-        viewModelScope.launch {
-            _name.value = tokenManager.getUserName()
-        }
     }
 
     private fun fetchFamilyMembers() {

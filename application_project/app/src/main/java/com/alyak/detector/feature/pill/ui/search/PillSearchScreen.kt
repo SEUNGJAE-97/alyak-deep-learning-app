@@ -73,11 +73,12 @@ fun PillSearchScreen(
     var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     var selectedIndex by remember { mutableStateOf(0) }
+    val name by viewModel.userName.collectAsState()
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         topBar = {
-            HeaderForm{"No name"}
+            HeaderForm(name)
         },
         sheetPeekHeight = 100.dp,
         sheetContainerColor = Color.White,

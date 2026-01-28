@@ -58,7 +58,7 @@ fun MainScreen(
     val totalRatio = viewModel._totalCount
     val nearestSchedule by viewModel.nearestSchedule
     val schedule = viewModel.nearestSchedule.value
-    val name by viewModel.name.collectAsState()
+    val name by viewModel.userName.collectAsState()
 
     val targetRate =
         if (familyMembers.isNotEmpty()) familyMembers[selectedIndex].stats.successRate else 0
@@ -70,7 +70,7 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            HeaderForm{ name ?: "No Name" }
+            HeaderForm(name)
         },
     ) { paddingValues ->
         Column(

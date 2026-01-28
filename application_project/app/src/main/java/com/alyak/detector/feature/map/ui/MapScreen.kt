@@ -56,6 +56,7 @@ fun MapScreen(
     navController: NavController,
     viewModel: MapViewModel = hiltViewModel()
 ) {
+    val name by viewModel.userName.collectAsState()
     val places by viewModel.places.collectAsState()
     val scaffoldState = rememberBottomSheetScaffoldState()
     BottomSheetScaffold(
@@ -68,7 +69,7 @@ fun MapScreen(
         sheetContent = {
             HospitalListContent(places, viewModel)
         },
-        topBar = { HeaderForm{ "No Name" } },
+        topBar = { HeaderForm( name ) },
         sheetDragHandle = { DragHandler() }
     ) { paddingValues ->
         Column {

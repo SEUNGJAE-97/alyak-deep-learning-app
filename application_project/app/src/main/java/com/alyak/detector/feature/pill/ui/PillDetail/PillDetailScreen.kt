@@ -43,10 +43,10 @@ fun PillDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var isExpanded by remember { mutableStateOf(false) }
-
+    val name by viewModel.userName.collectAsState()
     Scaffold(
         topBar = {
-            HeaderForm{"김민수"}
+            HeaderForm(name)
         },
     ) { paddingValues ->
         Column(

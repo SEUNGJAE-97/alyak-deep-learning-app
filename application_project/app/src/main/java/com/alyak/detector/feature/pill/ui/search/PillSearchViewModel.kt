@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.alyak.detector.feature.pill.data.model.Pill
 import com.alyak.detector.feature.pill.data.model.local.dao.RecentSearchDao
 import com.alyak.detector.feature.pill.data.repository.PillRepository
+import com.alyak.detector.core.auth.SessionManager
+import com.alyak.detector.core.auth.UserSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.delay
@@ -35,8 +37,22 @@ sealed interface SearchUiState {
 @HiltViewModel
 class PillSearchViewModel @Inject constructor(
     private val repository: PillRepository,
-    private val recentSearchDao: RecentSearchDao
+    private val recentSearchDao: RecentSearchDao,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
+    val userName : StateFlow<String> = sessionManager.userSession
+        .map { session ->
+            when (session) {
+                is UserSession.Authenticated -> session.userInfo.name
+                else -> "로딩 중.."
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "로딩 중.."
+        )
+
     val recentSearchState: StateFlow<RecentSearchUiState> = repository.fetchRecentPills()
         .map { pills ->
             RecentSearchUiState.Success(pills) as RecentSearchUiState

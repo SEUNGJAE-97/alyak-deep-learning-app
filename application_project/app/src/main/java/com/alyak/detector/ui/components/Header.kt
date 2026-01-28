@@ -28,7 +28,7 @@ import com.alyak.detector.R
 
 @Composable
 fun HeaderForm(
-    name : () -> String
+    name : String
 ) {
     Row(
         modifier = Modifier
@@ -86,6 +86,6 @@ fun HeaderForm(
 @Preview(showBackground = true)
 fun HeaderFormPreview() {
     HeaderForm(
-        name = {"김민수"?:"No name"}
+        name = ("김민수"?:"No name")
     )
 }
