@@ -104,21 +104,26 @@ fun CameraScreen(
                 val screenH = size.height
 
                 // 오버레이 사각형의 위치와 크기 계산 (기존 CameraOverlay와 동일한 로직)
-                val overlaySize = screenW * 0.8f
-                val offsetX = (screenW - overlaySize) / 2f
-                val offsetY = (screenH - overlaySize) / 2f
+//                val overlaySize = screenW * 0.8f
+//                val offsetX = (screenW - overlaySize) / 2f
+//                val offsetY = (screenH - overlaySize) / 2f
+
+                val overlayWidth = screenW * 0.8f
+                val overlayHeight = overlayWidth  // 정사각형 유지
+                val overlayLeft = (screenW - overlayWidth) / 2f
+                val overlayTop = (screenH - overlayHeight) / 2f
 
                 detectedObjects.value.forEach { pill -> val rect = pill.boundingBox
-                    val modelLeft = rect.left * 640f
-                    val modelTop = rect.top * 640f
-                    val modelRight = rect.right * 640f
-                    val modelBottom = rect.bottom * 640f
+                    // 90도 회전
+                    val rotatedLeft = 1f - rect.bottom
+                    val rotatedTop = rect.left
+                    val rotatedRight = 1f - rect.top
+                    val rotatedBottom = rect.right
 
-                    val screenLeft = offsetX + (modelLeft / 640f) * overlaySize
-                    val screenTop = offsetY + (modelTop / 640f) * overlaySize
-                    val screenRight = offsetX + (modelRight / 640f) * overlaySize
-                    val screenBottom = offsetY + (modelBottom / 640f) * overlaySize
-
+                    val screenLeft = overlayLeft + rotatedLeft * overlayWidth
+                    val screenTop = overlayTop + rotatedTop * overlayHeight
+                    val screenRight = overlayLeft + rotatedRight * overlayWidth
+                    val screenBottom = overlayTop + rotatedBottom * overlayHeight
 
                     drawRoundRect(
                         color = Color.Green,
@@ -235,6 +240,7 @@ fun startCamera(
             it.surfaceProvider = previewView.surfaceProvider
         }
         val imageAnalysis = ImageAnalysis.Builder()
+            .setTargetResolution(android.util.Size(640, 640))
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build()
             .also {

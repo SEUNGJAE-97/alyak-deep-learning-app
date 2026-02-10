@@ -38,7 +38,5 @@ class PillAnalyzer(
                 Log.e("PillAnalyzer", "모델 분석 실패: ${error.message}")
             }
         )
-        // 주의: imageProxy.close()는 PillDetector 내부의 processImage에서
-        // 처리가 완전히 끝난 후(finally 블록) 수행됩니다.
     }
 }
