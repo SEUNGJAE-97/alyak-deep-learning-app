@@ -3,7 +3,6 @@ package com.alyak.detector.feature.camera.detector
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.RectF
-import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
@@ -26,7 +25,7 @@ class PillDetector(context: Context) {
     // 1. 모델 로드 (v2_float32.tflite 파일명 확인!)
     private val modelBuffer = FileUtil.loadMappedFile(context, "v3_int8.tflite")
     private val interpreter = Interpreter(modelBuffer)
-    
+
     // 2. 전처리 설정 (정사각형 자르기 + 리사이즈 + 정규화)
     private val imageProcessor = ImageProcessor.Builder()
         .add(ResizeWithCropOrPadOp(640,640)) // 화면 중앙 기준으로 정사각형으로 자름 (오버레이 영역)
