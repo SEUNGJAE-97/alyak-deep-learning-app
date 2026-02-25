@@ -29,7 +29,7 @@ class PillDetector(context: Context) {
 
     // 2. 전처리 설정 (정사각형 자르기 + 리사이즈 + 정규화)
     private val imageProcessor = ImageProcessor.Builder()
-        .add(ResizeWithCropOrPadOp(640,640)) // 화면 중앙 기준으로 정사각형으로 자름 (오버레이 영역)
+//        .add(ResizeWithCropOrPadOp(640,640)) // 화면 중앙 기준으로 정사각형으로 자름 (오버레이 영역)
         .add(ResizeOp(640, 640, ResizeOp.ResizeMethod.BILINEAR)) // YOLOv11 입력 사이즈
         .add(NormalizeOp(0.0f, 255.0f)) // 0~1 사이로 정규화 (메타데이터 에러 해결 핵심)
         .build()

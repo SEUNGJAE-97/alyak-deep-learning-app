@@ -4,11 +4,9 @@ package com.alyak.detector.feature.camera.ui
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
@@ -29,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,11 +45,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.graphics.Shape
-import com.alyak.detector.feature.camera.detector.PillAnalyzer
-import com.alyak.detector.feature.camera.detector.PillDetection
-import com.alyak.detector.feature.camera.detector.PillDetector
 
 @Composable
 fun CameraScreen(
@@ -63,13 +56,6 @@ fun CameraScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraPermission by viewModel.cameraPermission.collectAsState()
-    val pillDetector = remember { PillDetector(context) }
-    val detectedObjects = remember { mutableStateOf<List<PillDetection>>(emptyList()) }
-    val pillAnalyzer = remember {
-        PillAnalyzer(pillDetector) { detections, _, _ ->
-            detectedObjects.value = detections // 검출된 리스트 업데이트
-        }
-    }
     val imageCapture = remember {
         ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
@@ -97,7 +83,7 @@ fun CameraScreen(
             AndroidView(
                 factory = { context ->
                     PreviewView(context).apply {
-                        startCamera(this, lifecycleOwner, imageCapture, pillAnalyzer)
+                        startCamera(this, lifecycleOwner, imageCapture)
                     }
                 },
                 modifier = Modifier.fillMaxSize()
@@ -128,43 +114,6 @@ fun CameraScreen(
                         }
                     }
                 )
-            }
-
-            // 박스치기
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val screenW = size.width
-                val screenH = size.height
-
-                // 오버레이 사각형의 위치와 크기 계산 (기존 CameraOverlay와 동일한 로직)
-//                val overlaySize = screenW * 0.8f
-//                val offsetX = (screenW - overlaySize) / 2f
-//                val offsetY = (screenH - overlaySize) / 2f
-
-                val overlayWidth = screenW * 0.8f
-                val overlayHeight = overlayWidth  // 정사각형 유지
-                val overlayLeft = (screenW - overlayWidth) / 2f
-                val overlayTop = (screenH - overlayHeight) / 2f
-
-                detectedObjects.value.forEach { pill -> val rect = pill.boundingBox
-                    // 90도 회전
-                    val rotatedLeft = 1f - rect.bottom
-                    val rotatedTop = rect.left
-                    val rotatedRight = 1f - rect.top
-                    val rotatedBottom = rect.right
-
-                    val screenLeft = overlayLeft + rotatedLeft * overlayWidth
-                    val screenTop = overlayTop + rotatedTop * overlayHeight
-                    val screenRight = overlayLeft + rotatedRight * overlayWidth
-                    val screenBottom = overlayTop + rotatedBottom * overlayHeight
-
-                    drawRoundRect(
-                        color = Color.Green,
-                        topLeft = Offset(screenLeft, screenTop),
-                        size = Size(screenRight - screenLeft, screenBottom - screenTop),
-                        cornerRadius = CornerRadius(8.dp.toPx()),
-                        style = Stroke(width = 4.dp.toPx())
-                    )
-                }
             }
         } else {
             // 권한이 없는 경우
@@ -223,13 +172,6 @@ fun CameraOverlay(
     }
 }
 
-//@Composable
-//@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
-//fun PreviewCameraScreen() {
-//    CameraOverlay(previewMode = true, onCaptureClick = {})
-//    CameraScreen(navController = rememberNavController())
-//}
-
 @Composable
 fun IconElevatedButton(
     onClick: () -> Unit,
@@ -263,8 +205,7 @@ fun IconElevatedButton(
 fun startCamera(
     previewView: PreviewView,
     lifecycleOwner: LifecycleOwner,
-    imageCapture: ImageCapture,
-    analyzer: ImageAnalysis.Analyzer
+    imageCapture: ImageCapture
 ) {
     val cameraProviderFuture = ProcessCameraProvider.getInstance(previewView.context)
     cameraProviderFuture.addListener({
@@ -272,17 +213,10 @@ fun startCamera(
         val preview = Preview.Builder().build().also {
             it.surfaceProvider = previewView.surfaceProvider
         }
-        val imageAnalysis = ImageAnalysis.Builder()
-            .setTargetResolution(android.util.Size(640, 640))
-            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            .build()
-            .also {
-                it.setAnalyzer(ContextCompat.getMainExecutor(previewView.context), analyzer)
-            }
         val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         cameraProvider.unbindAll()
         cameraProvider.bindToLifecycle(
-            lifecycleOwner, cameraSelector, preview, imageAnalysis,imageCapture
+            lifecycleOwner, cameraSelector, preview,imageCapture
         )
     }, ContextCompat.getMainExecutor(previewView.context))
 }
