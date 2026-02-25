@@ -16,6 +16,7 @@ import com.alyak.detector.feature.auth.ui.signIn.SignInScreen
 import com.alyak.detector.feature.auth.ui.signIn.SignInViewModel
 import com.alyak.detector.feature.auth.ui.signUp.SignUpViewModel
 import com.alyak.detector.feature.camera.ui.CameraScreen
+import com.alyak.detector.feature.camera.ui.ResultScreen
 import com.alyak.detector.feature.family.ui.main.MainScreen
 import com.alyak.detector.feature.map.ui.MapScreen
 import com.alyak.detector.feature.pill.ui.PillDetail.PillDetailScreen
@@ -55,6 +56,9 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
         }
         composable("CameraScreen") {
             CameraScreen(navController)
+        }
+        composable("ResultScreen") {
+            ResultScreen(navController)
         }
         composable("MapScreen") {
             MapScreen(navController)
