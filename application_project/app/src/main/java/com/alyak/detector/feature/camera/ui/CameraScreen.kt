@@ -109,6 +109,7 @@ fun CameraScreen(
                             val bitmap = image.toBitmap()
                             viewModel.setCapturedImage(bitmap)
                             image.close()
+
                             navController.navigate("ResultScreen")
                         }
                     }

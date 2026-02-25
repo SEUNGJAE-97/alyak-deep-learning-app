@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.alyak.detector.feature.camera.detector.PillDetection
 import com.alyak.detector.feature.camera.detector.PillDetector
@@ -30,7 +29,7 @@ import com.alyak.detector.feature.camera.detector.PillDetector
 @Composable
 fun ResultScreen(
     navController: NavController,
-    viewModel: CameraViewModel = hiltViewModel(),
+    viewModel: CameraViewModel,
 ) {
     val context = LocalContext.current
     val pillDetector = remember { PillDetector(context) }
@@ -55,7 +54,8 @@ fun ResultScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center) {
         bitmap?.let { btm ->
             Image(
                 bitmap = btm.asImageBitmap(),

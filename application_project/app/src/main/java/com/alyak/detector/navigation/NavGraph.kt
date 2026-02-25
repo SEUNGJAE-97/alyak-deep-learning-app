@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -17,6 +18,7 @@ import com.alyak.detector.feature.auth.ui.signIn.SignInViewModel
 import com.alyak.detector.feature.auth.ui.signUp.SignUpViewModel
 import com.alyak.detector.feature.camera.ui.CameraScreen
 import com.alyak.detector.feature.camera.ui.ResultScreen
+import com.alyak.detector.feature.camera.ui.CameraViewModel
 import com.alyak.detector.feature.family.ui.main.MainScreen
 import com.alyak.detector.feature.map.ui.MapScreen
 import com.alyak.detector.feature.pill.ui.PillDetail.PillDetailScreen
@@ -35,6 +37,7 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
 
     val accessToken by tokenManager.accessTokenFlow.collectAsState(initial = null)
     val navController = rememberNavController()
+    val cameraViewModel = remember { CameraViewModel() }
 
     //NavHost
     NavHost(
@@ -55,10 +58,10 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
             MainScreen(navController)
         }
         composable("CameraScreen") {
-            CameraScreen(navController)
+            CameraScreen(navController, cameraViewModel)
         }
         composable("ResultScreen") {
-            ResultScreen(navController)
+            ResultScreen(navController, cameraViewModel)
         }
         composable("MapScreen") {
             MapScreen(navController)
