@@ -1,10 +1,10 @@
 package com.alyak.detector.feature.camera.ui
 
-import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -54,19 +55,23 @@ fun ResultScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         bitmap?.let { btm ->
-            Image(
-                bitmap = btm.asImageBitmap(),
-                contentDescription = "Captured Pill Image",
-                modifier = Modifier.fillMaxSize()
-            )
+            val configuration = LocalConfiguration.current
+            val overlaySize = (configuration.screenWidthDp * 0.8f).dp
 
-            if (isLoading.value) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else {
-                ResultCanvas(detections = detectedObjects.value)
+            Box(modifier = Modifier.size(overlaySize)) {
+                Image(
+                    bitmap = btm.asImageBitmap(),
+                    contentDescription = "Captured Pill Image",
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                if (isLoading.value) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                } else {
+                    ResultCanvas(detections = detectedObjects.value)
+                }
             }
         }
     }
@@ -77,21 +82,14 @@ fun ResultCanvas(
     detections: List<PillDetection>
 ) {
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val screenW = size.width
-        val screenH = size.height
-
-        val overlayWidth = screenW * 0.8f
-        val overlayHeight = overlayWidth
-        val overlayLeft = (screenW - overlayWidth) / 2f
-        val overlayTop = (screenH - overlayHeight) / 2f
-
+        val canvasW = size.width
+        val canvasH = size.height
         detections.forEach { pill ->
             val rect = pill.boundingBox
-
-            val left = overlayLeft + rect.left * overlayWidth
-            val top = overlayTop + rect.top * overlayHeight
-            val right = overlayLeft + rect.right * overlayWidth
-            val bottom = overlayTop + rect.bottom * overlayHeight
+            val left = rect.left * canvasW
+            val top = rect.top * canvasH
+            val right = rect.right * canvasW
+            val bottom = rect.bottom * canvasH
 
             drawRoundRect(
                 color = Color.Green,

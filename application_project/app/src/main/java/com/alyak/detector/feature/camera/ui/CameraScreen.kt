@@ -3,6 +3,7 @@ package com.alyak.detector.feature.camera.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -106,8 +107,21 @@ fun CameraScreen(
                     ContextCompat.getMainExecutor(context),
                     object : ImageCapture.OnImageCapturedCallback() {
                         override fun onCaptureSuccess(image: ImageProxy) {
+                            val rotationDegrees = image.imageInfo.rotationDegrees
                             val bitmap = image.toBitmap()
-                            viewModel.setCapturedImage(bitmap)
+                            val matrix = android.graphics.Matrix().apply {
+                                postRotate(rotationDegrees.toFloat())
+                            }
+                            val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+
+                            val metrics = context.resources.displayMetrics
+                            val screenRatio = metrics.widthPixels.toFloat() / metrics.heightPixels.toFloat()
+                            val cropSize = (rotatedBitmap.height * screenRatio * 0.8f).toInt()
+
+                            val left = (rotatedBitmap.width - cropSize) / 2
+                            val top = (rotatedBitmap.height - cropSize) / 2
+                            val finalCroppedBitmap = Bitmap.createBitmap(rotatedBitmap, left, top, cropSize, cropSize)
+                            viewModel.setCapturedImage(finalCroppedBitmap)
                             image.close()
 
                             navController.navigate("ResultScreen")

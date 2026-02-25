@@ -3,6 +3,7 @@ package com.alyak.detector.feature.camera.detector
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.RectF
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
@@ -42,7 +43,6 @@ class PillDetector(context: Context) {
             var tensorImage = TensorImage(DataType.FLOAT32)
             tensorImage.load(bitmap)
             tensorImage = imageProcessor.process(tensorImage)
-
             val output = Array(1) { Array(5) { FloatArray(8400) } }
             interpreter.run(tensorImage.buffer, output)
 
