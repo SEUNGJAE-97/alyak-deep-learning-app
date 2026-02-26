@@ -58,8 +58,8 @@ import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import com.alyak.detector.R
-import com.alyak.detector.feature.camera.detector.PillDetection
-import com.alyak.detector.feature.camera.detector.PillDetector
+import com.alyak.detector.feature.camera.data.model.PillDetection
+import com.alyak.detector.feature.camera.data.model.PillDetector
 import com.alyak.detector.feature.pill.ui.search.components.TextPlaceholder
 import com.valentinilk.shimmer.shimmer
 import java.util.Collections.emptyList

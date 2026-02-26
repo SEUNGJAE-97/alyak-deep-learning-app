@@ -1,9 +1,8 @@
-package com.alyak.detector.feature.camera.detector
+package com.alyak.detector.feature.camera.data.model
 
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.RectF
-import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
@@ -14,7 +13,6 @@ import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
-import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp
 
 // 결과를 담을 데이터 클래스 (PillAnalyzer에서 사용)
 data class PillDetection(
@@ -23,15 +21,14 @@ data class PillDetection(
 )
 
 class PillDetector(context: Context) {
-    // 1. 모델 로드 (v2_float32.tflite 파일명 확인!)
+    // 1. 모델 로드
     private val modelBuffer = FileUtil.loadMappedFile(context, "v3_int8.tflite")
     private val interpreter = Interpreter(modelBuffer)
 
-    // 2. 전처리 설정 (정사각형 자르기 + 리사이즈 + 정규화)
+    // 2. 전처리 설정
     private val imageProcessor = ImageProcessor.Builder()
-//        .add(ResizeWithCropOrPadOp(640,640)) // 화면 중앙 기준으로 정사각형으로 자름 (오버레이 영역)
         .add(ResizeOp(640, 640, ResizeOp.ResizeMethod.BILINEAR)) // YOLOv11 입력 사이즈
-        .add(NormalizeOp(0.0f, 255.0f)) // 0~1 사이로 정규화 (메타데이터 에러 해결 핵심)
+        .add(NormalizeOp(0.0f, 255.0f))// 정규화
         .build()
 
     fun processImage(
