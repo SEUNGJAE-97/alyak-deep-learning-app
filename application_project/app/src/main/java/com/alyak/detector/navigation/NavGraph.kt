@@ -37,7 +37,6 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
 
     val accessToken by tokenManager.accessTokenFlow.collectAsState(initial = null)
     val navController = rememberNavController()
-    val cameraViewModel = remember { CameraViewModel() }
 
     //NavHost
     NavHost(
@@ -58,9 +57,13 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
             MainScreen(navController)
         }
         composable("CameraScreen") {
+            val cameraViewModel: CameraViewModel = hiltViewModel()
             CameraScreen(navController, cameraViewModel)
         }
         composable("ResultScreen") {
+            val cameraViewModel: CameraViewModel = hiltViewModel(
+                viewModelStoreOwner = navController.getBackStackEntry("CameraScreen")
+            )
             ResultScreen(navController, cameraViewModel)
         }
         composable("MapScreen") {

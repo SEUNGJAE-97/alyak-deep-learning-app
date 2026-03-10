@@ -23,6 +23,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.Duration;
@@ -49,6 +51,7 @@ public class PillServiceImpl implements PillService {
 
     private static final Duration IDENTIFY_API_DELAY = Duration.ofSeconds(5);
     private static final Pattern ALERT_SPLIT_PATTERN = Pattern.compile("[.!?]\\s*\\n*");
+    private static final WebClient webClient = WebClient.builder().baseUrl("").build();
     private static final Map<String, String> CAUTION_KEYWORD_MAP;
     static {
         Map<String, String> map = new HashMap<>();
@@ -333,5 +336,13 @@ public class PillServiceImpl implements PillService {
                 .map(String::trim)
                 .filter(s -> !s.isBlank()) // 빈 문자열 제거
                 .collect(Collectors.toList());
+    }
+
+
+    public List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images){
+        // 1. FastAPI 호출
+        // 2. 결과(알약명/ID)로 DB 조회
+        // 3. 최종 상세 정보 반환
+        return null;
     }
 }

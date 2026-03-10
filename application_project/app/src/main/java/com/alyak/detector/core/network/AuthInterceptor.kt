@@ -27,9 +27,6 @@ class AuthInterceptor @Inject constructor(
 
         // 인증 관련 엔드포인트가 아니거나, 로그인 요청이 아닌 경우 토큰 추가
         val token = if (!isAuthEndpoint) {
-            // TokenManager의 suspend 함수를 호출하기 위해 runBlocking 사용
-            // 주의: runBlocking은 메인 스레드에서 사용 시 ANR을 일으킬 수 있지만,
-            // OkHttp의 Interceptor는 백그라운드 스레드에서 실행되므로 안전합니다.
             runBlocking {
                 tokenManager.getAccessToken()
             }

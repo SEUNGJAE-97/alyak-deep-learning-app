@@ -7,11 +7,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/pill")
@@ -39,5 +40,13 @@ public class PillController {
     @Operation(summary = "상세검색", description = "pill_Id 값으로 하나의 알약에 대해 상세 정보를 조회한다.")
     public ResponseEntity<?> detailPill(@RequestParam Long pillId) {
         return ResponseEntity.ok(pillService.detailPill(pillId));
+    }
+
+    @PostMapping(value = "/recognize", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "알약 이미지 인식", description = "Fast API 서버로 이미지를 전달하고, 반환 받은 식별자로 DB조회 후 정보 반환한다.")
+    public ResponseEntity<?> recognizePill(
+            @RequestPart("images") List<MultipartFile> images
+    ) {
+        return ResponseEntity.ok(pillService.recognizeAndFindDetails(images));
     }
 }

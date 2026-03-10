@@ -73,6 +73,7 @@ fun ResultScreen(
     val pillDetector = remember { PillDetector(context) }
 
     val bitmap by viewModel.capturedBitmap.collectAsState()
+    val isSending by viewModel.isSending.collectAsState()
     val detectedObjects = remember { mutableStateOf<List<PillDetection>>(emptyList()) }
     val isLoading = remember { mutableStateOf(true) }
     val imageLoader = remember {
@@ -243,13 +244,16 @@ fun ResultScreen(
                     }
 
                     Button(
-                        onClick = { /* 서버 전송 로직 */ },
+                        onClick = { viewModel.sendImage() },
                         modifier = Modifier.weight(1f).height(56.dp),
-                        enabled = detectedObjects.value.isNotEmpty() && !isLoading.value,
+                        enabled = detectedObjects.value.isNotEmpty() && !isLoading.value && !isSending,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
                     ) {
-                        Text("결과 전송하기", color = Color.White)
+                        Text(
+                            text = if (isSending) "전송 중..." else "결과 전송하기",
+                            color = Color.White
+                        )
                     }
                 }
             }

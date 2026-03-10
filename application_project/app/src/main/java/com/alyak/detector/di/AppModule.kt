@@ -9,6 +9,9 @@ import com.alyak.detector.feature.auth.repository.AuthRepository
 import com.alyak.detector.feature.family.data.api.FamilyService
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
 import com.alyak.detector.feature.map.data.api.MapApi
+import com.alyak.detector.feature.camera.data.api.PillOCRApi
+import com.alyak.detector.feature.camera.data.repository.CameraRepo
+import com.alyak.detector.feature.camera.data.repository.CameraRepoImpl
 import com.alyak.detector.feature.pill.data.api.PillApi
 import com.alyak.detector.feature.pill.data.model.local.dao.RecentSearchDao
 import com.alyak.detector.feature.pill.data.model.local.database.PillDatabase
@@ -51,6 +54,16 @@ object AppModule {
     @Singleton
     fun providePillApi(@AppServerRetrofit retrofit: Retrofit): PillApi =
         retrofit.create(PillApi::class.java)
+
+    @Provides
+    @Singleton
+    fun providePillOCRApi(@AppServerRetrofit retrofit: Retrofit): PillOCRApi =
+        retrofit.create(PillOCRApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideCameraRepository(pillOCRApi: PillOCRApi): CameraRepo =
+        CameraRepoImpl(pillOCRApi)
 
     @Provides
     @Singleton
