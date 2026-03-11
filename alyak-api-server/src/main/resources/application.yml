@@ -75,6 +75,9 @@ jwt:
 valhalla:
   host: ${VALHALLA_HOST:http://localhost:8002}
 
+fast-api:
+  server:
+    url: ${OCR_SERVER_URL:http://fast-api:8000}
 
 logging:
   level:

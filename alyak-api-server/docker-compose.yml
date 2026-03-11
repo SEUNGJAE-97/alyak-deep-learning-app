@@ -52,7 +52,10 @@ services:
       SPRING_JPA_SHOW_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
-      
+
+      # Fast api url
+      OCR_SERVER_URL: http://fast-api:8000
+
       # Redis Configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -77,6 +80,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      fast-api:
+        condition: service_started
     networks:
       - alyak-network
     restart: unless-stopped
@@ -95,6 +100,19 @@ services:
       - build_admins=True     # 행정 구역 데이터
       - build_time_zones=True
       - server_threads=2      # CPU 사용량에 따라 조절 (기본 2)
+    networks:
+      - alyak-network
+
+  fast-api:
+    build:
+      context: ../Pill-Recognition-Pipeline
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    volumes:
+      - ../Pill-Recognition-Pipeline:/app
+    environment:
+      - PYTHONPATH=/app
     networks:
       - alyak-network
 

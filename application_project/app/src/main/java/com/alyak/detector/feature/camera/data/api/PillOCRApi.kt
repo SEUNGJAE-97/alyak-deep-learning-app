@@ -9,7 +9,7 @@ import retrofit2.http.Part
 
 interface PillOCRApi {
     @Multipart
-    @POST("api/v1/pills/ocr")
+    @POST("api/pill/recognize")
     suspend fun uploadPillImages(
         @Part images: List<MultipartBody.Part>
     ): Response<MedicineInfoDto>

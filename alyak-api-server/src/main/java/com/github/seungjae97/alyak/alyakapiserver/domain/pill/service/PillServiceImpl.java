@@ -389,7 +389,7 @@ public class PillServiceImpl implements PillService {
         HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
 
         ResponseEntity<OcrResponse> response = restTemplateService.postForEntity(
-                ocrServerUrl + "/process",
+                ocrServerUrl + "/api/v1/process",
                 request,
                 OcrResponse.class
         );
