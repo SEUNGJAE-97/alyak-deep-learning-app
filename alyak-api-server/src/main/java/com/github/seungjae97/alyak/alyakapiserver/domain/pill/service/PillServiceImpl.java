@@ -356,14 +356,14 @@ public class PillServiceImpl implements PillService {
                     // 2. 결과(알약명)로 DB 조회
                     for(OcrResult ocrResult : ocrResponse.results()){
                         if (ocrResult.confidence() > 0.5f) {
-                            pillRepository.findByPillName(ocrResult.text())
+                            pillRepository.findByPillNameWithType(ocrResult.text())
                                     .stream()
                                     .map(pill -> SimplePillInfo.builder()
-                                            .pillId(pill.getId())
+                                            .pillId(pill.getPillId())
                                             .pillName(pill.getPillName())
-                                            .manufacturer(pill.getPillManufacturer())
-                                            .classification(null)
-                                            .pillType(null)
+                                            .manufacturer(pill.getManufacturer())
+                                            .classification(pill.getClassification())
+                                            .pillType(pill.getPillType())
                                             .pillImg(pill.getPillImg())
                                             .build()
                                     )
