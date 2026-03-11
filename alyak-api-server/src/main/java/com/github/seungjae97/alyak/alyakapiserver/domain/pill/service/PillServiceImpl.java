@@ -1,10 +1,8 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.OcrResult;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillAppearanceResponse;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillDetailResponse;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillInfoResponse;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.SimplePillInfo;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.*;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillAppearance;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillColor;
@@ -21,8 +19,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -45,6 +49,9 @@ public class PillServiceImpl implements PillService {
     private final PillColorRepository pillColorRepository;
     private final PillShapeRepository pillShapeRepository;
     private final RestTemplateService restTemplateService;
+
+    @Value("${ocr.server.url:http://localhost:8000}")
+    private String ocrServerUrl;
 
     @Qualifier("pillIdentifyTaskScheduler")
     private final TaskScheduler pillIdentifyTaskScheduler;
@@ -340,9 +347,52 @@ public class PillServiceImpl implements PillService {
 
 
     public List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images){
-        // 1. FastAPI 호출
-        // 2. 결과(알약명/ID)로 DB 조회
+        List<SimplePillInfo> results = new ArrayList<>();
+        for(MultipartFile image : images){
+            try{
+                // 1. FastAPI 호출
+                OcrResponse ocrResponse = callFastApi(image);
+                if(ocrResponse != null && ocrResponse.results() != null){
+                    // 2. 결과(알약명)로 DB 조회
+                    for(OcrResult ocrResult : ocrResponse.results()){
+                        if (ocrResult.confidence() > 0.5f) {
+                            pillRepository.findByPillName(ocrResult.text())
+                                    .stream()
+                                    .map(pill -> SimplePillInfo.builder()
+                                            .pillId(pill.getId())
+                                            .pillName(pill.getPillName())
+                                            .manufacturer(pill.getPillManufacturer())
+                                            .classification(null)
+                                            .pillType(null)
+                                            .pillImg(pill.getPillImg())
+                                            .build()
+                                    )
+                                    .forEach(results::add);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
         // 3. 최종 상세 정보 반환
-        return null;
+        return results.isEmpty() ? List.of() : results;
+    }
+
+    private OcrResponse callFastApi(MultipartFile image) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", image.getResource());
+
+        HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<OcrResponse> response = restTemplateService.postForEntity(
+                ocrServerUrl + "/process",
+                request,
+                OcrResponse.class
+        );
+        return response.getBody();
     }
 }
