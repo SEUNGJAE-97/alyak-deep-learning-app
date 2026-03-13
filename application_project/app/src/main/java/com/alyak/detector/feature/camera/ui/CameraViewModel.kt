@@ -3,6 +3,7 @@ package com.alyak.detector.feature.camera.ui
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alyak.detector.feature.camera.data.model.PillDetection
 import com.alyak.detector.feature.camera.data.repository.CameraRepo
 import com.alyak.detector.feature.pill.data.model.MedicineInfoDto
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +31,9 @@ class CameraViewModel @Inject constructor(
     private val _sendError = MutableStateFlow<String?>(null)
     val sendError = _sendError.asStateFlow()
 
+    private val _detectedPillBitmaps = MutableStateFlow<List<Bitmap>>(emptyList())
+    val detectedPillBitmaps = _detectedPillBitmaps.asStateFlow()
+
     fun setCameraPermission(granted: Boolean) {
         cameraPermission.value = granted
     }
@@ -38,14 +42,25 @@ class CameraViewModel @Inject constructor(
         _capturedBitmap.value = bitmap
     }
 
+    fun setDetectedPills(originalBitmap: Bitmap, detections: List<PillDetection>) {
+        viewModelScope.launch {
+            val cropped = cropDetectedPills(originalBitmap, detections)
+            _detectedPillBitmaps.value = cropped
+        }
+    }
+
     fun sendImage() {
-        val bitmap = _capturedBitmap.value ?: return
+        val originalBitmap = _capturedBitmap.value ?: return
+        val detectedImages = _detectedPillBitmaps.value
 
         viewModelScope.launch {
             _isSending.value = true
             _sendError.value = null
             try {
-                val result = cameraRepo.sendImage(bitmap)
+                val result = cameraRepo.sendImage(
+                    originalImage = originalBitmap,
+                    detectedImages = detectedImages
+                )
                 _sendResult.value = result
             } catch (e: Exception) {
                 _sendError.value = e.message
@@ -54,4 +69,27 @@ class CameraViewModel @Inject constructor(
             }
         }
     }
+
+    private fun cropDetectedPills(
+        originalBitmap: Bitmap,
+        detections: List<PillDetection>
+    ): List<Bitmap> {
+        return detections.mapNotNull { detection ->
+            val rect = detection.boundingBox // RectF 객체
+
+            try {
+                val left = (rect.left * originalBitmap.width).toInt().coerceIn(0, originalBitmap.width - 1)
+                val top = (rect.top * originalBitmap.height).toInt().coerceIn(0, originalBitmap.height - 1)
+                val width = (rect.width() * originalBitmap.width).toInt().coerceAtMost(originalBitmap.width - left)
+                val height = (rect.height() * originalBitmap.height).toInt().coerceAtMost(originalBitmap.height - top)
+
+                if (width > 0 && height > 0) {
+                    Bitmap.createBitmap(originalBitmap, left, top, width, height)
+                } else null
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
 }

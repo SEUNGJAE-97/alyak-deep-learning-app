@@ -91,11 +91,11 @@ fun ResultScreen(
     LaunchedEffect(bitmap) {
         bitmap?.let { btm ->
             isLoading.value = true
-            kotlinx.coroutines.delay(2000)
             pillDetector.processImage(
                 bitmap = btm,
                 onSuccess = { detections ->
                     detectedObjects.value = detections
+                    viewModel.setDetectedPills(btm, detections)
                     isLoading.value = false
                 },
                 onFailure = {
