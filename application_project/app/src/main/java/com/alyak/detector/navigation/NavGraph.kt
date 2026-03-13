@@ -61,10 +61,13 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
             CameraScreen(navController, cameraViewModel)
         }
         composable("ResultScreen") {
-            val cameraViewModel: CameraViewModel = hiltViewModel(
-                viewModelStoreOwner = navController.getBackStackEntry("CameraScreen")
-            )
-            ResultScreen(navController, cameraViewModel)
+            val cameraEntry = runCatching {
+                navController.getBackStackEntry("CameraScreen")
+            }.getOrNull()
+            if (cameraEntry != null) {
+                val cameraViewModel: CameraViewModel = hiltViewModel(cameraEntry)
+                ResultScreen(navController, cameraViewModel)
+            }
         }
         composable("MapScreen") {
             MapScreen(navController)

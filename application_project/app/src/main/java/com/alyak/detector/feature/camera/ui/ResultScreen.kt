@@ -146,7 +146,7 @@ fun ResultScreen(
                 IconButton(
                     onClick = {
                         navController.navigate("MainScreen") {
-                            popUpTo("MainScreen") { inclusive = true }
+                            popUpTo("CameraScreen") { inclusive = true }
                         }
                     },
                     modifier = Modifier
