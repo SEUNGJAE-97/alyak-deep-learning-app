@@ -18,7 +18,7 @@ class CameraRepoImpl @Inject constructor(
     override suspend fun sendImage(
         originalImage: Bitmap,
         detectedImages: List<Bitmap>
-    ): MedicineInfoDto {
+    ): List<MedicineInfoDto> {
         val imageParts = mutableListOf<MultipartBody.Part>()
         // 1. 원본 이미지 추가
         val originalBytes = bitmapToBytes(originalImage)
@@ -54,10 +54,9 @@ class CameraRepoImpl @Inject constructor(
     }
 
     // 응답 처리 공통화
-    private fun handleResponse(response: Response<MedicineInfoDto>): MedicineInfoDto {
+    private fun handleResponse(response: Response<List<MedicineInfoDto>>): List<MedicineInfoDto> {
         if (response.isSuccessful) {
-            return response.body()
-                ?: throw IllegalStateException("API 응답 본문이 없습니다.")
+            return response.body() ?: emptyList()
         } else {
             throw IllegalStateException("API 호출 실패: ${response.code()} - ${response.message()}")
         }

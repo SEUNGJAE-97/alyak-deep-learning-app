@@ -7,7 +7,7 @@ interface CameraRepo {
     /**
      * @param detectedImages : 검출된 이미지들
      * @param originalImage : 원본 이미지
-     * @return MedicineInfoDto : 알약 기본 정보
+     * @return List<MedicineInfoDto> : 인식된 알약 기본 정보 목록
      * */
-    suspend fun sendImage(originalImage: Bitmap, detectedImages: List<Bitmap>): MedicineInfoDto
+    suspend fun sendImage(originalImage: Bitmap, detectedImages: List<Bitmap>): List<MedicineInfoDto>
 }

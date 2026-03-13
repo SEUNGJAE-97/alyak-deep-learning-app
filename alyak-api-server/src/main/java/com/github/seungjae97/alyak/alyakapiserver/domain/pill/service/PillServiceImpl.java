@@ -348,16 +348,23 @@ public class PillServiceImpl implements PillService {
 
     public List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images){
         List<SimplePillInfo> results = new ArrayList<>();
+        log.info("[OCR] 이미지 {}장 처리 시작", images.size());
         for(MultipartFile image : images){
             try{
                 // 1. FastAPI 호출
                 OcrResponse ocrResponse = callFastApi(image);
+                log.info("[OCR] FastAPI 응답: filename={}, results 개수={}", 
+                        ocrResponse != null ? ocrResponse.filename() : null,
+                        ocrResponse != null && ocrResponse.results() != null ? ocrResponse.results().size() : 0);
                 if(ocrResponse != null && ocrResponse.results() != null){
                     // 2. 결과(알약명)로 DB 조회
                     for(OcrResult ocrResult : ocrResponse.results()){
+                        log.debug("[OCR] text={}, confidence={}", ocrResult.text(), ocrResult.confidence());
                         if (ocrResult.confidence() > 0.5f) {
-                            pillRepository.findByPillNameWithType(ocrResult.text())
-                                    .stream()
+                            List<SimplePillInfo> found = pillRepository.findByPillNameWithType(ocrResult.text());
+                            log.info("[OCR] DB 조회: text='{}', confidence={}, 매칭 수={}", 
+                                    ocrResult.text(), ocrResult.confidence(), found.size());
+                            found.stream()
                                     .map(pill -> SimplePillInfo.builder()
                                             .pillId(pill.getPillId())
                                             .pillName(pill.getPillName())
@@ -368,14 +375,18 @@ public class PillServiceImpl implements PillService {
                                             .build()
                                     )
                                     .forEach(results::add);
+                        } else {
+                            log.info("[OCR] confidence 낮음 제외: text='{}', confidence={} (임계값 0.5)", 
+                                    ocrResult.text(), ocrResult.confidence());
                         }
                     }
                 }
             } catch (Exception e) {
+                log.error("[OCR] 이미지 처리 중 오류: {}", e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         }
-        // 3. 최종 상세 정보 반환
+        log.info("[OCR] 최종 결과: {}건", results.size());
         return results.isEmpty() ? List.of() : results;
     }
 

@@ -12,5 +12,5 @@ interface PillOCRApi {
     @POST("api/pill/recognize")
     suspend fun uploadPillImages(
         @Part images: List<MultipartBody.Part>
-    ): Response<MedicineInfoDto>
+    ): Response<List<MedicineInfoDto>>
 }

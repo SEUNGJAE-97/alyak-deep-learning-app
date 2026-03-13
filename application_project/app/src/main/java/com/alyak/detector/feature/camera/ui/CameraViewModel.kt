@@ -25,7 +25,7 @@ class CameraViewModel @Inject constructor(
     private val _isSending = MutableStateFlow(false)
     val isSending = _isSending.asStateFlow()
 
-    private val _sendResult = MutableStateFlow<MedicineInfoDto?>(null)
+    private val _sendResult = MutableStateFlow<List<MedicineInfoDto>?>(null)
     val sendResult = _sendResult.asStateFlow()
 
     private val _sendError = MutableStateFlow<String?>(null)

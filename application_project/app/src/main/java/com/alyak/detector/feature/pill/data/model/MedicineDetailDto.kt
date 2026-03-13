@@ -1,6 +1,7 @@
 package com.alyak.detector.feature.pill.data.model
 
 import com.alyak.detector.core.model.SpecialCautionType
+import com.google.gson.annotations.SerializedName
 
 /**
  * 약 상세 정보를 담는 DTO 클래스.
@@ -31,12 +32,12 @@ data class MedicineDetailDto(
  * @property category 약 분류 (예: 일반의약품)
  */
 data class MedicineInfoDto(
-    val name: String,
+    @SerializedName("pillName") val name: String,
     val classification: String,
     val manufacturer: String,
     val pillId: Long,
-    val category: String,
-    val img: String?
+    @SerializedName("pillType") val category: String,
+    @SerializedName("pillImg") val img: String?
 )
 
 /**
