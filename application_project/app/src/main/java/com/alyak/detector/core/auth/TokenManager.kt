@@ -169,4 +169,11 @@ class TokenManager @Inject constructor(
             preferences.remove(PreferencesKeys.USER_NAME)
         }
     }
+
+    /**
+     * refreshToken을 반환한다.
+     * */
+    suspend fun getRefreshToken(): String? {
+        return dataStore.data.first()[PreferencesKeys.REFRESH_TOKEN]
+    }
 }

@@ -6,11 +6,15 @@ import com.alyak.detector.feature.auth.data.model.SignInResponse
 import com.alyak.detector.feature.auth.data.model.SignUpRequest
 import com.alyak.detector.feature.auth.data.model.SignUpResponse
 import com.alyak.detector.feature.auth.data.model.TempLoginResponse
+import com.alyak.detector.feature.auth.data.model.TokenRequest
 import com.alyak.detector.feature.auth.data.model.response.LoginResponse
+import com.alyak.detector.feature.auth.data.model.response.TokenResponse
+import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.http.Query
+
 
 interface AuthApi {
     @POST("/api/auth/signup")
@@ -42,6 +46,9 @@ interface AuthApi {
     @POST("/auth/kakao/authorize")
     suspend fun kakaoLogin() : Response<LoginResponse>
 
-
+    @POST("/api/auth/reissue")
+    fun reissue(
+        @Body request: TokenRequest
+    ): Call<TokenResponse>
 }
 

@@ -1,6 +1,7 @@
 package com.alyak.detector.data.api
 
 import com.alyak.detector.core.network.AuthInterceptor
+import com.alyak.detector.core.network.TokenAuthenticator
 import com.alyak.detector.di.AppServerRetrofit
 import com.alyak.detector.di.KakaoRetrofit
 import com.alyak.detector.feature.auth.data.api.AuthApi
@@ -38,13 +39,15 @@ object NetworkModule {
     @Singleton
     @AppServerRetrofit
     fun provideServerRetrofit(
-        authInterceptor: AuthInterceptor
+        authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator
     ): Retrofit {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
         val client = OkHttpClient.Builder()
             .addInterceptor(authInterceptor)  // 토큰 추가 (먼저 실행)
+            .authenticator(tokenAuthenticator) // 토큰 재발급
             .addInterceptor(logging)          // 로깅 (나중에 실행)
             .build()
 
