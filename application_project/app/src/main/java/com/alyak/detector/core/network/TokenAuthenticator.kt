@@ -4,18 +4,17 @@ import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.feature.auth.data.api.AuthApi
 import com.alyak.detector.feature.auth.data.model.TokenRequest
 import jakarta.inject.Inject
-import jakarta.inject.Singleton
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
 import okhttp3.Response
 import okhttp3.Request
 import okhttp3.Route
-import dagger.Lazy
+import javax.inject.Singleton
 
 @Singleton
 class TokenAuthenticator @Inject constructor(
     private val tokenManager: TokenManager,
-    private val authApi: Lazy<AuthApi>
+    private val authApi: dagger.Lazy<AuthApi>
 ) : Authenticator {
 
     override fun authenticate(route: Route?, response: Response): Request? {
@@ -47,6 +46,7 @@ class TokenAuthenticator @Inject constructor(
                     .build()
             }else{
                 tokenManager.clearToken()
+                tokenManager.emitLogout()
                 null
             }
         }

@@ -8,7 +8,9 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.core.util.PermissionManager
 import com.alyak.detector.feature.auth.data.model.TempLoginResponse
@@ -50,6 +52,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             AlyakTheme {
                 Navigator(permissionManager = permissionManager, tokenManager = tokenManager)
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                tokenManager.authEvent.collect { event ->
+                    if (event == TokenManager.AuthEvent.LOGOUT) {
+                        tokenManager.clearToken()
+                    }
+                }
             }
         }
     }

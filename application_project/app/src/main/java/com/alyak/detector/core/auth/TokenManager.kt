@@ -7,9 +7,13 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.alyak.detector.core.auth.PreferencesKeys.ACCESS_TOKEN
 import com.alyak.detector.feature.auth.data.model.TempLoginResponse
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -32,6 +36,16 @@ class TokenManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val dataStore = context.dataStore
+    private val _authEvent = MutableSharedFlow<AuthEvent>()
+    val authEvent = _authEvent.asSharedFlow()
+
+    enum class AuthEvent { LOGOUT }
+
+    // 로그아웃 이벤트를 발생시키는 함수
+    suspend fun emitLogout() {
+        _authEvent.emit(AuthEvent.LOGOUT)
+    }
+
 
     /**
      * 토큰 저장
