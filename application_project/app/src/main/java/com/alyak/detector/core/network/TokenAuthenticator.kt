@@ -21,7 +21,7 @@ class TokenAuthenticator @Inject constructor(
         // 1. 이미 갱신 시도를 했는데도 또 401이 온 경우
         if (response.priorResponse != null) return null
 
-        // 2. 동기적으로 새 토큰 요청 (runBlocking 사용)
+        // 2. 동기적으로 새 토큰 요청
         return runBlocking {
             val refreshToken = tokenManager.getRefreshToken() ?: return@runBlocking null
 
@@ -50,11 +50,5 @@ class TokenAuthenticator @Inject constructor(
                 null
             }
         }
-    }
-
-    // 토큰을 리셋하고, 로그인 화면으로 이동
-    private suspend fun handleLogout() {
-        tokenManager.clearToken()
-        // 여기서 추가로 로그아웃 이벤트를 쏴서 UI에서 로그인 화면으로 보내야 함
     }
 }
