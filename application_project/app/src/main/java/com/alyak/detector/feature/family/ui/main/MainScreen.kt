@@ -20,14 +20,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -39,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.alyak.detector.R
+import com.alyak.detector.feature.family.ui.invitation.InvitationBottomSheet
 import com.alyak.detector.feature.family.ui.main.components.AddFamilyMemberButton
 import com.alyak.detector.feature.family.ui.main.components.ChartBar
 import com.alyak.detector.feature.family.ui.main.components.DonutChart
@@ -50,6 +57,7 @@ import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.HeaderForm
 import com.alyak.detector.ui.components.MultiFloatingActionButton
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     navController: NavController,
@@ -66,6 +74,8 @@ fun MainScreen(
     val nearestSchedule by viewModel.nearestSchedule
     val schedule = viewModel.nearestSchedule.value
     val name by viewModel.userName.collectAsState()
+    val sheetState = rememberModalBottomSheetState()
+    var showBottomSheet by remember { mutableStateOf(false) }
 
     val targetRate =
         if (familyMembers.isNotEmpty()) familyMembers[selectedIndex].stats.successRate else 0
@@ -116,7 +126,7 @@ fun MainScreen(
                     // 가족 추가 버튼
                     AddFamilyMemberButton(
                         onClick = {
-                            navController.navigate("AddFamilyScreen")
+                            showBottomSheet = true
                         }
                     )
                 }
@@ -280,6 +290,17 @@ fun MainScreen(
                         //HistoryCard()
                     }
                     }
+            }
+        }
+        if (showBottomSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showBottomSheet = false },
+                sheetState = sheetState,
+                containerColor = Color.White
+            ) {
+                InvitationBottomSheet(
+                    onDismiss = { showBottomSheet = false }
+                )
             }
         }
     }
