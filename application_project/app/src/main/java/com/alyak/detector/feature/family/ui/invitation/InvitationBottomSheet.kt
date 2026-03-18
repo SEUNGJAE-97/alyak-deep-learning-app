@@ -17,10 +17,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,14 +33,29 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.alyak.detector.feature.family.ui.invitation.component.EmailInputSection
 import com.alyak.detector.feature.family.ui.invitation.component.InvitationOptionItem
+import com.alyak.detector.feature.family.ui.invitation.component.QRDisplaySection
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InvitationBottomSheet(
     viewModel: FamilyInvitationViewModel = hiltViewModel(),
+    sheetState: SheetState,
     onDismiss: () -> Unit
 ) {
+    val uiState by viewModel.uiState.collectAsState()
     var expandedOption by remember { mutableStateOf<InvitationOption?>(null) }
     val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+
+    /* 만일 이메일 입력을 시도할 경우 0.9f까지 바텀시트를 올려준다.*/
+    LaunchedEffect(expandedOption) {
+        if (expandedOption != null) {
+            sheetState.expand()
+        } else {
+            sheetState.partialExpand()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -55,9 +75,32 @@ fun InvitationBottomSheet(
                 isExpanded = expandedOption == InvitationOption.QR_CODE,
                 onClick = {
                     expandedOption = if (expandedOption == InvitationOption.QR_CODE) null else InvitationOption.QR_CODE
-                    /* QR코드 로직 실행 */
+                    /* QR코드 인식을 위해 카메라 켜는 로직 실행 */
                 }
             )
+
+            InvitationOptionItem(
+                title = "QR 생성하기",
+                description = "생성된 QR코드를 상대방에게 보여주세요",
+                icon = Icons.Default.QrCodeScanner,
+                isExpanded = expandedOption == InvitationOption.QR_CODE,
+                onClick = {
+                    if(expandedOption != InvitationOption.QR_CODE){
+                        expandedOption = InvitationOption.QR_CODE
+                        viewModel.onOptionSelected(InvitationOption.QR_CODE)
+                    }else{
+                        expandedOption = null
+                    }
+                }
+            )
+
+            AnimatedVisibility(
+                visible = expandedOption == InvitationOption.QR_CODE,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                QRDisplaySection(uiState = uiState)
+            }
 
             // 이메일 초대
             InvitationOptionItem(
@@ -77,7 +120,11 @@ fun InvitationBottomSheet(
             ) {
                 EmailInputSection(
                     onSendClick = { email ->
-                        onDismiss() // 전송 후 바텀시트 닫기
+                        scope.launch {
+                            expandedOption = null
+                            sheetState.partialExpand()
+                        }
+                        onDismiss()
                     }
                 )
             }

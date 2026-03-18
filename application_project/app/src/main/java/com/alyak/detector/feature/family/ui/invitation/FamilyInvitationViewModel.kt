@@ -1,10 +1,11 @@
 package com.alyak.detector.feature.family.ui.invitation
 
+import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alyak.detector.utils.QRUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -22,7 +23,7 @@ class FamilyInvitationViewModel @Inject constructor(
     fun onOptionSelected(option: InvitationOption) {
         when(option){
             InvitationOption.QR_CODE -> {
-
+                generateInviteCode()
             }
             InvitationOption.EMAIL -> {
 
@@ -33,12 +34,21 @@ class FamilyInvitationViewModel @Inject constructor(
         }
     }
 
+    // QR코드를 생성하는 함수
     private fun generateInviteCode() {
         viewModelScope.launch {
             _uiState.value = InvitationUiState.Loading
-            /*QR코드 생성*/
-            delay(1000)
-            _uiState.value = InvitationUiState.Success("FAMILY_1234")
+            try{
+                // 1. 서버에 토큰 생성 API 호출
+                val mockToken = "TEMP_TOKEN_${System.currentTimeMillis()}"
+
+                // 2. 토큰을 Bitmap으로 변환
+                val qrBitmap = QRUtils.createQRCode(mockToken)
+                _uiState.value = InvitationUiState.Success(qrBitmap)
+
+            }catch (e : Exception){
+                _uiState.value = InvitationUiState.Error("토큰 생성 실패")
+            }
         }
     }
 }
@@ -46,7 +56,8 @@ class FamilyInvitationViewModel @Inject constructor(
 sealed class InvitationUiState {
     object Idle : InvitationUiState()
     object Loading : InvitationUiState()
-    data class Success(val inviteCode: String) : InvitationUiState()
+    data class Success(val inviteCode: Bitmap) : InvitationUiState()
+    data class Error(val message: String) : InvitationUiState()
 }
 enum class InvitationOption {
     QR_CODE, EMAIL, SMS

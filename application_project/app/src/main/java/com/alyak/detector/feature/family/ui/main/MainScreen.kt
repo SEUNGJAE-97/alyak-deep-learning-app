@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -74,7 +76,7 @@ fun MainScreen(
     val nearestSchedule by viewModel.nearestSchedule
     val schedule = viewModel.nearestSchedule.value
     val name by viewModel.userName.collectAsState()
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showBottomSheet by remember { mutableStateOf(false) }
 
     val targetRate =
@@ -286,7 +288,7 @@ fun MainScreen(
                         // 복약 기록 박스
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // TODO : 일단 막아
+                        // 일단 막아
                         //HistoryCard()
                     }
                     }
@@ -296,9 +298,11 @@ fun MainScreen(
             ModalBottomSheet(
                 onDismissRequest = { showBottomSheet = false },
                 sheetState = sheetState,
-                containerColor = Color.White
+                containerColor = Color.White,
+                contentWindowInsets = { WindowInsets.ime }
             ) {
                 InvitationBottomSheet(
+                    sheetState = sheetState,
                     onDismiss = { showBottomSheet = false }
                 )
             }
