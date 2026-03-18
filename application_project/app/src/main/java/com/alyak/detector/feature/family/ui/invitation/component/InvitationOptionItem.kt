@@ -1,5 +1,7 @@
 package com.alyak.detector.feature.family.ui.invitation.component
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,8 +11,10 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -23,8 +27,15 @@ fun InvitationOptionItem(
     description: String,
     icon: ImageVector,
     iconColor: Color = Color(0xFF5864D9),
+    isExpanded: Boolean = false,
     onClick: () -> Unit
 ) {
+    val rotationDegree by animateFloatAsState(
+        targetValue = if (isExpanded) 90f else 0f,
+        animationSpec = tween(durationMillis = 300),
+        label = "iconRotation"
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -75,7 +86,9 @@ fun InvitationOptionItem(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
             tint = Color(0xFFDDDDDD),
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier
+                .size(24.dp)
+                .rotate(rotationDegree)
         )
     }
 }
