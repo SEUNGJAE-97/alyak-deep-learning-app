@@ -43,7 +43,7 @@ fun InvitationBottomSheet(
     sheetState: SheetState,
     onDismiss: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsState()
     var expandedOption by remember { mutableStateOf<InvitationOption?>(null) }
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -99,7 +99,10 @@ fun InvitationBottomSheet(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                QRDisplaySection(uiState = uiState)
+                QRDisplaySection(
+                    state = state,
+                    onClickRegenerate = { viewModel.onClickRegenerate() }
+                )
             }
 
             // 이메일 초대
