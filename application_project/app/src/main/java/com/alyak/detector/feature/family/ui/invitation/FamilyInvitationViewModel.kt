@@ -19,7 +19,7 @@ class FamilyInvitationViewModel @Inject constructor(
     // 현재 선택된 초대 방식이나 QR 코드 상태 등을 관리
     private val _uiState = MutableStateFlow<InvitationUiState>(InvitationUiState.Idle)
     val uiState = _uiState.asStateFlow()
-    private final val INVITE_TTL_SECONDS = 300
+    private final val INVITE_TTL_SECONDS = 10
     private var timerJob: Job? = null
 
     // 초대 옵션 선택

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,68 +40,73 @@ val TextColor = Color(0xFFF5A67C)
 /**
  * 초 단위 값을 분:초 포맷의 플립 타이머로 렌더링합니다.
  *
- * 한 자리 분 + 두 자리 초(`M:SS`) 형태로 표시하며,
- * 각 자리는 [FlipDigit]를 사용해 플립 애니메이션 카드로 그립니다.
+ * 분/초를 각각 두 자리 문자열(`MM` / `SS`) 카드로 렌더링합니다.
  *
  * @param targetNumber 남은 시간을 초 단위로 전달합니다.
- * @param cardSize 각 숫자 카드의 정사각형 크기입니다.
+ * @param cardWidth 각 숫자 카드의 너비입니다.
+ * @param cardHeight 각 숫자 카드의 높이입니다.
  * @param textColor 숫자와 콜론에 적용할 색상입니다.
  */
 @Composable
 fun FlipCounter(
     targetNumber: Int,
-    cardSize: Dp,
+    cardWidth: Dp,
+    cardHeight: Dp,
     textColor: Color = TextColor
 ) {
-    val min = targetNumber / 60
-    val sec = targetNumber % 60
-
-    val secFirstDigit = sec / 10
-    val secSecondDigit = sec % 10
+    val min = (targetNumber / 60).coerceAtLeast(0)
+    val sec = (targetNumber % 60).coerceAtLeast(0)
+    val minuteText = min.toString().padStart(2, '0')
+    val secondText = sec.toString().padStart(2, '0')
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        FlipDigit(digit = min, cardSize = cardSize, textColor = textColor)
+        FlipDigit(numberText = minuteText, cardWidth = cardWidth, cardHeight = cardHeight, textColor = textColor)
 
         Text(
             text = ":",
-            fontSize = (cardSize.value * 0.6f).sp,
+            fontSize = (cardWidth.value * 0.6f).sp,
             fontWeight = FontWeight.Bold,
             color = textColor,
             modifier = Modifier.padding(bottom = 2.dp)
         )
 
-        FlipDigit(digit = secFirstDigit, cardSize = cardSize, textColor = textColor)
-        FlipDigit(digit = secSecondDigit, cardSize = cardSize, textColor = textColor)
+        FlipDigit(numberText = secondText, cardWidth = cardWidth, cardHeight = cardHeight, textColor = textColor)
     }
 }
 
 /**
- * 단일 숫자 카드의 플립 애니메이션을 렌더링합니다.
+ * 두 자리 숫자 문자열 카드의 플립 애니메이션을 렌더링합니다.
  *
  * 숫자가 변경되면 0도에서 180도까지 회전 애니메이션을 수행하고,
  * 상/하 반쪽 레이어를 조합해 실제 플립 보드처럼 보이도록 구성합니다.
  *
- * @param digit 현재 표시할 숫자(0~9)입니다.
- * @param cardSize 카드의 정사각형 크기입니다.
+ * @param numberText 현재 표시할 숫자 문자열(예: `04`)입니다.
+ * @param cardWidth 카드의 너비입니다.
+ * @param cardHeight 카드의 높이입니다.
  * @param textColor 숫자 색상입니다.
  */
 @Composable
-fun FlipDigit(digit: Int, cardSize: Dp, textColor: Color) {
-    var currentDigit by remember { mutableStateOf(digit) }
-    var nextDigit by remember { mutableStateOf(digit) }
+fun FlipDigit(
+    numberText: String,
+    cardWidth: Dp,
+    cardHeight: Dp,
+    textColor: Color
+) {
+    var currentText by remember { mutableStateOf(numberText) }
+    var nextText by remember { mutableStateOf(numberText) }
     val rotation = remember { Animatable(0f) }
 
-    LaunchedEffect(digit) {
-        if (digit != currentDigit) {
-            nextDigit = digit
+    LaunchedEffect(numberText) {
+        if (numberText != currentText) {
+            nextText = numberText
             rotation.animateTo(
                 targetValue = 180f,
                 animationSpec = tween(durationMillis = 600)
             )
-            currentDigit = nextDigit
+            currentText = nextText
             rotation.snapTo(0f)
         }
     }
@@ -110,19 +116,21 @@ fun FlipDigit(digit: Int, cardSize: Dp, textColor: Color) {
 
     Box(
         modifier = Modifier
-            .size(cardSize)
+            .width(cardWidth)
+            .height(cardHeight)
             .clip(cardShape)
             .background(cardBgColor),
         contentAlignment = Alignment.Center
     ) {
-        DigitHalf(digit = nextDigit, isTop = false, cardSize = cardSize, textColor = textColor)
+        DigitHalf(numberText = nextText, isTop = false, cardWidth = cardWidth, cardHeight = cardHeight, textColor = textColor)
 
-        DigitHalf(digit = nextDigit, isTop = true, cardSize = cardSize, textColor = textColor)
+        DigitHalf(numberText = nextText, isTop = true, cardWidth = cardWidth, cardHeight = cardHeight, textColor = textColor)
 
         DigitHalf(
-            digit = if (rotation.value <= 90f) currentDigit else nextDigit,
+            numberText = if (rotation.value <= 90f) currentText else nextText,
             isTop = rotation.value <= 90f,
-            cardSize = cardSize,
+            cardWidth = cardWidth,
+            cardHeight = cardHeight,
             textColor = textColor,
             modifier = Modifier.graphicsLayer {
                 rotationX = -rotation.value
@@ -136,7 +144,7 @@ fun FlipDigit(digit: Int, cardSize: Dp, textColor: Color) {
         )
 
         if (rotation.value <= 90f) {
-            DigitHalf(digit = currentDigit, isTop = false, cardSize = cardSize, textColor = textColor)
+            DigitHalf(numberText = currentText, isTop = false, cardWidth = cardWidth, cardHeight = cardHeight, textColor = textColor)
         }
 
         Spacer(
@@ -155,26 +163,29 @@ fun FlipDigit(digit: Int, cardSize: Dp, textColor: Color) {
  * [isTop] 값에 따라 상단 절반 또는 하단 절반 영역을 만들고,
  * 텍스트 위치를 미세 조정해 카드 중앙 분할선 기준으로 자연스럽게 보이게 합니다.
  *
- * @param digit 해당 절반 영역에 표시할 숫자입니다.
+ * @param numberText 해당 절반 영역에 표시할 두 자리 문자열입니다.
  * @param isTop `true`면 상단 절반, `false`면 하단 절반입니다.
- * @param cardSize 전체 카드 크기입니다.
+ * @param cardWidth 카드 너비입니다.
+ * @param cardHeight 카드 높이입니다.
  * @param textColor 숫자 색상입니다.
  * @param modifier 외부에서 전달하는 추가 Modifier입니다.
  */
 @Composable
 fun BoxScope.DigitHalf(
-    digit: Int,
+    numberText: String,
     isTop: Boolean,
-    cardSize: Dp,
+    cardWidth: Dp,
+    cardHeight: Dp,
     textColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val fontSize = (cardSize.value * 0.5f).sp
+    val fontSize = minOf(cardWidth.value * 0.40f, cardHeight.value * 0.24f).sp
+    val textStretchY = 1.22f
 
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .height(cardSize / 2)
+            .width(cardWidth)
+            .height(cardHeight / 2)
             .align(if (isTop) Alignment.TopCenter else Alignment.BottomCenter)
             .clip(
                 if (isTop) RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
@@ -184,7 +195,7 @@ fun BoxScope.DigitHalf(
         contentAlignment = if (isTop) Alignment.BottomCenter else Alignment.TopCenter
     ) {
         Text(
-            text = digit.toString(),
+            text = numberText,
             color = textColor,
             fontSize = fontSize,
             fontWeight = FontWeight.Bold,
@@ -197,6 +208,7 @@ fun BoxScope.DigitHalf(
                 .fillMaxWidth()
                 .graphicsLayer {
                     val moveDistance = size.height * 0.48f
+                    scaleY = textStretchY
                     translationY = if (isTop) moveDistance else -moveDistance
                 }
         )

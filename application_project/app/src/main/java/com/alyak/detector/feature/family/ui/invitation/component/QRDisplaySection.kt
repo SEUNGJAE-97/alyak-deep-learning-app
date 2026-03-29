@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -56,55 +57,72 @@ fun QRDisplaySection(
                         .fillMaxWidth()
                         .padding(horizontal = 4.dp, vertical = 16.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    val qrSize = 160.dp
                     Box(
                         modifier = Modifier
-                            .size(160.dp)
-                            .background(Color.White, RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .height(qrSize)
                     ) {
-                        Image(
-                            bitmap = state.inviteCode.asImageBitmap(),
-                            contentDescription = "Invitation QR Code",
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-
-                    Spacer(Modifier.width(16.dp))
-
-                    Column(
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        if (!state.isExpired) {
-                            FlipCounter(
-                                targetNumber = state.remainingSeconds,
-                                cardSize = 42.dp,
-                                textColor = TextColor
-                            )
-                        } else {
-                            Text(
-                                text = "만료되었습니다.",
-                                color = Color.Red,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
-                        Button(
-                            onClick = { onClickRegenerate() },
-                            modifier = Modifier.padding(top = 8.dp)
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Refresh,
-                                contentDescription = "",
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(text = "새로 발급")
+                            Box(
+                                modifier = Modifier
+                                    .size(qrSize)
+                                    .background(Color.White, RoundedCornerShape(12.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    bitmap = state.inviteCode.asImageBitmap(),
+                                    contentDescription = "Invitation QR Code",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+
+                            Spacer(Modifier.width(10.dp))
+
+                            Column(
+                                horizontalAlignment = Alignment.Start,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                FlipCounter(
+                                    targetNumber = state.remainingSeconds,
+                                    cardWidth = 72.dp,
+                                    cardHeight = qrSize * 0.6f,
+                                    textColor = TextColor
+                                )
+                            }
                         }
-                    }
+
+                        if (state.isExpired) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.45f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "QR이 만료되었습니다",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                    Button(
+                                        onClick = onClickRegenerate,
+                                        modifier = Modifier.padding(top = 10.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Refresh,
+                                            contentDescription = "",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(text = "새로 발급")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 Text(
