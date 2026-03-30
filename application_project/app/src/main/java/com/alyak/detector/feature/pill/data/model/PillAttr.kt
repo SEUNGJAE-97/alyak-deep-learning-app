@@ -1,9 +1,6 @@
 package com.alyak.detector.feature.pill.data.model
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Circle
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.alyak.detector.ui.theme.PillBlack
 import com.alyak.detector.ui.theme.PillBlue
 import com.alyak.detector.ui.theme.PillBrown
@@ -57,9 +54,9 @@ enum class PillColor(val label: String, val color: Color) {
 }
 
 enum class PillLineType(val label: String, val query: String) {
-    ALL("전체",""),
-    NONE("없음",""),
-    PLUS(" + 형","+"),
-    MINUS(" - 형","-"),
-    ETC("기타","")
+    ALL("전체", ""),
+    NONE("없음", ""),
+    PLUS(" + 형", "+"),
+    MINUS(" - 형", "-"),
+    ETC("기타", "")
 }

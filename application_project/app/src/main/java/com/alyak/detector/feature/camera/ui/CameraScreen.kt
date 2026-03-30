@@ -14,11 +14,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -26,7 +23,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -43,6 +39,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -50,16 +47,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
-import androidx.compose.ui.graphics.Shape
+import com.alyak.detector.feature.camera.qr.decodeQrFromImageProxy
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.DecodeHintType
 import com.google.zxing.MultiFormatReader
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
-import com.alyak.detector.feature.camera.qr.decodeQrFromImageProxy
+
+const val CAMERA_MODE_PILL = "pill"
+const val CAMERA_MODE_QR = "qr"
 
 @Composable
 fun CameraScreen(
@@ -189,15 +187,25 @@ fun CameraScreen(
                             val matrix = android.graphics.Matrix().apply {
                                 postRotate(rotationDegrees.toFloat())
                             }
-                            val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                            val rotatedBitmap = Bitmap.createBitmap(
+                                bitmap,
+                                0,
+                                0,
+                                bitmap.width,
+                                bitmap.height,
+                                matrix,
+                                true
+                            )
 
                             val metrics = context.resources.displayMetrics
-                            val screenRatio = metrics.widthPixels.toFloat() / metrics.heightPixels.toFloat()
+                            val screenRatio =
+                                metrics.widthPixels.toFloat() / metrics.heightPixels.toFloat()
                             val cropSize = (rotatedBitmap.height * screenRatio * 0.8f).toInt()
 
                             val left = (rotatedBitmap.width - cropSize) / 2
                             val top = (rotatedBitmap.height - cropSize) / 2
-                            val finalCroppedBitmap = Bitmap.createBitmap(rotatedBitmap, left, top, cropSize, cropSize)
+                            val finalCroppedBitmap =
+                                Bitmap.createBitmap(rotatedBitmap, left, top, cropSize, cropSize)
                             viewModel.setCapturedImage(finalCroppedBitmap)
                             image.close()
 
@@ -286,8 +294,6 @@ fun CameraOverlay(
     }
 }
 
-const val CAMERA_MODE_PILL = "pill"
-const val CAMERA_MODE_QR = "qr"
 private const val OVERLAY_FRAME_RATIO = 0.8f
 private const val QR_DECODE_INSET_RATIO = 0.94f
 

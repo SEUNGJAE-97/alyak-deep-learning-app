@@ -3,10 +3,10 @@ package com.alyak.detector.feature.pill.ui.PillDetail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alyak.detector.feature.pill.data.model.MedicineDetailDto
-import com.alyak.detector.feature.pill.data.repository.PillRepository
 import com.alyak.detector.core.auth.SessionManager
 import com.alyak.detector.core.auth.UserSession
+import com.alyak.detector.feature.pill.data.model.MedicineDetailDto
+import com.alyak.detector.feature.pill.data.repository.PillRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +31,7 @@ class PillDetailViewModel @Inject constructor(
     private val pillId: Long = savedStateHandle.get<Long>("pillId") ?: 0L
     private val _uiState = MutableStateFlow<PillDetailUiState>(PillDetailUiState.Loading)
     val uiState: StateFlow<PillDetailUiState> = _uiState
-    val userName : StateFlow<String> = sessionManager.userSession
+    val userName: StateFlow<String> = sessionManager.userSession
         .map { session ->
             when (session) {
                 is UserSession.Authenticated -> session.userInfo.name
@@ -43,6 +43,7 @@ class PillDetailViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = "로딩 중.."
         )
+
     init {
         loadPillDetail(pillId)
     }

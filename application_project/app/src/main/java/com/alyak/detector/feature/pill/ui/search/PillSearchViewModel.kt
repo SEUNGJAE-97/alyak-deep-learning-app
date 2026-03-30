@@ -2,11 +2,11 @@ package com.alyak.detector.feature.pill.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alyak.detector.core.auth.SessionManager
+import com.alyak.detector.core.auth.UserSession
 import com.alyak.detector.feature.pill.data.model.Pill
 import com.alyak.detector.feature.pill.data.model.local.dao.RecentSearchDao
 import com.alyak.detector.feature.pill.data.repository.PillRepository
-import com.alyak.detector.core.auth.SessionManager
-import com.alyak.detector.core.auth.UserSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.delay
@@ -40,7 +40,7 @@ class PillSearchViewModel @Inject constructor(
     private val recentSearchDao: RecentSearchDao,
     private val sessionManager: SessionManager
 ) : ViewModel() {
-    val userName : StateFlow<String> = sessionManager.userSession
+    val userName: StateFlow<String> = sessionManager.userSession
         .map { session ->
             when (session) {
                 is UserSession.Authenticated -> session.userInfo.name

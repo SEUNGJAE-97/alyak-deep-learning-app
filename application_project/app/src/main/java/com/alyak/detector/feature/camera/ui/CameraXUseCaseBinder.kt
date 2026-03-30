@@ -1,13 +1,13 @@
 package com.alyak.detector.feature.camera.ui
 
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
-import androidx.camera.core.CameraSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.lifecycle.LifecycleOwner
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
 
 /**
  * Preview/ImageCapture/ImageAnalysis use case를 lifecycle에 바인딩합니다.

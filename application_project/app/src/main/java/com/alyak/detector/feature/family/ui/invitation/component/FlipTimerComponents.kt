@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -63,7 +62,12 @@ fun FlipCounter(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        FlipDigit(numberText = minuteText, cardWidth = cardWidth, cardHeight = cardHeight, textColor = textColor)
+        FlipDigit(
+            numberText = minuteText,
+            cardWidth = cardWidth,
+            cardHeight = cardHeight,
+            textColor = textColor
+        )
 
         Text(
             text = ":",
@@ -73,7 +77,12 @@ fun FlipCounter(
             modifier = Modifier.padding(bottom = 2.dp)
         )
 
-        FlipDigit(numberText = secondText, cardWidth = cardWidth, cardHeight = cardHeight, textColor = textColor)
+        FlipDigit(
+            numberText = secondText,
+            cardWidth = cardWidth,
+            cardHeight = cardHeight,
+            textColor = textColor
+        )
     }
 }
 
@@ -122,9 +131,21 @@ fun FlipDigit(
             .background(cardBgColor),
         contentAlignment = Alignment.Center
     ) {
-        DigitHalf(numberText = nextText, isTop = false, cardWidth = cardWidth, cardHeight = cardHeight, textColor = textColor)
+        DigitHalf(
+            numberText = nextText,
+            isTop = false,
+            cardWidth = cardWidth,
+            cardHeight = cardHeight,
+            textColor = textColor
+        )
 
-        DigitHalf(numberText = nextText, isTop = true, cardWidth = cardWidth, cardHeight = cardHeight, textColor = textColor)
+        DigitHalf(
+            numberText = nextText,
+            isTop = true,
+            cardWidth = cardWidth,
+            cardHeight = cardHeight,
+            textColor = textColor
+        )
 
         DigitHalf(
             numberText = if (rotation.value <= 90f) currentText else nextText,
@@ -144,7 +165,13 @@ fun FlipDigit(
         )
 
         if (rotation.value <= 90f) {
-            DigitHalf(numberText = currentText, isTop = false, cardWidth = cardWidth, cardHeight = cardHeight, textColor = textColor)
+            DigitHalf(
+                numberText = currentText,
+                isTop = false,
+                cardWidth = cardWidth,
+                cardHeight = cardHeight,
+                textColor = textColor
+            )
         }
 
         Spacer(

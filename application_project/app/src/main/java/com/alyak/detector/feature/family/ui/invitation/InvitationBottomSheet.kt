@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,6 +47,7 @@ fun InvitationBottomSheet(
     onDismiss: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val scannedToken by viewModel.scannedInviteToken.collectAsState()
     var expandedOption by remember { mutableStateOf<InvitationOption?>(null) }
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -81,6 +83,13 @@ fun InvitationBottomSheet(
                     navController.navigate("CameraScreenQr")
                 }
             )
+            if (!scannedToken.isNullOrBlank()) {
+                Text(
+                    text = "인식된 코드: $scannedToken",
+                    color = Color(0xFF5864D9),
+                    modifier = Modifier.padding(start = 68.dp, top = 2.dp, bottom = 8.dp)
+                )
+            }
 
             InvitationOptionItem(
                 title = "QR 생성하기",

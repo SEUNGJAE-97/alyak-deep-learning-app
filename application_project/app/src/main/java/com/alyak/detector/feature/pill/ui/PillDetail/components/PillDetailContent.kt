@@ -3,8 +3,6 @@ package com.alyak.detector.feature.pill.ui.PillDetail.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,14 +17,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReportProblem
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -199,7 +194,11 @@ fun PillDetailContent(
                         shape = RoundedCornerShape(24),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F5F9))
                     ) {
-                        Text(if (isSideEffectExpanded) "접기" else "더 많은 주의사항 보기", color = Color(0xFF7262FD), fontSize = 13.sp)
+                        Text(
+                            if (isSideEffectExpanded) "접기" else "더 많은 주의사항 보기",
+                            color = Color(0xFF7262FD),
+                            fontSize = 13.sp
+                        )
                     }
                 }
             }

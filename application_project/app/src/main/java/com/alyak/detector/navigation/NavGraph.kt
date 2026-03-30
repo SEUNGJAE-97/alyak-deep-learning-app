@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -19,8 +18,8 @@ import com.alyak.detector.feature.auth.ui.signUp.SignUpViewModel
 import com.alyak.detector.feature.camera.ui.CAMERA_MODE_PILL
 import com.alyak.detector.feature.camera.ui.CAMERA_MODE_QR
 import com.alyak.detector.feature.camera.ui.CameraScreen
-import com.alyak.detector.feature.camera.ui.ResultScreen
 import com.alyak.detector.feature.camera.ui.CameraViewModel
+import com.alyak.detector.feature.camera.ui.ResultScreen
 import com.alyak.detector.feature.family.ui.invitation.FamilyInvitationViewModel
 import com.alyak.detector.feature.family.ui.main.MainScreen
 import com.alyak.detector.feature.map.ui.MapScreen
@@ -30,7 +29,7 @@ import com.alyak.detector.feature.splash.ui.SplashScreen
 import com.alyak.detector.feature.user.ui.UserScreen
 
 @Composable
-fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager) {
+fun Navigator(permissionManager: PermissionManager, tokenManager: TokenManager) {
     LaunchedEffect(Unit) {
         permissionManager.setOnGrantedListener {
             // 권한 허용 후 실행할 작업
@@ -44,7 +43,7 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
     //NavHost
     NavHost(
         navController = navController,
-        startDestination = if(accessToken == null) "SignInScreen" else "MainScreen"
+        startDestination = if (accessToken == null) "SignInScreen" else "MainScreen"
     ) {
         composable("SplashScreen") {
             SplashScreen(navController)
@@ -68,7 +67,8 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
             val mainEntry = runCatching {
                 navController.getBackStackEntry("MainScreen")
             }.getOrNull()
-            val invitationViewModel: FamilyInvitationViewModel? = mainEntry?.let { hiltViewModel(it) }
+            val invitationViewModel: FamilyInvitationViewModel? =
+                mainEntry?.let { hiltViewModel(it) }
 
             CameraScreen(
                 navController = navController,
@@ -89,7 +89,7 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
         composable("MapScreen") {
             MapScreen(navController)
         }
-        composable("PillSearchScreen"){
+        composable("PillSearchScreen") {
             PillSearchScreen(navController)
         }
         composable(

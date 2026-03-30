@@ -10,15 +10,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alyak.detector.core.auth.SessionManager
 import com.alyak.detector.core.auth.TokenManager
+import com.alyak.detector.core.auth.UserSession
 import com.alyak.detector.core.network.ApiResult
 import com.alyak.detector.core.util.AlarmScheduler
 import com.alyak.detector.feature.family.data.model.DailyMedicationStat
 import com.alyak.detector.feature.family.data.model.FamilyMember
 import com.alyak.detector.feature.family.data.model.MedicineSchedule
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
-import com.alyak.detector.core.auth.SessionManager
-import com.alyak.detector.core.auth.UserSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,7 +59,7 @@ class MainViewModel @Inject constructor(
     val errorMessage: StateFlow<String?> = _errorMessage
     private val _familyMembers = mutableStateListOf<FamilyMember>()
     val familyMembers: List<FamilyMember> get() = _familyMembers
-    val userName : StateFlow<String> = sessionManager.userSession
+    val userName: StateFlow<String> = sessionManager.userSession
         .map { session ->
             when (session) {
                 is UserSession.Authenticated -> session.userInfo.name
@@ -71,6 +71,7 @@ class MainViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = "로딩 중.."
         )
+
     /**
      * 선택된 멤버의 주간 통계 데이터
      * UI에서 dailyStatToBarSegments 함수로 BarSegments로 변환

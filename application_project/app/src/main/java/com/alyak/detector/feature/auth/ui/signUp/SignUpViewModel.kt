@@ -3,7 +3,6 @@ package com.alyak.detector.feature.auth.ui.signUp
 import android.content.Context
 import android.util.Log
 import android.util.Patterns
-import android.widget.Toast
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -67,7 +66,7 @@ class SignUpViewModel @Inject constructor(
 
     fun requestCode(email: String) {
         viewModelScope.launch {
-            when(val result = safeCall { authApi.requestCode(email) }){
+            when (val result = safeCall { authApi.requestCode(email) }) {
                 is ApiResult.Success -> {
                     Log.d("code success : ", result.toString())
                 }
@@ -76,6 +75,7 @@ class SignUpViewModel @Inject constructor(
                     val errorMsg = "오류 ${result.code}: ${result.message}"
                     Log.d("code error : ", errorMsg)
                 }
+
                 is ApiResult.Exception -> {
                     Log.d("code error : ", result.throwable.toString())
                 }
@@ -85,7 +85,7 @@ class SignUpViewModel @Inject constructor(
 
     fun verifyCode(email: String, code: String) {
         viewModelScope.launch {
-            when(val result = safeCall { authApi.verifyCode(CodeValidateRequest(email, code)) }){
+            when (val result = safeCall { authApi.verifyCode(CodeValidateRequest(email, code)) }) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(isVerified = true)
                 }
@@ -94,6 +94,7 @@ class SignUpViewModel @Inject constructor(
                     val errorMsg = "오류 ${result.code}: ${result.message}"
                     Log.d("code error : ", errorMsg)
                 }
+
                 is ApiResult.Exception -> {
                     Log.d("code error : ", result.throwable.toString())
                 }

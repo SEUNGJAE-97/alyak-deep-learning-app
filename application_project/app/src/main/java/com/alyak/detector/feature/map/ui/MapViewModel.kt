@@ -3,13 +3,13 @@ package com.alyak.detector.feature.map.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alyak.detector.core.auth.SessionManager
+import com.alyak.detector.core.auth.UserSession
 import com.alyak.detector.feature.map.data.model.KakaoPlaceDto
 import com.alyak.detector.feature.map.data.model.LocationDto
 import com.alyak.detector.feature.map.data.repository.ApiRepo
 import com.alyak.detector.feature.map.data.repository.FusedLocationRepo
 import com.alyak.detector.feature.map.data.repository.KakaoPlaceRepo
-import com.alyak.detector.core.auth.SessionManager
-import com.alyak.detector.core.auth.UserSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,8 +36,9 @@ class MapViewModel @Inject constructor(
     private val _routePath = MutableStateFlow<List<LocationDto>>(emptyList())
     val routePath: StateFlow<List<LocationDto>> = _routePath
     private val _moveToCurrentLocationEvent = MutableSharedFlow<LocationDto>()
-    val moveToCurrentLocationEvent: SharedFlow<LocationDto> = _moveToCurrentLocationEvent.asSharedFlow()
-    val userName : StateFlow<String> = sessionManager.userSession
+    val moveToCurrentLocationEvent: SharedFlow<LocationDto> =
+        _moveToCurrentLocationEvent.asSharedFlow()
+    val userName: StateFlow<String> = sessionManager.userSession
         .map { session ->
             when (session) {
                 is UserSession.Authenticated -> session.userInfo.name

@@ -6,8 +6,8 @@ import com.alyak.detector.feature.auth.data.model.TokenRequest
 import jakarta.inject.Inject
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
-import okhttp3.Response
 import okhttp3.Request
+import okhttp3.Response
 import okhttp3.Route
 import javax.inject.Singleton
 
@@ -44,7 +44,7 @@ class TokenAuthenticator @Inject constructor(
                 response.request.newBuilder()
                     .header("Authorization", "Bearer ${newTokens.accessToken}")
                     .build()
-            }else{
+            } else {
                 tokenManager.clearToken()
                 tokenManager.emitLogout()
                 null

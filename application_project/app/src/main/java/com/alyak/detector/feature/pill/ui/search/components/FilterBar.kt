@@ -1,6 +1,5 @@
 package com.alyak.detector.feature.pill.ui.search.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -46,9 +45,14 @@ fun <E : Enum<E>> FilterBar(
     ) {
         for (item in entries) {
             val isSelected = (item == selectedItem)
-            val backgroundColor = if (isSelected) colorResource(R.color.primaryBlue) else colorResource(R.color.white) // 파란색/흰색
-            val contentColor = if (isSelected) colorResource(R.color.white) else colorResource(R.color.black)
-            val shadowModifier = if (isSelected) Modifier else Modifier.shadow(2.dp, shape = RoundedCornerShape(24.dp))
+            val backgroundColor =
+                if (isSelected) colorResource(R.color.primaryBlue) else colorResource(R.color.white) // 파란색/흰색
+            val contentColor =
+                if (isSelected) colorResource(R.color.white) else colorResource(R.color.black)
+            val shadowModifier = if (isSelected) Modifier else Modifier.shadow(
+                2.dp,
+                shape = RoundedCornerShape(24.dp)
+            )
 
             Box(
                 modifier = Modifier

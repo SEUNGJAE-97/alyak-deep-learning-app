@@ -19,12 +19,13 @@ import com.alyak.detector.ui.theme.AlyakTheme
 import com.google.firebase.messaging.FirebaseMessaging
 import com.kakao.sdk.common.util.Utility
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private lateinit var permissionManager: PermissionManager
+
     @Inject
     lateinit var tokenManager: TokenManager
 

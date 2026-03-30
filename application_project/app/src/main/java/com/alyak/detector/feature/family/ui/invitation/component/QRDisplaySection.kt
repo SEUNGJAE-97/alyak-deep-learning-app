@@ -1,7 +1,5 @@
 package com.alyak.detector.feature.family.ui.invitation.component
 
-import androidx.compose.ui.graphics.asComposeRenderEffect
-import android.graphics.RenderEffect as NativeRenderEffect
 import android.graphics.Shader
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,8 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.asImageBitmap
@@ -42,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 import com.alyak.detector.feature.family.ui.invitation.InvitationUiState
+import android.graphics.RenderEffect as NativeRenderEffect
 
 @Composable
 fun QRDisplaySection(
@@ -56,6 +53,7 @@ fun QRDisplaySection(
             )
             Text("QR 코드를 생성 중입니다...", modifier = Modifier.padding(top = 8.dp), fontSize = 13.sp)
         }
+
         is InvitationUiState.Success -> {
             Box(
                 modifier = Modifier
@@ -68,11 +66,13 @@ fun QRDisplaySection(
                         .padding(horizontal = 4.dp, vertical = 16.dp)
                         .graphicsLayer {
                             renderEffect = if (state.isExpired) {
-                                NativeRenderEffect.createBlurEffect(
-                                    20f,
-                                    20f,
-                                    Shader.TileMode.DECAL
-                                ).asComposeRenderEffect()
+                                NativeRenderEffect
+                                    .createBlurEffect(
+                                        20f,
+                                        20f,
+                                        Shader.TileMode.DECAL
+                                    )
+                                    .asComposeRenderEffect()
                             } else {
                                 null
                             }
@@ -122,7 +122,7 @@ fun QRDisplaySection(
                         color = Color.Gray,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp, start =25.dp, end = 4.dp)
+                            .padding(top = 12.dp, start = 25.dp, end = 4.dp)
                     )
                 }
 
@@ -160,9 +160,11 @@ fun QRDisplaySection(
                 }
             }
         }
+
         is InvitationUiState.Error -> {
             Text(state.message, color = Color.Red)
         }
+
         else -> {}
     }
 }

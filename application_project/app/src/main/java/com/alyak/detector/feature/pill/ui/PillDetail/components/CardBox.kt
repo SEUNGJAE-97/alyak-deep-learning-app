@@ -1,7 +1,6 @@
 package com.alyak.detector.feature.pill.ui.PillDetail.components
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,7 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -31,7 +28,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -59,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.alyak.detector.R
-import com.alyak.detector.core.model.MealTime
 import com.alyak.detector.core.model.SpecialCautionType
 import com.alyak.detector.feature.pill.data.model.AlertInfoDto
 import com.alyak.detector.feature.pill.data.model.DosageInfoDto
@@ -177,7 +172,7 @@ fun FunctionButtonRow() {
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
-            ){
+            ) {
                 Icon(
                     painterResource(R.drawable.history),
                     contentDescription = null,
@@ -185,7 +180,11 @@ fun FunctionButtonRow() {
                     tint = colorResource(R.color.primaryBlue)
                 )
                 Spacer(Modifier.width(12.dp))
-                Text("복용 이력 확인", color = colorResource(R.color.primaryBlue), modifier = Modifier.weight(1f))
+                Text(
+                    "복용 이력 확인",
+                    color = colorResource(R.color.primaryBlue),
+                    modifier = Modifier.weight(1f)
+                )
                 Icon(
                     Icons.Default.ChevronRight,
                     contentDescription = null,
@@ -226,7 +225,12 @@ fun AlertBox(
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             visibleItems.forEach {
                 Row(verticalAlignment = Alignment.Top) {
-                    Text("•", fontSize = 15.sp, color = Color(0xFFD65A54), modifier = Modifier.padding(end = 4.dp))
+                    Text(
+                        "•",
+                        fontSize = 15.sp,
+                        color = Color(0xFFD65A54),
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
                     Text(
                         text = it,
                         fontSize = 15.sp,

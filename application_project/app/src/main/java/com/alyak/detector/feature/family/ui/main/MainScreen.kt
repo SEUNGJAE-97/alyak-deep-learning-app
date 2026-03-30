@@ -3,7 +3,6 @@ package com.alyak.detector.feature.family.ui.main
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,16 +15,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -98,11 +91,14 @@ fun MainScreen(
                 .padding(paddingValues)
         ) {
             if (isLoading) {
-                Box(Modifier.fillMaxWidth().height(60.dp).padding(16.dp)) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .padding(16.dp)) {
                     Text("가족 정보를 불러오는 중...", color = Color.Gray)
                 }
-            }
-            else if (familyMembers.isEmpty()) {
+            } else if (familyMembers.isEmpty()) {
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -146,6 +142,7 @@ fun MainScreen(
                             CircularProgressIndicator(color = colorResource(id = R.color.primaryBlue))
                         }
                     }
+
                     familyMembers.isEmpty() -> {
                         Column(
                             modifier = Modifier.fillMaxSize(),
@@ -156,6 +153,7 @@ fun MainScreen(
                             // 여기에 가족 생성 화면으로 가는 버튼 등을 배치할 수 있습니다.
                         }
                     }
+
                     else -> {
                         Text(
                             "이번 주 복약 현황",
@@ -291,7 +289,7 @@ fun MainScreen(
                         // 일단 막아
                         //HistoryCard()
                     }
-                    }
+                }
             }
         }
         if (showBottomSheet) {
