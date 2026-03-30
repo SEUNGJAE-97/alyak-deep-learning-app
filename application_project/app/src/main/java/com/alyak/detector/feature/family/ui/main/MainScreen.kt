@@ -302,6 +302,7 @@ fun MainScreen(
                 contentWindowInsets = { WindowInsets.ime }
             ) {
                 InvitationBottomSheet(
+                    navController = navController,
                     sheetState = sheetState,
                     onDismiss = { showBottomSheet = false }
                 )

@@ -16,9 +16,12 @@ import com.alyak.detector.core.util.PermissionManager
 import com.alyak.detector.feature.auth.ui.signIn.SignInScreen
 import com.alyak.detector.feature.auth.ui.signIn.SignInViewModel
 import com.alyak.detector.feature.auth.ui.signUp.SignUpViewModel
+import com.alyak.detector.feature.camera.ui.CAMERA_MODE_PILL
+import com.alyak.detector.feature.camera.ui.CAMERA_MODE_QR
 import com.alyak.detector.feature.camera.ui.CameraScreen
 import com.alyak.detector.feature.camera.ui.ResultScreen
 import com.alyak.detector.feature.camera.ui.CameraViewModel
+import com.alyak.detector.feature.family.ui.invitation.FamilyInvitationViewModel
 import com.alyak.detector.feature.family.ui.main.MainScreen
 import com.alyak.detector.feature.map.ui.MapScreen
 import com.alyak.detector.feature.pill.ui.PillDetail.PillDetailScreen
@@ -58,7 +61,21 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
         }
         composable("CameraScreen") {
             val cameraViewModel: CameraViewModel = hiltViewModel()
-            CameraScreen(navController, cameraViewModel)
+            CameraScreen(navController, cameraViewModel, mode = CAMERA_MODE_PILL)
+        }
+        composable("CameraScreenQr") {
+            val cameraViewModel: CameraViewModel = hiltViewModel()
+            val mainEntry = runCatching {
+                navController.getBackStackEntry("MainScreen")
+            }.getOrNull()
+            val invitationViewModel: FamilyInvitationViewModel? = mainEntry?.let { hiltViewModel(it) }
+
+            CameraScreen(
+                navController = navController,
+                viewModel = cameraViewModel,
+                mode = CAMERA_MODE_QR,
+                onQrScanned = { token -> invitationViewModel?.onQrScanned(token) }
+            )
         }
         composable("ResultScreen") {
             val cameraEntry = runCatching {

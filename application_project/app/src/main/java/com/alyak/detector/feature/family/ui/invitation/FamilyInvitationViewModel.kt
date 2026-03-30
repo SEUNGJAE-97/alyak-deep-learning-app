@@ -19,6 +19,8 @@ class FamilyInvitationViewModel @Inject constructor(
     // 현재 선택된 초대 방식이나 QR 코드 상태 등을 관리
     private val _uiState = MutableStateFlow<InvitationUiState>(InvitationUiState.Idle)
     val uiState = _uiState.asStateFlow()
+    private val _scannedInviteToken = MutableStateFlow<String?>(null)
+    val scannedInviteToken = _scannedInviteToken.asStateFlow()
     private final val INVITE_TTL_SECONDS = 10
     private var timerJob: Job? = null
 
@@ -40,6 +42,11 @@ class FamilyInvitationViewModel @Inject constructor(
     // QR 재생성
     fun onClickRegenerate() {
         generateInviteCode()
+    }
+
+    fun onQrScanned(token: String) {
+        _scannedInviteToken.value = token
+        // TODO: 서버에 초대 수락/검증 API 호출로 연결
     }
 
     // QR코드를 생성하는 함수

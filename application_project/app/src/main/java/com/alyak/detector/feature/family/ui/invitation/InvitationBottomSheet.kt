@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.alyak.detector.feature.family.ui.invitation.component.EmailInputSection
 import com.alyak.detector.feature.family.ui.invitation.component.InvitationOptionItem
 import com.alyak.detector.feature.family.ui.invitation.component.QRDisplaySection
@@ -39,6 +40,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InvitationBottomSheet(
+    navController: NavController,
     viewModel: FamilyInvitationViewModel = hiltViewModel(),
     sheetState: SheetState,
     onDismiss: () -> Unit
@@ -75,7 +77,8 @@ fun InvitationBottomSheet(
                 isExpanded = expandedOption == InvitationOption.QR_CODE,
                 onClick = {
                     expandedOption = if (expandedOption == InvitationOption.QR_CODE) null else InvitationOption.QR_CODE
-                    /* QR코드 인식을 위해 카메라 켜는 로직 실행 */
+                    onDismiss()
+                    navController.navigate("CameraScreenQr")
                 }
             )
 
