@@ -4,19 +4,14 @@ package com.alyak.detector.feature.camera.ui
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Rect
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -60,14 +55,11 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.compose.ui.graphics.Shape
 import com.google.zxing.BarcodeFormat
-import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
 import com.google.zxing.MultiFormatReader
-import com.google.zxing.PlanarYUVLuminanceSource
-import com.google.zxing.Result
-import com.google.zxing.common.HybridBinarizer
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import com.alyak.detector.feature.camera.qr.decodeQrFromImageProxy
 
 @Composable
 fun CameraScreen(
@@ -126,7 +118,12 @@ fun CameraScreen(
             imageAnalysis.setAnalyzer(analysisExecutor) { image ->
                 try {
                     if (qrHandled.get()) return@setAnalyzer
-                    val decoded = decodeQrFromImageProxy(qrReader, image)
+                    val decoded = decodeQrFromImageProxy(
+                        reader = qrReader,
+                        image = image,
+                        overlayFrameRatio = OVERLAY_FRAME_RATIO,
+                        qrDecodeInsetRatio = QR_DECODE_INSET_RATIO
+                    )
                     if (!decoded.isNullOrBlank()) {
                         lastQrText = decoded
                     }
@@ -226,8 +223,7 @@ fun CameraOverlay(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val width = size.width
             val height = size.height
-
-            val overlayWidth = width * 0.8f
+            val overlayWidth = width * OVERLAY_FRAME_RATIO
             val overlayHeight = overlayWidth
 
             val left = (width - overlayWidth) / 2f
@@ -292,6 +288,8 @@ fun CameraOverlay(
 
 const val CAMERA_MODE_PILL = "pill"
 const val CAMERA_MODE_QR = "qr"
+private const val OVERLAY_FRAME_RATIO = 0.8f
+private const val QR_DECODE_INSET_RATIO = 0.94f
 
 @Composable
 fun IconElevatedButton(
@@ -321,116 +319,4 @@ fun IconElevatedButton(
             }
         }
     }
-}
-
-fun startCamera(
-    previewView: PreviewView,
-    lifecycleOwner: LifecycleOwner,
-    imageCapture: ImageCapture,
-    imageAnalysis: ImageAnalysis? = null,
-    mode: String = CAMERA_MODE_PILL
-) {
-    val cameraProviderFuture = ProcessCameraProvider.getInstance(previewView.context)
-    cameraProviderFuture.addListener({
-        val cameraProvider = cameraProviderFuture.get()
-        val preview = Preview.Builder().build().also {
-            it.surfaceProvider = previewView.surfaceProvider
-        }
-        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-        cameraProvider.unbindAll()
-        if (mode == CAMERA_MODE_QR && imageAnalysis != null) {
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                cameraSelector,
-                preview,
-                imageAnalysis
-            )
-        } else {
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                cameraSelector,
-                preview,
-                imageCapture
-            )
-        }
-    }, ContextCompat.getMainExecutor(previewView.context))
-}
-
-private fun decodeQrFromImageProxy(reader: MultiFormatReader, image: ImageProxy): String? {
-    val plane = image.planes.firstOrNull() ?: return null
-    val buffer = plane.buffer
-    val bytes = ByteArray(buffer.remaining())
-    buffer.get(bytes)
-
-    val width = image.width
-    val height = image.height
-
-    val rotation = image.imageInfo.rotationDegrees % 360
-    val (data, w, h) = when (rotation) {
-        90 -> Triple(rotateYPlane90(bytes, width, height), height, width)
-        180 -> Triple(rotateYPlane180(bytes, width, height), width, height)
-        270 -> Triple(rotateYPlane270(bytes, width, height), height, width)
-        else -> Triple(bytes, width, height)
-    }
-
-    // 중앙 영역 위주로 시도(성능/정확도 개선)
-    val rect = cropCenterRect(w, h, 0.72f)
-    val source = PlanarYUVLuminanceSource(
-        data,
-        w,
-        h,
-        rect.left,
-        rect.top,
-        rect.width(),
-        rect.height(),
-        false
-    )
-
-    val bitmap = BinaryBitmap(HybridBinarizer(source))
-    return try {
-        val result: Result = reader.decodeWithState(bitmap)
-        result.text
-    } catch (_: Exception) {
-        null
-    } finally {
-        reader.reset()
-    }
-}
-
-private fun cropCenterRect(w: Int, h: Int, ratio: Float): Rect {
-    val size = (minOf(w, h) * ratio).toInt().coerceAtLeast(1)
-    val left = ((w - size) / 2).coerceAtLeast(0)
-    val top = ((h - size) / 2).coerceAtLeast(0)
-    return Rect(left, top, (left + size).coerceAtMost(w), (top + size).coerceAtMost(h))
-}
-
-private fun rotateYPlane90(src: ByteArray, width: Int, height: Int): ByteArray {
-    val dst = ByteArray(src.size)
-    var i = 0
-    for (x in 0 until width) {
-        for (y in height - 1 downTo 0) {
-            dst[i++] = src[y * width + x]
-        }
-    }
-    return dst
-}
-
-private fun rotateYPlane180(src: ByteArray, width: Int, height: Int): ByteArray {
-    val dst = ByteArray(src.size)
-    var i = 0
-    for (p in src.size - 1 downTo 0) {
-        dst[i++] = src[p]
-    }
-    return dst
-}
-
-private fun rotateYPlane270(src: ByteArray, width: Int, height: Int): ByteArray {
-    val dst = ByteArray(src.size)
-    var i = 0
-    for (x in width - 1 downTo 0) {
-        for (y in 0 until height) {
-            dst[i++] = src[y * width + x]
-        }
-    }
-    return dst
 }
