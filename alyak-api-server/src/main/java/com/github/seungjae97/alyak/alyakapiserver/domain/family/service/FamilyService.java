@@ -3,16 +3,20 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.family.service;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.dto.response.FamilyMemberInfoResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Family;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.repository.FamilyRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.notification.entity.DeviceToken;
+import com.github.seungjae97.alyak.alyakapiserver.domain.notification.repository.DeviceTokenRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.notification.service.PushNotificationService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.schedule.service.MedicationStatsService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
+import com.github.seungjae97.alyak.alyakapiserver.global.redis.service.RedisService;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
+import com.github.seungjae97.alyak.alyakapiserver.global.mail.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +25,10 @@ public class FamilyService {
     private final FamilyRepository familyRepository;
     private final UserRepository userRepository;
     private final MedicationStatsService medicationStatsService;
-
+    private final RedisService redisService;
+    private final EmailService emailService;
+    private final DeviceTokenRepository deviceTokenRepository;
+    private final PushNotificationService pushNotificationService;
     /**
      * @param userId 유저 아이디
      * @return List<FamilyMemberInfoResponse> members 가족에 속하는 구성원들의 정보
@@ -63,5 +70,42 @@ public class FamilyService {
                     return response;
                 })
                 .toList();
+    }
+
+    /**
+     * @param userId 유저 아이디
+     * @return qrcode userId - 생성된 임시 코드 구조로 redis에 저장한다,
+     * */
+    public String getQrCode(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(BusinessError.USER_NOT_EXIST));
+        return redisService.createToken(user.getEmail());
+    }
+
+    /**
+     * 대상 이메일로 가족 초대 요청을 전송한다.
+     * 가입 여부를 확인한 뒤 초대 안내 메일을 발송한다.
+     *
+     * @param email 초대할 대상 이메일
+     * @param userId 초대를 요청한 사용자 ID
+     * @return 초대 요청 처리 성공 여부
+     */
+    public boolean inviteByEmail(String email, Long userId) {
+        User inviter = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(BusinessError.USER_NOT_EXIST));
+
+        userRepository.findByEmail(email).ifPresentOrElse(
+                targetUser -> {
+                    List<DeviceToken> activeDeviceTokens = deviceTokenRepository.findAllByUser_UserIdAndEnabledTrue(targetUser.getUserId());
+                    if (activeDeviceTokens.isEmpty()) {
+                        emailService.sendFamilyInviteEmail(email, inviter.getName(), true);
+                        return;
+                    }
+                    pushNotificationService.sendInvite(activeDeviceTokens, inviter.getUserId(), inviter.getName());
+                },
+                () -> emailService.sendFamilyInviteEmail(email, inviter.getName(), false)
+        );
+
+        return true;
     }
 }

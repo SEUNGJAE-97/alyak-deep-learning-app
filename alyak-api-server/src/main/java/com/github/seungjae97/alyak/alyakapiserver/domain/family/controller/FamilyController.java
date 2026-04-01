@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,4 +31,19 @@ public class FamilyController {
         return ResponseEntity.ok(members);
     }
 
+    @GetMapping("/qrcode")
+    @Operation(summary = "생성된 qr코드를 리턴", description = "임시 코드를 키 값, userId를 value로 생성한다.")
+    public ResponseEntity<String> getQrCode(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        String qrCode = familyService.getQrCode(userDetails.getUser().getUserId());
+        return ResponseEntity.ok(qrCode);
+    }
+
+    @PostMapping("/invite")
+    @Operation(summary = "이메일로 가족 추가", description = "입력한 이메일로 초대코드를 전송한다.")
+    public ResponseEntity<Boolean> inviteEmail(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestParam String email
+    ) {
+        return ResponseEntity.ok(familyService.inviteByEmail(email, userDetails.getUser().getUserId()));
+    }
 }

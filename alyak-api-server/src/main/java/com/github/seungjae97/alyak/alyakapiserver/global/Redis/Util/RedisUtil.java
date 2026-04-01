@@ -1,4 +1,4 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.Redis.Util;
+package com.github.seungjae97.alyak.alyakapiserver.global.redis.util;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

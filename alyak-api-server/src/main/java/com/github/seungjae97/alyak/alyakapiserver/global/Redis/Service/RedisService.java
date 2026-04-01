@@ -1,6 +1,6 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.Redis.Service;
+package com.github.seungjae97.alyak.alyakapiserver.global.redis.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.global.Redis.Util.RedisUtil;
+import com.github.seungjae97.alyak.alyakapiserver.global.redis.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,9 +17,8 @@ public class RedisService {
     private final RedisUtil redisUtil;
 
     @Value("${spring.mail.username}")
-    private String SENDER_EMAIL;
+    private String senderEmail;
 
-    // 1. 랜덤 인증코드 생성
     public String createAuthCode() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder builder = new StringBuilder();
@@ -30,19 +29,18 @@ public class RedisService {
         return builder.toString();
     }
 
-    //2. 인증 메일 전송, Redis 에 저장
     public void sendAuthEmail(String toEmail) {
         String code = createAuthCode();
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
-        message.setFrom(SENDER_EMAIL);
+        message.setFrom(senderEmail);
         message.setSubject("이메일 인증번호 안내");
         message.setText("인증번호는 " + code + " 입니다.");
         mailSender.send(message);
         redisUtil.setDataExpire("auth_request:" + toEmail, "requested", 120);
         redisUtil.setDataExpire(toEmail, code, 30);
     }
-    //3. 인증 번호 검증
+
     public boolean verifyAuthCode(String email, String code) {
         String savedCode = redisUtil.getData(email);
         if (savedCode == null) return false;
@@ -53,5 +51,11 @@ public class RedisService {
             redisUtil.setDataExpire("verified:" + email, "verified", 60);
         }
         return matched;
+    }
+
+    public String createToken(String email) {
+        String code = createAuthCode();
+        redisUtil.setDataExpire("token:" + email, code, 60);
+        return code;
     }
 }

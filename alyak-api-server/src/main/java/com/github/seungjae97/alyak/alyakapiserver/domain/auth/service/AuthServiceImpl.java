@@ -13,7 +13,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRep
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
-import com.github.seungjae97.alyak.alyakapiserver.global.Redis.Util.RedisUtil;
+import com.github.seungjae97.alyak.alyakapiserver.global.redis.util.RedisUtil;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;

@@ -79,6 +79,11 @@ fast-api:
   server:
     url: ${OCR_SERVER_URL:http://fast-api:8000}
 
+# Firebase (FCM) — prod 프로파일에서 credentials-path 필수
+firebase:
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+  project-id: ${FIREBASE_PROJECT_ID:uplifted-studio-457001-h1}
+
 logging:
   level:
     org.springframework.security: DEBUG

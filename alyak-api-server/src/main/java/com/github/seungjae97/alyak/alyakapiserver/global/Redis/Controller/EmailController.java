@@ -1,7 +1,7 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.Redis.Controller;
+package com.github.seungjae97.alyak.alyakapiserver.global.redis.controller;
 
-import com.github.seungjae97.alyak.alyakapiserver.global.Redis.Service.RedisService;
-import com.github.seungjae97.alyak.alyakapiserver.global.Redis.Dto.Request.EmailValidationRequest;
+import com.github.seungjae97.alyak.alyakapiserver.global.redis.dto.request.EmailValidationRequest;
+import com.github.seungjae97.alyak.alyakapiserver.global.redis.service.RedisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,6 @@ public class EmailController {
     public ResponseEntity<Boolean> verifyEmailCode(@RequestBody EmailValidationRequest emailValidationRequest) {
         String email = emailValidationRequest.getEmail();
         String code = emailValidationRequest.getCode();
-
         return ResponseEntity.ok(mailService.verifyAuthCode(email, code));
     }
 }
