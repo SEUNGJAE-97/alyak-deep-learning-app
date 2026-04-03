@@ -2,6 +2,9 @@ package com.alyak.detector.feature.notification.ui
 
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -12,15 +15,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,6 +50,9 @@ import kotlinx.coroutines.delay
 
 private const val AUTO_DISMISS_MS = 12_000L
 
+private val InAppPushProgressGreen = Color(0xFF22C55E)
+private val InAppPushProgressTrack = Color(0xFFE5E7EB)
+
 /**
  * 포그라운드 푸시를 상단 카드 배너로 표시합니다. [content] 위에 겹쳐 그립니다.
  */
@@ -54,6 +63,19 @@ fun InAppPushBannerHost(
 ) {
     val context = LocalContext.current
     var visibleEvent by remember { mutableStateOf<InAppPushEvent?>(null) }
+    val dismissProgress = remember { Animatable(1f) }
+
+    LaunchedEffect(visibleEvent?.notificationId) {
+        visibleEvent?.notificationId ?: return@LaunchedEffect
+        dismissProgress.snapTo(1f)
+        dismissProgress.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(
+                durationMillis = AUTO_DISMISS_MS.toInt(),
+                easing = LinearEasing,
+            ),
+        )
+    }
 
     LaunchedEffect(notifier) {
         notifier.events.collect { event ->
@@ -91,6 +113,7 @@ fun InAppPushBannerHost(
                         containerColor = MaterialTheme.colorScheme.surface,
                     ),
                 ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -190,6 +213,22 @@ fun InAppPushBannerHost(
                                 }
                             }
                         }
+                    }
+
+                    LinearProgressIndicator(
+                        progress = { dismissProgress.value },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .clip(
+                                RoundedCornerShape(
+                                    bottomStart = 12.dp,
+                                    bottomEnd = 12.dp,
+                                ),
+                            ),
+                        color = InAppPushProgressGreen,
+                        trackColor = InAppPushProgressTrack,
+                    )
                     }
                 }
         }
