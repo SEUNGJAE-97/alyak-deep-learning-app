@@ -1,9 +1,7 @@
 package com.alyak.detector
 
-import android.content.ContentValues.TAG
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,7 +16,6 @@ import com.alyak.detector.feature.auth.data.model.TempLoginResponse
 import com.alyak.detector.navigation.Navigator
 import com.alyak.detector.ui.theme.AlyakTheme
 import com.google.firebase.messaging.FirebaseMessaging
-import com.kakao.sdk.common.util.Utility
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -42,9 +39,6 @@ class MainActivity : ComponentActivity() {
         handleAuthIntent(intent)
         // 권한 요청
         permissionManager = PermissionManager(this)
-        // hash key 확인
-        var keyHash = Utility.getKeyHash(this)
-        Log.d("Mykey", keyHash)
         setContent {
             AlyakTheme {
                 Navigator(permissionManager = permissionManager, tokenManager = tokenManager)
@@ -79,7 +73,6 @@ class MainActivity : ComponentActivity() {
     private fun registerFcmTokenIfLoggedIn() {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (!task.isSuccessful) {
-                Log.w(TAG, "FCM 토큰 조회 실패", task.exception)
                 return@addOnCompleteListener
             }
             val token = task.result ?: return@addOnCompleteListener
@@ -96,8 +89,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleAuthIntent(intent: Intent?) {
-        Log.d("Auth", "DeepLink Received: ${intent?.data}")
-
         intent?.data?.let { uri ->
             if (uri.scheme == "alyak" && uri.host == "auth") {
                 val accessToken = uri.getQueryParameter("accessToken")

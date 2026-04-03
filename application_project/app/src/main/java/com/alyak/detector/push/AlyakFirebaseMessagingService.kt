@@ -8,17 +8,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import com.alyak.detector.core.auth.TokenManager
-import com.alyak.detector.MainActivity
-import com.alyak.detector.feature.notification.data.DeviceTokenRegistrar
-import com.alyak.detector.feature.family.ui.main.MainScreen
-import com.google.firebase.messaging.FirebaseMessagingService
-import com.google.firebase.messaging.RemoteMessage
-import dagger.hilt.android.AndroidEntryPoint
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.alyak.detector.MainActivity
+import com.alyak.detector.R
+import com.alyak.detector.core.auth.TokenManager
+import com.alyak.detector.feature.notification.data.DeviceTokenRegistrar
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -66,15 +65,8 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
         val title = message.notification?.title ?: data["title"] ?: "ALYAK 알림"
         val body = message.notification?.body ?: data["body"] ?: ""
 
-        Log.i(
-            TAG,
-            "onMessageReceived: type=$type inviterUserId=$inviterUserId inviterName=$inviterName title=$title body=$body dataKeys=${data.keys}"
-        )
-
         // 포그라운드에서도 보이도록 로컬 알림을 추가로 표시한다.
-        // (서버가 setNotification(...)을 사용하므로, 앱 포그라운드에서는 시스템 알림이 안 보일 수 있음)
         if (!notificationPermissionGranted(this)) {
-            Log.w(TAG, "POST_NOTIFICATIONS permission not granted. Skip local notification.")
             return
         }
 
@@ -83,7 +75,6 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
 
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            // 추후 data type에 따라 화면 분기 가능
             putExtra("fcm_type", type)
             putExtra("inviter_name", inviterName)
         }
@@ -121,7 +112,6 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private companion object {
-        const val TAG = "AlyakFCM"
         const val FCM_INVITE_CHANNEL_ID = "fcm_invite_channel"
     }
 }

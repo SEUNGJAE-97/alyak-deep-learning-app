@@ -6,12 +6,9 @@ import com.alyak.detector.feature.notification.data.api.NotificationApi
 import com.alyak.detector.feature.notification.data.model.DeleteDeviceTokenRequest
 import com.alyak.detector.feature.notification.data.model.DevicePlatform
 import com.alyak.detector.feature.notification.data.model.UpsertDeviceTokenRequest
-import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
-
-private const val TAG = "DeviceTokenRegistrar"
 
 @Singleton
 class DeviceTokenRegistrar @Inject constructor(
@@ -32,7 +29,7 @@ class DeviceTokenRegistrar @Inject constructor(
             if (!response.isSuccessful) {
                 error("FCM 토큰 등록 실패: HTTP ${response.code()}")
             }
-        }.onFailure { Log.w(TAG, "FCM 토큰 등록 실패", it) }
+        }
     }
 
     suspend fun unregister(): Result<Unit> {
@@ -43,7 +40,7 @@ class DeviceTokenRegistrar @Inject constructor(
             if (!response.isSuccessful) {
                 error("FCM 토큰 해제 실패: HTTP ${response.code()}")
             }
-        }.onFailure { Log.w(TAG, "FCM 토큰 해제 실패", it) }
+        }
     }
 
     private fun resolveDeviceId(): String {
