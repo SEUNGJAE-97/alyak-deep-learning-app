@@ -5,7 +5,9 @@ import com.alyak.detector.core.network.TokenAuthenticator
 import com.alyak.detector.di.AppServerRetrofit
 import com.alyak.detector.di.KakaoRetrofit
 import com.alyak.detector.feature.auth.data.api.AuthApi
+import com.alyak.detector.feature.family.data.api.FamilyApi
 import com.alyak.detector.feature.map.data.api.KakaoLocalApi
+import com.alyak.detector.feature.notification.data.api.NotificationApi
 import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
@@ -71,6 +73,16 @@ object NetworkModule {
     @Singleton
     fun provideAuthApi(@AppServerRetrofit retrofit: Retrofit): AuthApi =
         retrofit.create(AuthApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationApi(@AppServerRetrofit retrofit: Retrofit): NotificationApi =
+        retrofit.create(NotificationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideFamilyApi(@AppServerRetrofit retrofit: Retrofit): FamilyApi =
+        retrofit.create(FamilyApi::class.java)
 
     @Provides
     @Singleton

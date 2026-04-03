@@ -42,7 +42,10 @@ services:
     container_name: alyak-api-server
     ports:
       - "8080:8080"
+    volumes:
+      - ./uplifted-studio-457001-h1-firebase-adminsdk-fbsvc-06cdb7fc02.json:/run/secrets/firebase-adminsdk.json:ro
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       # Database Configuration
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/alyak?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&useSSL=false
       SPRING_DATASOURCE_USERNAME: alyak_user
@@ -75,6 +78,8 @@ services:
       JWT_EXPIRATION_TIME: 3600000
       JWT_HEADER: Authorization
       JWT_PREFIX: Bearer
+      FIREBASE_CREDENTIALS_PATH: /run/secrets/firebase-adminsdk.json
+      FIREBASE_PROJECT_ID: uplifted-studio-457001-h1
     depends_on:
       mysql:
         condition: service_healthy

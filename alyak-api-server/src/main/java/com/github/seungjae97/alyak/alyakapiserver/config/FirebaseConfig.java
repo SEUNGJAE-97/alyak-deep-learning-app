@@ -31,10 +31,10 @@ public class FirebaseConfig {
 
         String path = firebaseProperties.getCredentialsPath();
         if (path == null || path.isBlank()) {
-            throw new IllegalStateException("firebase.credentials-path 가 비어 있습니다. prod 프로파일에서는 필수입니다.");
+            throw new IllegalStateException("firebase.credentials-path(FIREBASE_CREDENTIALS_PATH)가 비어 있습니다. prod 프로파일에서는 필수입니다.");
         }
 
-        try (InputStream serviceAccount = openCredentialsStream(path)) {
+        try (InputStream serviceAccount = new FileInputStream(path)) {
             FirebaseOptions.Builder optionsBuilder = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount));
 
@@ -43,12 +43,8 @@ public class FirebaseConfig {
             }
 
             FirebaseApp app = FirebaseApp.initializeApp(optionsBuilder.build());
-            log.info("FirebaseApp 초기화 완료 (projectId={})", app.getOptions().getProjectId());
+            log.info("FirebaseApp 초기화 완료 (source=file:{}, projectId={})", path, app.getOptions().getProjectId());
             return app;
         }
-    }
-
-    private static InputStream openCredentialsStream(String path) throws IOException {
-        return new FileInputStream(path);
     }
 }

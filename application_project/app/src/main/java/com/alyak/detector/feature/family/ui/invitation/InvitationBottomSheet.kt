@@ -26,17 +26,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.alyak.detector.feature.family.ui.invitation.component.EmailInputSection
 import com.alyak.detector.feature.family.ui.invitation.component.InvitationOptionItem
 import com.alyak.detector.feature.family.ui.invitation.component.QRDisplaySection
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,11 +46,27 @@ fun InvitationBottomSheet(
     sheetState: SheetState,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
     val scannedToken by viewModel.scannedInviteToken.collectAsState()
     var expandedOption by remember { mutableStateOf<InvitationOption?>(null) }
     val scrollState = rememberScrollState()
-    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        viewModel.inviteEmailEvent.collect { event ->
+            when (event) {
+                InviteEmailUiEvent.Success -> {
+                    Toast.makeText(context, "초대 요청을 보냈습니다.", Toast.LENGTH_SHORT).show()
+                    expandedOption = null
+                    sheetState.partialExpand()
+                    onDismiss()
+                }
+                is InviteEmailUiEvent.Failure -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
 
     /* 만일 이메일 입력을 시도할 경우 0.9f까지 바텀시트를 올려준다.*/
     LaunchedEffect(expandedOption) {
@@ -134,13 +150,7 @@ fun InvitationBottomSheet(
                 exit = shrinkVertically() + fadeOut()
             ) {
                 EmailInputSection(
-                    onSendClick = { email ->
-                        scope.launch {
-                            expandedOption = null
-                            sheetState.partialExpand()
-                        }
-                        onDismiss()
-                    }
+                    onSendClick = { email -> viewModel.inviteByEmail(email) }
                 )
             }
 
