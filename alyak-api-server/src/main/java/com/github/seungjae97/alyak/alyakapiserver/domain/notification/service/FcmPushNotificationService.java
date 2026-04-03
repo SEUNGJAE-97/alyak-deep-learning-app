@@ -8,7 +8,6 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.MessagingErrorCode;
-import com.google.firebase.messaging.Notification;
 import com.google.firebase.messaging.SendResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,12 +46,8 @@ public class FcmPushNotificationService implements PushNotificationService {
             messages.add(
                     Message.builder()
                             .setToken(dt.getFcmToken())
-                            .setNotification(
-                                    Notification.builder()
-                                            .setTitle(title)
-                                            .setBody(body)
-                                            .build()
-                            )
+                            .putData("title", title)
+                            .putData("body", body)
                             .putData("type", DATA_TYPE)
                             .putData("inviterUserId", String.valueOf(inviterUserId))
                             .putData("inviterName", inviterName == null ? "" : inviterName)

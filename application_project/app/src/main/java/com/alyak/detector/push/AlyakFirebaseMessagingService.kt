@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -85,65 +86,125 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
+        if (!notificationPermissionGranted(this)) return
+
         val data = message.data
-        val type = data["type"]
-        val inviterName = data["inviterName"]
         val title = message.notification?.title ?: data["title"] ?: "ALYAK 알림"
         val body = message.notification?.body ?: data["body"] ?: ""
 
-        if (!notificationPermissionGranted(this)) {
-            return
-        }
-
-        val channelId = FCM_INVITE_CHANNEL_ID
-        createChannelIfNeeded(channelId)
+        val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
 
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("fcm_type", type)
-            putExtra("inviter_name", inviterName)
+            putExtra("fcm_type", data["type"])
+            putExtra("inviter_name", data["inviterName"])
         }
 
         val pendingIntent = PendingIntent.getActivity(
             this,
-            (System.currentTimeMillis() % Int.MAX_VALUE).toInt(),
+            notificationId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
-        val notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(body)
+        val isFamilyInvite = data["type"]?.equals("family_invite", ignoreCase = true) == true
+            || data["type"]?.equals("FAMILY_INVITE", ignoreCase = true) == true
+
+        val acceptPendingIntent: PendingIntent? = if (isFamilyInvite) {
+            val acceptIntent = Intent(this, PushActionReceiver::class.java).apply {
+                action = PushActionReceiver.ACTION_FAMILY_INVITE_ACCEPT
+                putExtra(PushActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+                putExtra(PushActionReceiver.EXTRA_INVITER_USER_ID, data["inviterUserId"])
+                putExtra(PushActionReceiver.EXTRA_INVITER_NAME, data["inviterName"])
+            }
+            PendingIntent.getBroadcast(
+                this,
+                notificationId + 1,
+                acceptIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            null
+        }
+
+        val rejectPendingIntent: PendingIntent? = if (isFamilyInvite) {
+            val rejectIntent = Intent(this, PushActionReceiver::class.java).apply {
+                action = PushActionReceiver.ACTION_FAMILY_INVITE_REJECT
+                putExtra(PushActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+                putExtra(PushActionReceiver.EXTRA_INVITER_USER_ID, data["inviterUserId"])
+                putExtra(PushActionReceiver.EXTRA_INVITER_NAME, data["inviterName"])
+            }
+            PendingIntent.getBroadcast(
+                this,
+                notificationId + 2,
+                rejectIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            null
+        }
+
+        val remoteViews = RemoteViews(packageName, R.layout.notification_custom).apply {
+            setTextViewText(R.id.notif_title, title)
+            setTextViewText(R.id.notif_body, body)
+            setImageViewResource(R.id.notif_icon, R.drawable.notification_icon)
+        }
+
+        val notificationBuilder = NotificationCompat.Builder(this, FCM_INVITE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.notification_icon)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(remoteViews)
+            .setColor(ContextCompat.getColor(this, R.color.primaryBlue))
             .setAutoCancel(true)
+            .setCustomBigContentView(remoteViews)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
 
-        NotificationManagerCompat.from(this).notify(notificationId, notification)
+        if (acceptPendingIntent != null) {
+            notificationBuilder.addAction(
+                0,
+                getString(R.string.notification_action_accept),
+                acceptPendingIntent
+            )
+        }
+        if (rejectPendingIntent != null) {
+            notificationBuilder.addAction(
+                0,
+                getString(R.string.notification_action_reject),
+                rejectPendingIntent
+            )
+        }
+
+        NotificationManagerCompat.from(this)
+            .notify(notificationId, notificationBuilder.build())
     }
 
-    /**
-     * Android 8.0(API 26) 이상에서 알림 채널을 생성합니다.
-     *
-     * 동일한 채널 ID가 이미 존재하는 경우 시스템이 기존 채널을 재사용합니다.
-     *
-     * @param channelId 생성(또는 재사용)할 채널 ID
-     */
-    private fun createChannelIfNeeded(channelId: String) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val channelName = "FCM 알림"
-        val channel = NotificationChannel(
-            channelId,
-            channelName,
-            NotificationManager.IMPORTANCE_HIGH
-        )
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(channel)
-    }
-
-    private companion object {
+    companion object {
         const val FCM_INVITE_CHANNEL_ID = "fcm_invite_channel"
+
+        /**
+         * Android 8.0(API 26) 이상에서 알림 채널을 생성합니다.
+         *
+         * 동일한 채널 ID가 이미 존재하는 경우 시스템이 기존 채널을 재사용합니다.
+         *
+         * @param channelId 생성(또는 재사용)할 채널 ID
+         */
+        fun createNotificationChannel(context: Context) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channelName = "가족 초대 및 알림"
+                val descriptionText = "가족 초대 요청 및 앱 내 중요 알림을 수신합니다."
+                val importance = NotificationManager.IMPORTANCE_HIGH
+
+                val channel =
+                    NotificationChannel(FCM_INVITE_CHANNEL_ID, channelName, importance).apply {
+                        description = descriptionText
+                    }
+
+                val notificationManager =
+                    context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.createNotificationChannel(channel)
+            }
+        }
     }
 }
