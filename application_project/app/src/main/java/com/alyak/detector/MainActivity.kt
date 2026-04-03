@@ -11,6 +11,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.core.util.PermissionManager
+import com.alyak.detector.feature.notification.InAppPushNotifier
+import com.alyak.detector.feature.notification.ui.InAppPushBannerHost
 import com.alyak.detector.feature.notification.data.DeviceTokenRegistrar
 import com.alyak.detector.feature.auth.data.model.TempLoginResponse
 import com.alyak.detector.navigation.Navigator
@@ -33,6 +35,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var deviceTokenRegistrar: DeviceTokenRegistrar
 
+    @Inject
+    lateinit var inAppPushNotifier: InAppPushNotifier
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -41,7 +46,12 @@ class MainActivity : ComponentActivity() {
         permissionManager = PermissionManager(this)
         setContent {
             AlyakTheme {
-                Navigator(permissionManager = permissionManager, tokenManager = tokenManager)
+                InAppPushBannerHost(notifier = inAppPushNotifier) {
+                    Navigator(
+                        permissionManager = permissionManager,
+                        tokenManager = tokenManager,
+                    )
+                }
             }
         }
 

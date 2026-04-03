@@ -12,9 +12,13 @@ import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.alyak.detector.MainActivity
 import com.alyak.detector.R
 import com.alyak.detector.core.auth.TokenManager
+import com.alyak.detector.feature.notification.InAppPushEvent
+import com.alyak.detector.feature.notification.InAppPushNotifier
 import com.alyak.detector.feature.notification.data.DeviceTokenRegistrar
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -39,6 +43,9 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject
     lateinit var tokenManager: TokenManager
+
+    @Inject
+    lateinit var inAppPushNotifier: InAppPushNotifier
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -78,21 +85,39 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
     /**
      * FCM 메시지를 수신했을 때 호출됩니다.
      *
-     * notification payload와 data payload를 조합해 제목/본문을 만들고,
-     * 앱이 포그라운드인 경우에도 사용자가 인지할 수 있도록 로컬 알림을 표시합니다.
+     * notification payload와 data payload를 조합해 제목/본문을 만듭니다.
+     * 포그라운드일 때는 [InAppPushNotifier]로 인앱 상단 배너만 띄우고,
+     * 백그라운드일 때는 로컬 시스템 알림을 표시합니다.
      *
      * @param message 수신한 FCM 메시지
      */
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
-        if (!notificationPermissionGranted(this)) return
-
         val data = message.data
         val title = message.notification?.title ?: data["title"] ?: "ALYAK 알림"
         val body = message.notification?.body ?: data["body"] ?: ""
 
         val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+
+        val isForeground = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(
+            Lifecycle.State.STARTED
+        )
+        if (isForeground) {
+            inAppPushNotifier.emit(
+                InAppPushEvent(
+                    title = title,
+                    body = body,
+                    notificationId = notificationId,
+                    type = data["type"],
+                    inviterUserId = data["inviterUserId"],
+                    inviterName = data["inviterName"],
+                )
+            )
+            return
+        }
+
+        if (!notificationPermissionGranted(this)) return
 
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -107,8 +132,7 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val isFamilyInvite = data["type"]?.equals("family_invite", ignoreCase = true) == true
-            || data["type"]?.equals("FAMILY_INVITE", ignoreCase = true) == true
+        val isFamilyInvite = data["type"] == "FAMILY_INVITE"
 
         val acceptPendingIntent: PendingIntent? = if (isFamilyInvite) {
             val acceptIntent = Intent(this, PushActionReceiver::class.java).apply {

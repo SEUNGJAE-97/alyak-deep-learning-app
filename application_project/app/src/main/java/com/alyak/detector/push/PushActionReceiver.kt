@@ -7,8 +7,6 @@ import androidx.core.app.NotificationManagerCompat
 
 /**
  * 알림의 [수락] / [거절] 액션 탭을 처리합니다.
- *
- * 길게 눌러서만 버튼을 띄우는 API는 없고, 알림을 펼치면 보이는 표준 액션 버튼으로 동작합니다.
  */
 class PushActionReceiver : BroadcastReceiver() {
 
@@ -31,8 +29,10 @@ class PushActionReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        const val ACTION_FAMILY_INVITE_ACCEPT = "com.alyak.detector.push.ACTION_FAMILY_INVITE_ACCEPT"
-        const val ACTION_FAMILY_INVITE_REJECT = "com.alyak.detector.push.ACTION_FAMILY_INVITE_REJECT"
+        const val ACTION_FAMILY_INVITE_ACCEPT =
+            "com.alyak.detector.push.ACTION_FAMILY_INVITE_ACCEPT"
+        const val ACTION_FAMILY_INVITE_REJECT =
+            "com.alyak.detector.push.ACTION_FAMILY_INVITE_REJECT"
 
         const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
         const val EXTRA_INVITER_USER_ID = "extra_inviter_user_id"
