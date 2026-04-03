@@ -19,6 +19,7 @@ import com.alyak.detector.feature.family.data.model.DailyMedicationStat
 import com.alyak.detector.feature.family.data.model.FamilyMember
 import com.alyak.detector.feature.family.data.model.MedicineSchedule
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
+import com.alyak.detector.push.dao.NotificationDao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,9 +37,12 @@ class MainViewModel @Inject constructor(
     private val familyRepo: FamilyRepo,
     private val tokenManager: TokenManager,
     private val alarmScheduler: AlarmScheduler,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val notificationDao: NotificationDao
 ) : ViewModel() {
 
+    val unreadNotificationCount = notificationDao.getUnreadCountFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
     private var _selectedIndex by mutableIntStateOf(0)
     val selectedIndex: Int get() = _selectedIndex
     private var successRate by mutableIntStateOf(0)

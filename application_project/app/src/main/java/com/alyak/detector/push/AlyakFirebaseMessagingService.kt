@@ -20,6 +20,8 @@ import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.feature.notification.InAppPushEvent
 import com.alyak.detector.feature.notification.InAppPushNotifier
 import com.alyak.detector.feature.notification.data.DeviceTokenRegistrar
+import com.alyak.detector.push.dao.NotificationDao
+import com.alyak.detector.push.dto.NotificationEntity
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
@@ -37,6 +39,9 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class AlyakFirebaseMessagingService : FirebaseMessagingService() {
+
+    @Inject
+    lateinit var notificationDao: NotificationDao
 
     @Inject
     lateinit var deviceTokenRegistrar: DeviceTokenRegistrar
@@ -97,8 +102,14 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
         val data = message.data
         val title = message.notification?.title ?: data["title"] ?: "ALYAK 알림"
         val body = message.notification?.body ?: data["body"] ?: ""
-
+        val type = data["type"]
         val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+
+        serviceScope.launch {
+            notificationDao.insertNotification(
+                NotificationEntity(title = title, body = body, type = type)
+            )
+        }
 
         val isForeground = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(
             Lifecycle.State.STARTED
@@ -109,7 +120,7 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
                     title = title,
                     body = body,
                     notificationId = notificationId,
-                    type = data["type"],
+                    type = type,
                     inviterUserId = data["inviterUserId"],
                     inviterName = data["inviterName"],
                 )
@@ -121,7 +132,7 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
 
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("fcm_type", data["type"])
+            putExtra("fcm_type", type)
             putExtra("inviter_name", data["inviterName"])
         }
 

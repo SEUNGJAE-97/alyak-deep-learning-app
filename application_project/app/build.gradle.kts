@@ -116,8 +116,8 @@ dependencies {
     // Preferences DataStore (SharedPreferences like APIs)
     implementation("androidx.datastore:datastore-preferences:1.2.0")
 
-    implementation ("io.coil-kt:coil-compose:2.4.0")
-    implementation ("io.coil-kt:coil-svg:2.4.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-svg:2.4.0")
 
     //Room
     implementation("androidx.room:room-runtime:2.8.4")
@@ -143,6 +143,7 @@ dependencies {
 
     //ZXing
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-
+    // 로띠
+    implementation("com.airbnb.android:lottie-compose:6.0.0")
 
 }

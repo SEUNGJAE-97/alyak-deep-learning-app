@@ -19,6 +19,7 @@ import com.alyak.detector.feature.pill.data.repository.PillRepository
 import com.alyak.detector.feature.pill.data.repository.PillRepositoryImpl
 import com.alyak.detector.feature.user.data.api.UserService
 import com.alyak.detector.feature.user.repository.UserRepository
+import com.alyak.detector.push.dao.NotificationDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -72,7 +73,7 @@ object AppModule {
             context,
             PillDatabase::class.java,
             "pill_database"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
@@ -120,4 +121,10 @@ object AppModule {
     @ApplicationScope
     fun provideApplicationScope(): CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    @Provides
+    @Singleton
+    fun provideNotificationDao(database: PillDatabase): NotificationDao {
+        return database.notificationDao()
+    }
 }
