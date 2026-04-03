@@ -24,6 +24,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * Firebase Cloud Messaging(FCM) 수신 및 토큰 갱신을 처리하는 서비스입니다.
+ *
+ * - [onNewToken]: FCM 등록 토큰이 갱신되면 로그인 상태일 때 서버에 등록합니다.
+ * - [onMessageReceived]: 푸시 메시지 수신 시 제목/본문을 바탕으로 로컬 알림을 표시합니다(포그라운드 대응).
+ */
 @AndroidEntryPoint
 class AlyakFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -35,6 +41,12 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    /**
+     * 알림 표시 권한이 부여되었는지 확인합니다.
+     *
+     * Android 13(API 33) 이상에서는 [Manifest.permission.POST_NOTIFICATIONS] 런타임 권한을 검사하고,
+     * 그 미만 버전에서는 항상 `true`를 반환합니다.
+     */
     private fun notificationPermissionGranted(context: Context): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
@@ -46,6 +58,13 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
+    /**
+     * FCM 등록 토큰이 갱신되었을 때 호출됩니다.
+     *
+     * 현재 로그인 상태(액세스 토큰 존재)인 경우에만 서버의 디바이스 토큰 등록 API로 토큰을 동기화합니다.
+     *
+     * @param token Firebase가 발급한 최신 등록 토큰
+     */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         serviceScope.launch {
@@ -55,17 +74,23 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
+    /**
+     * FCM 메시지를 수신했을 때 호출됩니다.
+     *
+     * notification payload와 data payload를 조합해 제목/본문을 만들고,
+     * 앱이 포그라운드인 경우에도 사용자가 인지할 수 있도록 로컬 알림을 표시합니다.
+     *
+     * @param message 수신한 FCM 메시지
+     */
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
         val data = message.data
         val type = data["type"]
         val inviterName = data["inviterName"]
-        val inviterUserId = data["inviterUserId"]
         val title = message.notification?.title ?: data["title"] ?: "ALYAK 알림"
         val body = message.notification?.body ?: data["body"] ?: ""
 
-        // 포그라운드에서도 보이도록 로컬 알림을 추가로 표시한다.
         if (!notificationPermissionGranted(this)) {
             return
         }
@@ -99,6 +124,13 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
         NotificationManagerCompat.from(this).notify(notificationId, notification)
     }
 
+    /**
+     * Android 8.0(API 26) 이상에서 알림 채널을 생성합니다.
+     *
+     * 동일한 채널 ID가 이미 존재하는 경우 시스템이 기존 채널을 재사용합니다.
+     *
+     * @param channelId 생성(또는 재사용)할 채널 ID
+     */
     private fun createChannelIfNeeded(channelId: String) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channelName = "FCM 알림"
