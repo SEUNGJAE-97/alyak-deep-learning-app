@@ -15,6 +15,7 @@ import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.Busine
 import com.github.seungjae97.alyak.alyakapiserver.global.mail.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -96,7 +97,9 @@ public class FamilyService {
 
         userRepository.findByEmail(email).ifPresentOrElse(
                 targetUser -> {
-                    List<DeviceToken> activeDeviceTokens = deviceTokenRepository.findAllByUser_UserIdAndEnabledTrue(targetUser.getUserId());
+                    redisService.saveFamilyInvitePending(targetUser.getUserId(), inviter.getUserId());
+                    List<DeviceToken> activeDeviceTokens = deviceTokenRepository
+                            .findAllByUser_UserIdAndEnabledTrue(targetUser.getUserId());
                     if (activeDeviceTokens.isEmpty()) {
                         emailService.sendFamilyInviteEmail(email, inviter.getName(), true);
                         return;
@@ -107,5 +110,45 @@ public class FamilyService {
         );
 
         return true;
+    }
+
+    /**
+     * 초대받은 사용자가 로그인 상태에서 초대를 수락합니다.
+     * Redis에 저장된 보류 초대가 있어야 하며, 1회 성공 시 키가 삭제됩니다.
+     */
+    @Transactional
+    public void acceptInvite(Long inviteeUserId, Long inviterUserId) {
+        if (inviteeUserId.equals(inviterUserId)) {
+            throw new BusinessException(BusinessError.INVITE_SELF_NOT_ALLOWED);
+        }
+
+        User invitee = userRepository.findById(inviteeUserId)
+                .orElseThrow(() -> new BusinessException(BusinessError.USER_NOT_EXIST));
+        User inviter = userRepository.findById(inviterUserId)
+                .orElseThrow(() -> new BusinessException(BusinessError.USER_NOT_EXIST));
+
+        if (invitee.getFamily() != null && inviter.getFamily() != null
+                && invitee.getFamily().getId().equals(inviter.getFamily().getId())) {
+            redisService.verifyAndConsumeFamilyInvitePending(inviteeUserId, inviterUserId);
+            return;
+        }
+
+        if (invitee.getFamily() != null) {
+            throw new BusinessException(BusinessError.ALREADY_IN_OTHER_FAMILY);
+        }
+
+        if (!redisService.verifyAndConsumeFamilyInvitePending(inviteeUserId, inviterUserId)) {
+            throw new BusinessException(BusinessError.FAMILY_INVITE_EXPIRED_OR_INVALID);
+        }
+
+        Family targetFamily = inviter.getFamily();
+        if (targetFamily == null) {
+            targetFamily = familyRepository.save(Family.builder().build());
+            inviter.assignFamily(targetFamily);
+            userRepository.save(inviter);
+        }
+
+        invitee.assignFamily(targetFamily);
+        userRepository.save(invitee);
     }
 }

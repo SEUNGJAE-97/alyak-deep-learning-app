@@ -23,7 +23,10 @@ public enum BusinessError {
     DONT_EXIST_PILL(HttpStatus.BAD_REQUEST, "존재하지 않는 이름입니다."),
 
     // 가족
-    DONT_EXIST_FAMILY(HttpStatus.BAD_REQUEST, "존재하는 가족이 없습니다.");
+    DONT_EXIST_FAMILY(HttpStatus.BAD_REQUEST, "존재하는 가족이 없습니다."),
+    INVITE_SELF_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 보낸 초대는 수락할 수 없습니다."),
+    ALREADY_IN_OTHER_FAMILY(HttpStatus.CONFLICT, "이미 다른 가족에 소속되어 있어 초대를 수락할 수 없습니다."),
+    FAMILY_INVITE_EXPIRED_OR_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않거나 만료된 초대입니다.");
 
     private final HttpStatus httpStatus;
 

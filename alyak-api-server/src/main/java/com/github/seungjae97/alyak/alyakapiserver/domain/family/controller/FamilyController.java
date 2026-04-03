@@ -1,6 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.family.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.UserDetailsImpl;
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.dto.request.AcceptFamilyInviteRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.dto.response.FamilyMemberInfoResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.service.FamilyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,8 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -45,5 +47,18 @@ public class FamilyController {
             @RequestParam String email
     ) {
         return ResponseEntity.ok(familyService.inviteByEmail(email, userDetails.getUser().getUserId()));
+    }
+
+    @PostMapping("/invite/accept")
+    @Operation(summary = "가족 초대 수락", description = "로그인한 사용자가 이메일 초대를 수락해 초대자의 가족에 합류합니다.")
+    public ResponseEntity<Void> acceptInvite(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody AcceptFamilyInviteRequest body
+    ) {
+        familyService.acceptInvite(
+                userDetails.getUser().getUserId(),
+                body.getInviterUserId()
+        );
+        return ResponseEntity.noContent().build();
     }
 }

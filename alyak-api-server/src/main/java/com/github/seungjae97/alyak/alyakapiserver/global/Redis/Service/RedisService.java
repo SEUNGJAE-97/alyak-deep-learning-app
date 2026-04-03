@@ -58,4 +58,29 @@ public class RedisService {
         redisUtil.setDataExpire("token:" + email, code, 60);
         return code;
     }
+
+    private static final long FAMILY_INVITE_PENDING_TTL_SECONDS = 86_400L; // 24시간
+
+    /**
+     * 가족 초대가 발송된 뒤 수락 API에서 검증할 수 있도록 Redis에 보관합니다.
+     */
+    public void saveFamilyInvitePending(Long inviteeUserId, Long inviterUserId) {
+        String key = "familyInvite:pending:" + inviteeUserId + ":" + inviterUserId;
+        redisUtil.setDataExpire(key, "1", FAMILY_INVITE_PENDING_TTL_SECONDS);
+    }
+
+    /**
+     * 초대 수락 확정 시 키를 삭제합니다.
+     *
+     * @return 삭제 전에 보류 초대가 있었으면 true
+     */
+    public boolean verifyAndConsumeFamilyInvitePending(Long inviteeUserId, Long inviterUserId) {
+        String key = "familyInvite:pending:" + inviteeUserId + ":" + inviterUserId;
+        String val = redisUtil.getData(key);
+        if (!"1".equals(val)) {
+            return false;
+        }
+        redisUtil.deleteData(key);
+        return true;
+    }
 }

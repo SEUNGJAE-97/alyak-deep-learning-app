@@ -40,4 +40,9 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "family_id")
     private Family family;
+
+    /** 가족 초대 수락 시 소속 가족을 설정합니다. */
+    public void assignFamily(Family family) {
+        this.family = family;
+    }
 }
