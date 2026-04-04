@@ -1,6 +1,7 @@
 package com.alyak.detector.feature.family.data.api
 
 import com.alyak.detector.feature.family.data.model.AcceptFamilyInviteRequest
+import com.alyak.detector.feature.family.data.model.FamilyJoinByQrRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -20,5 +21,10 @@ interface FamilyApi {
     @POST("/api/family/invite/accept")
     suspend fun acceptFamilyInvite(
         @Body body: AcceptFamilyInviteRequest,
+    ): Response<Unit>
+
+    @POST("/api/family/join/qr")
+    suspend fun joinFamilyByQr(
+        @Body body: FamilyJoinByQrRequest,
     ): Response<Unit>
 }

@@ -302,7 +302,8 @@ fun MainScreen(
                 InvitationBottomSheet(
                     navController = navController,
                     sheetState = sheetState,
-                    onDismiss = { showBottomSheet = false }
+                    onDismiss = { showBottomSheet = false },
+                    onFamilyListRefresh = { viewModel.refreshFamilyMembers() }
                 )
             }
         }

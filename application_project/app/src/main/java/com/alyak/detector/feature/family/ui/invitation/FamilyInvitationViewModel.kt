@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alyak.detector.feature.family.data.api.FamilyApi
+import com.alyak.detector.feature.family.data.model.FamilyJoinByQrRequest
 import com.alyak.detector.utils.QRUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
@@ -28,6 +29,9 @@ class FamilyInvitationViewModel @Inject constructor(
 
     private val _inviteEmailEvent = MutableSharedFlow<InviteEmailUiEvent>(extraBufferCapacity = 1)
     val inviteEmailEvent = _inviteEmailEvent.asSharedFlow()
+
+    private val _joinByQrEvent = MutableSharedFlow<JoinByQrUiEvent>(extraBufferCapacity = 1)
+    val joinByQrEvent = _joinByQrEvent.asSharedFlow()
 
     private final val INVITE_TTL_SECONDS = 60
     private var timerJob: Job? = null
@@ -54,8 +58,28 @@ class FamilyInvitationViewModel @Inject constructor(
 
     fun onQrScanned(token: String) {
         Log.d("FamilyInvitation", "QR scanned: $token")
-        _scannedInviteToken.value = token
-        // TODO: 서버에 초대 수락/검증 API 호출로 연결
+        viewModelScope.launch {
+            val trimmed = token.trim()
+            if (trimmed.isEmpty()) {
+                _joinByQrEvent.emit(JoinByQrUiEvent.Failure("인식된 코드가 없습니다."))
+                return@launch
+            }
+            try {
+                val response = familyApi.joinFamilyByQr(FamilyJoinByQrRequest(scannedCode = trimmed))
+                if (response.isSuccessful) {
+                    _scannedInviteToken.value = trimmed
+                    _joinByQrEvent.emit(JoinByQrUiEvent.Success)
+                } else {
+                    _joinByQrEvent.emit(
+                        JoinByQrUiEvent.Failure("가족 합류에 실패했습니다. (${response.code()})")
+                    )
+                }
+            } catch (e: Exception) {
+                _joinByQrEvent.emit(
+                    JoinByQrUiEvent.Failure(e.message ?: "네트워크 오류가 발생했습니다.")
+                )
+            }
+        }
     }
 
     fun inviteByEmail(email: String) {
@@ -169,4 +193,9 @@ enum class InvitationOption {
 sealed interface InviteEmailUiEvent {
     data object Success : InviteEmailUiEvent
     data class Failure(val message: String) : InviteEmailUiEvent
+}
+
+sealed interface JoinByQrUiEvent {
+    data object Success : JoinByQrUiEvent
+    data class Failure(val message: String) : JoinByQrUiEvent
 }

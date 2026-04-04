@@ -44,7 +44,8 @@ fun InvitationBottomSheet(
     navController: NavController,
     viewModel: FamilyInvitationViewModel = hiltViewModel(),
     sheetState: SheetState,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onFamilyListRefresh: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
@@ -62,6 +63,23 @@ fun InvitationBottomSheet(
                     onDismiss()
                 }
                 is InviteEmailUiEvent.Failure -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.joinByQrEvent.collect { event ->
+            when (event) {
+                JoinByQrUiEvent.Success -> {
+                    Toast.makeText(context, "가족에 합류했습니다.", Toast.LENGTH_SHORT).show()
+                    onFamilyListRefresh()
+                    expandedOption = null
+                    sheetState.partialExpand()
+                    onDismiss()
+                }
+                is JoinByQrUiEvent.Failure -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                 }
             }

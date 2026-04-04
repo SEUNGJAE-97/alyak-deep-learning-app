@@ -93,6 +93,10 @@ class MainViewModel @Inject constructor(
         loadUserChartData()
     }
 
+    fun refreshFamilyMembers() {
+        fetchFamilyMembers()
+    }
+
     private fun fetchFamilyMembers() {
         viewModelScope.launch {
             _isLoading.value = true
