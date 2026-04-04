@@ -1,6 +1,7 @@
 package com.alyak.detector.feature.family.ui.invitation
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alyak.detector.feature.family.data.api.FamilyApi
@@ -28,7 +29,7 @@ class FamilyInvitationViewModel @Inject constructor(
     private val _inviteEmailEvent = MutableSharedFlow<InviteEmailUiEvent>(extraBufferCapacity = 1)
     val inviteEmailEvent = _inviteEmailEvent.asSharedFlow()
 
-    private final val INVITE_TTL_SECONDS = 10
+    private final val INVITE_TTL_SECONDS = 60
     private var timerJob: Job? = null
 
     // 초대 옵션 선택
@@ -52,6 +53,7 @@ class FamilyInvitationViewModel @Inject constructor(
     }
 
     fun onQrScanned(token: String) {
+        Log.d("FamilyInvitation", "QR scanned: $token")
         _scannedInviteToken.value = token
         // TODO: 서버에 초대 수락/검증 API 호출로 연결
     }
@@ -88,22 +90,26 @@ class FamilyInvitationViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.value = InvitationUiState.Loading
-            try{
-                // 1. 서버에 토큰 생성 API 호출
-                val mockToken = "TEMP_TOKEN_${System.currentTimeMillis()}"
-
-                // 2. 토큰을 Bitmap으로 변환
-                val qrBitmap = QRUtils.createQRCode(mockToken)
-
-                // 3. 상태 업데이트 + 타이머 시작
+            try {
+                val response = familyApi.getQrCode()
+                val token = response.body()?.trim().orEmpty()
+                if (!response.isSuccessful || token.isEmpty()) {
+                    _uiState.value = InvitationUiState.Error(
+                        "QR 발급에 실패했습니다. (${response.code()})"
+                    )
+                    return@launch
+                }
+                val qrBitmap = QRUtils.createQRCode(token)
                 _uiState.value = InvitationUiState.Success(
                     inviteCode = qrBitmap,
                     remainingSeconds = INVITE_TTL_SECONDS,
                     isExpired = false
                 )
                 startCountdown()
-            }catch (e : Exception){
-                _uiState.value = InvitationUiState.Error("토큰 생성 실패")
+            } catch (e: Exception) {
+                _uiState.value = InvitationUiState.Error(
+                    e.message ?: "QR 발급 중 오류가 발생했습니다."
+                )
             }
         }
     }
