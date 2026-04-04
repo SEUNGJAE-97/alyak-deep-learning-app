@@ -107,7 +107,12 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
 
         serviceScope.launch {
             notificationDao.insertNotification(
-                NotificationEntity(title = title, body = body, type = type)
+                NotificationEntity(
+                    notificationId = notificationId,
+                    title = title,
+                    body = body,
+                    type = type,
+                )
             )
         }
 
