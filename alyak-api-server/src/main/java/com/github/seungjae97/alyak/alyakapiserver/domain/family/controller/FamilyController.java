@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.family.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.UserDetailsImpl;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.dto.request.AcceptFamilyInviteRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.dto.request.FamilyJoinByQrRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.dto.response.FamilyMemberInfoResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.service.FamilyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +41,8 @@ public class FamilyController {
         return ResponseEntity.ok(qrCode);
     }
 
+
+
     @PostMapping("/invite")
     @Operation(summary = "이메일로 가족 추가", description = "입력한 이메일로 초대코드를 전송한다.")
     public ResponseEntity<Boolean> inviteEmail(
@@ -58,6 +61,19 @@ public class FamilyController {
         familyService.acceptInvite(
                 userDetails.getUser().getUserId(),
                 body.getInviterUserId()
+        );
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/join/qr")
+    @Operation(summary = "QR로 가족 합류", description = "스캔한 코드로 초대자를 확인한 뒤 로그인 사용자를 해당 가족에 합류시킵니다.")
+    public ResponseEntity<Void> joinByQr(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody FamilyJoinByQrRequest body
+    ) {
+        familyService.joinByQrCode(
+                userDetails.getUser().getUserId(),
+                body.getScannedCode()
         );
         return ResponseEntity.noContent().build();
     }

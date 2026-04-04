@@ -53,10 +53,32 @@ public class RedisService {
         return matched;
     }
 
+    /**
+     * @param email qr을 생성하는 사람의 이메일
+     * @return code 랜덤 생성된 임시 코드값
+     * */
     public String createToken(String email) {
         String code = createAuthCode();
         redisUtil.setDataExpire("token:" + email, code, 60);
+        redisUtil.setDataExpire("qr_code:" + code, email, 60);
         return code;
+    }
+
+    public String getInviterEmailByQrCode(String scannedCode) {
+        if (scannedCode == null || scannedCode.isBlank()) {
+            return null;
+        }
+        return redisUtil.getData("qr_code:" + scannedCode.trim());
+    }
+
+    /** QR 일회용 처리: 역방향·정방향 키 제거 */
+    public void deleteFamilyQrMappings(String scannedCode, String inviterEmail) {
+        if (scannedCode != null && !scannedCode.isBlank()) {
+            redisUtil.deleteData("qr_code:" + scannedCode.trim());
+        }
+        if (inviterEmail != null && !inviterEmail.isBlank()) {
+            redisUtil.deleteData("token:" + inviterEmail.trim());
+        }
     }
 
     private static final long FAMILY_INVITE_PENDING_TTL_SECONDS = 86_400L; // 24시간

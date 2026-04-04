@@ -141,6 +141,50 @@ public class FamilyService {
             throw new BusinessException(BusinessError.FAMILY_INVITE_EXPIRED_OR_INVALID);
         }
 
+        mergeInviteeIntoInvitersFamily(invitee, inviter);
+    }
+
+    /**
+     * 스캔한 QR 코드(역방향 Redis)로 초대자를 특정한 뒤, 로그인 사용자를 그 가족에 합류시킵니다.
+     * 성공·멱등(이미 동일 가족) 시 Redis QR 매핑을 삭제합니다.
+     */
+    @Transactional
+    public void joinByQrCode(Long scannerUserId, String scannedCode) {
+        String code = scannedCode == null ? "" : scannedCode.trim();
+        if (code.isEmpty()) {
+            throw new BusinessException(BusinessError.FAMILY_INVITE_EXPIRED_OR_INVALID);
+        }
+
+        String inviterEmail = redisService.getInviterEmailByQrCode(code);
+        if (inviterEmail == null || inviterEmail.isBlank()) {
+            throw new BusinessException(BusinessError.FAMILY_INVITE_EXPIRED_OR_INVALID);
+        }
+        String inviterEmailNorm = inviterEmail.trim();
+
+        User inviter = userRepository.findByEmail(inviterEmailNorm)
+                .orElseThrow(() -> new BusinessException(BusinessError.USER_NOT_EXIST));
+        User invitee = userRepository.findById(scannerUserId)
+                .orElseThrow(() -> new BusinessException(BusinessError.USER_NOT_EXIST));
+
+        if (inviter.getUserId().equals(scannerUserId)) {
+            throw new BusinessException(BusinessError.INVITE_SELF_NOT_ALLOWED);
+        }
+
+        if (invitee.getFamily() != null && inviter.getFamily() != null
+                && invitee.getFamily().getId().equals(inviter.getFamily().getId())) {
+            redisService.deleteFamilyQrMappings(code, inviterEmailNorm);
+            return;
+        }
+
+        if (invitee.getFamily() != null) {
+            throw new BusinessException(BusinessError.ALREADY_IN_OTHER_FAMILY);
+        }
+
+        mergeInviteeIntoInvitersFamily(invitee, inviter);
+        redisService.deleteFamilyQrMappings(code, inviterEmailNorm);
+    }
+
+    private void mergeInviteeIntoInvitersFamily(User invitee, User inviter) {
         Family targetFamily = inviter.getFamily();
         if (targetFamily == null) {
             targetFamily = familyRepository.save(Family.builder().build());
