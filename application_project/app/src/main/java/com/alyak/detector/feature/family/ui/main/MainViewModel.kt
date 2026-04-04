@@ -20,6 +20,8 @@ import com.alyak.detector.feature.family.data.model.FamilyMember
 import com.alyak.detector.feature.family.data.model.MedicineSchedule
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
 import com.alyak.detector.push.dao.NotificationDao
+import com.alyak.detector.push.ui.NotificationItem
+import com.alyak.detector.push.ui.toNotificationItemUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +45,11 @@ class MainViewModel @Inject constructor(
 
     val unreadNotificationCount = notificationDao.getUnreadCountFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val notificationItems: StateFlow<List<NotificationItem>> =
+        notificationDao.getAllNotificationsFlow()
+            .map { list -> list.map { it.toNotificationItemUi() } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     private var _selectedIndex by mutableIntStateOf(0)
     val selectedIndex: Int get() = _selectedIndex
     private var successRate by mutableIntStateOf(0)

@@ -1,7 +1,10 @@
 package com.alyak.detector.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,20 +40,23 @@ import com.alyak.detector.feature.family.ui.main.MainViewModel
 @Composable
 fun HeaderForm(
     name: String,
+    onNotificationClick: () -> Unit = {},
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val unreadCount by viewModel.unreadNotificationCount.collectAsState()
 
     HeaderFormContent(
         name = name,
-        hasNewNotification = unreadCount > 0
+        hasNewNotification = unreadCount > 0,
+        onNotificationClick = onNotificationClick,
     )
 }
 
 @Composable
 fun HeaderFormContent(
     name: String,
-    hasNewNotification: Boolean
+    hasNewNotification: Boolean,
+    onNotificationClick: () -> Unit = {},
 ) {
     Column {
         Row(
@@ -82,7 +88,13 @@ fun HeaderFormContent(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                NotificationBellAnimation(isPlaying = hasNewNotification)
+                NotificationBellAnimation(
+                    isPlaying = hasNewNotification,
+                    modifier = Modifier.clickable {
+                        Log.d("HeaderForm", "종 아이콘 클릭됨!")
+                        onNotificationClick()
+                    },
+                )
 
                 Spacer(modifier = Modifier.width(12.dp))
                 Image(
@@ -105,7 +117,8 @@ fun HeaderFormContent(
 
 @Composable
 fun NotificationBellAnimation(
-    isPlaying: Boolean
+    isPlaying: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.alarm_bell))
     val progress by animateLottieCompositionAsState(
@@ -114,11 +127,22 @@ fun NotificationBellAnimation(
         iterations = LottieConstants.IterateForever
     )
 
-    LottieAnimation(
-        composition = composition,
-        progress = { if (isPlaying) progress else 0f },
-        modifier = Modifier.size(40.dp)
-    )
+//    LottieAnimation(
+//        composition = composition,
+//        progress = { if (isPlaying) progress else 0f },
+//        modifier = modifier.size(40.dp)
+//    )
+    Box(
+        modifier = modifier
+            .size(48.dp), // 터치 영역을 48dp로 확장 (UX 권장사항)
+        contentAlignment = Alignment.Center
+    ) {
+        LottieAnimation(
+            composition = composition,
+            progress = { if (isPlaying) progress else 0f },
+            modifier = Modifier.size(40.dp) // Lottie 자체 크기는 40dp 유지
+        )
+    }
 }
 
 @Composable
@@ -126,6 +150,6 @@ fun NotificationBellAnimation(
 fun HeaderFormPreview() {
     HeaderFormContent(
         name = "김민수",
-        hasNewNotification = true
+        hasNewNotification = true,
     )
 }

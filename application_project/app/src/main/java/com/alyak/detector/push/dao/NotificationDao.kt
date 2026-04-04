@@ -14,4 +14,7 @@ interface NotificationDao {
 
     @Query("SELECT COUNT(*) FROM notifications WHERE isRead = false")
     fun getUnreadCountFlow(): Flow<Int>
+
+    @Query("SELECT * FROM notifications ORDER BY timestamp DESC")
+    fun getAllNotificationsFlow(): Flow<List<NotificationEntity>>
 }
