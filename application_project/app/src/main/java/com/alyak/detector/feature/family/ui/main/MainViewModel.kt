@@ -22,8 +22,8 @@ import com.alyak.detector.feature.family.data.model.FamilyMember
 import com.alyak.detector.feature.family.data.model.MedicineSchedule
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
 import com.alyak.detector.push.dao.NotificationDao
-import com.alyak.detector.push.ui.NotificationItem
-import com.alyak.detector.push.ui.toNotificationItemUi
+import com.alyak.detector.push.ui.model.NotificationItem
+import com.alyak.detector.push.ui.model.toNotificationItemUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow

@@ -258,7 +258,7 @@ fun MainScreen(
                                         count = familyMembers[selectedIndex].stats.delayedCount
                                     )
                                     StatusRow(
-                                        color = Color(0xFFD6D9DE),
+                                        color = colorResource(R.color.chart_segment_gray),
                                         label = "예정",
                                         count = familyMembers[selectedIndex].stats.scheduledCount
                                     )
@@ -357,7 +357,7 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(0.88f),
-                color = Color(0xFFF8F9FA),
+                color = colorResource(R.color.notification_screen_background),
                 shadowElevation = 8.dp,
                 shape = sheetShape,
             ) {
@@ -388,7 +388,11 @@ fun MainScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("알림이 없습니다.", color = Color.Gray, fontSize = 15.sp)
+                            Text(
+                                "알림이 없습니다.",
+                                color = colorResource(R.color.notification_text_muted),
+                                fontSize = 15.sp,
+                            )
                         }
                     } else {
                         NotificationSection(

@@ -46,8 +46,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
@@ -55,37 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 import com.alyak.detector.feature.map.ui.components.FilterButton
-import com.alyak.detector.push.dto.NotificationEntity
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
-fun NotificationEntity.toNotificationItemUi(): NotificationItem {
-    val fmt = SimpleDateFormat("M/d HH:mm", Locale.getDefault())
-    val normalizedType = when (val t = type.orEmpty()) {
-        "FAMILY_INVITE" -> "FAMILY"
-        else -> t.ifBlank { "GENERAL" }
-    }
-    return NotificationItem(
-        id = notificationId,
-        title = title,
-        body = body,
-        time = fmt.format(Date(timestamp)),
-        type = normalizedType,
-        isRead = isRead,
-        inviterUserId = inviterUserId,
-    )
-}
-
-data class NotificationItem(
-    val id: Int,
-    val title: String,
-    val body: String,
-    val time: String,
-    val type: String,
-    val isRead: Boolean = false,
-    val inviterUserId: Long? = null,
-)
+import com.alyak.detector.push.ui.model.NotificationItem
 
 private enum class NotificationFilterTab(val label: String) {
     ALL("전체"),
@@ -120,7 +90,7 @@ fun NotificationSection(
             NotificationFilterTab.ALL -> notifications
             NotificationFilterTab.UNREAD,
             NotificationFilterTab.READ,
-            -> filterSnapshotIds.mapNotNull { id -> notifications.find { it.id == id } }
+                -> filterSnapshotIds.mapNotNull { id -> notifications.find { it.id == id } }
         }
     }
 
@@ -134,7 +104,7 @@ fun NotificationSection(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F9FA)),
+            .background(colorResource(R.color.notification_screen_background)),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -173,7 +143,11 @@ fun NotificationSection(
                         .padding(vertical = 48.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(message, color = Color.Gray, fontSize = 15.sp)
+                    Text(
+                        message,
+                        color = colorResource(R.color.notification_text_muted),
+                        fontSize = 15.sp,
+                    )
                 }
             }
         } else {
@@ -218,12 +192,13 @@ private fun NotificationFilterChipRow(
         when (selected) {
             NotificationFilterTab.ALL,
             NotificationFilterTab.UNREAD,
-            -> {
-                actionLabel = if (onMarkAllAsRead != null) "모두 읽음 처리" else null
+                -> {
+                actionLabel = if (onMarkAllAsRead != null) "모두 읽음" else null
                 actionOnClick = onMarkAllAsRead
             }
+
             NotificationFilterTab.READ -> {
-                actionLabel = if (onClearReadNotifications != null) "알림 비우기" else null
+                actionLabel = if (onClearReadNotifications != null) "비우기" else null
                 actionOnClick = onClearReadNotifications
             }
         }
@@ -233,7 +208,7 @@ private fun NotificationFilterChipRow(
                 modifier = Modifier
                     .padding(start = 8.dp)
                     .clickable(onClick = actionOnClick),
-                color = Color.Gray,
+                color = colorResource(R.color.notification_text_muted),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Thin,
                 maxLines = 2,
@@ -257,18 +232,25 @@ fun NotificationCard(
     var inviteExpanded by remember(item.id) { mutableStateOf(false) }
     val expandFadeSpec = tween<Float>(280, easing = FastOutSlowInEasing)
     val expandSizeSpec = tween<IntSize>(280, easing = FastOutSlowInEasing)
-    val readIconBackground = Color(0xFFECEFF1)
-    val readIconTint = Color(0xFF9E9E9E)
+    val category = NotificationCategory.from(item)
+    val isFamilyBlueTheme =
+        category == NotificationCategory.FAMILY_INVITE ||
+            category == NotificationCategory.FAMILY_ACTIVITY
+    val readIconBackground = colorResource(R.color.notification_icon_read_background)
+    val readIconTint = colorResource(R.color.notification_icon_read_tint)
+    val familyIconTint = colorResource(R.color.notification_family_icon_tint)
+    val familyIconCircle = colorResource(R.color.notification_family_icon_circle)
+    val iconCircleNeutral = colorResource(R.color.notification_icon_circle_neutral)
     val notificationIconTint =
         if (item.isRead) readIconTint
         else when {
-            item.type == "FAMILY" -> Color(0xFF1976D2)
+            isFamilyBlueTheme -> familyIconTint
             else -> primaryBlue
         }
     val notificationIconCircleColor =
         if (item.isRead) readIconBackground
-        else if (item.type == "FAMILY") Color(0xFFE3F2FD)
-        else Color(0xFFF5F5F5)
+        else if (isFamilyBlueTheme) familyIconCircle
+        else iconCircleNeutral
 
     fun onMainAreaInteract() {
         if (!item.isRead) onNotificationClick?.invoke(item)
@@ -278,7 +260,7 @@ fun NotificationCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = colorResource(R.color.white)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
 
@@ -304,12 +286,21 @@ fun NotificationCard(
                         .background(notificationIconCircleColor),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = null,
-                        tint = notificationIconTint,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    if (category.useMaterialBell) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = notificationIconTint,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(checkNotNull(category.iconRes)),
+                            contentDescription = null,
+                            tint = notificationIconTint,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -325,19 +316,19 @@ fun NotificationCard(
                             text = item.title,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF212529)
+                            color = colorResource(R.color.notification_title_text)
                         )
                         Text(
                             text = item.time,
                             fontSize = 12.sp,
-                            color = Color.Gray
+                            color = colorResource(R.color.notification_text_muted)
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = item.body,
                         fontSize = 14.sp,
-                        color = Color(0xFF495057),
+                        color = colorResource(R.color.notification_body_text),
                         lineHeight = 20.sp
                     )
                 }
@@ -351,7 +342,7 @@ fun NotificationCard(
                         Icons.Default.KeyboardArrowDown
                     },
                     contentDescription = if (inviteExpanded) "접기" else "펼쳐서 수락·거절",
-                    tint = Color.Gray,
+                    tint = colorResource(R.color.notification_text_muted),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(end = 10.dp, bottom = 10.dp)
@@ -374,7 +365,7 @@ fun NotificationCard(
         ) {
             if (onFamilyInviteAccept != null && onFamilyInviteReject != null) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    HorizontalDivider(color = Color(0xFFEEEEEE))
+                    HorizontalDivider(color = colorResource(R.color.notification_divider))
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -397,7 +388,7 @@ fun NotificationCard(
                         VerticalDivider(
                             modifier = Modifier.fillMaxHeight(),
                             thickness = 1.dp,
-                            color = Color(0xFFE0E0E0),
+                            color = colorResource(R.color.notification_divider_vertical),
                         )
                         Box(
                             modifier = Modifier
@@ -411,7 +402,7 @@ fun NotificationCard(
                                 text = "수락",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color.White,
+                                color = colorResource(R.color.white),
                             )
                         }
                     }
@@ -431,7 +422,7 @@ fun NotificationSectionPreview() {
             title = "가족 초대",
             body = "김민수님이 가족 그룹에 초대했습니다.",
             time = "방금 전",
-            type = "FAMILY",
+            type = "FAMILY_INVITE",
             isRead = false,
             inviterUserId = 100L,
         ),
