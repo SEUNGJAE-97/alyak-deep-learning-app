@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -90,10 +89,10 @@ fun HeaderFormContent(
             ) {
                 NotificationBellAnimation(
                     isPlaying = hasNewNotification,
-                    modifier = Modifier.clickable {
+                    onClick = {
                         Log.d("HeaderForm", "종 아이콘 클릭됨!")
                         onNotificationClick()
-                    },
+                    }
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -119,6 +118,7 @@ fun HeaderFormContent(
 fun NotificationBellAnimation(
     isPlaying: Boolean,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.alarm_bell))
     val progress by animateLottieCompositionAsState(
@@ -127,22 +127,14 @@ fun NotificationBellAnimation(
         iterations = LottieConstants.IterateForever
     )
 
-//    LottieAnimation(
-//        composition = composition,
-//        progress = { if (isPlaying) progress else 0f },
-//        modifier = modifier.size(40.dp)
-//    )
-    Box(
-        modifier = modifier
-            .size(48.dp), // 터치 영역을 48dp로 확장 (UX 권장사항)
-        contentAlignment = Alignment.Center
-    ) {
-        LottieAnimation(
-            composition = composition,
-            progress = { if (isPlaying) progress else 0f },
-            modifier = Modifier.size(40.dp) // Lottie 자체 크기는 40dp 유지
-        )
-    }
+    LottieAnimation(
+        composition = composition,
+        progress = { if (isPlaying) progress else 0f },
+        modifier = Modifier
+            .size(40.dp)
+            .clickable { onClick() }
+    )
+
 }
 
 @Composable

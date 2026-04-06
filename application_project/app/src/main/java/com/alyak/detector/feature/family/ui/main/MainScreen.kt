@@ -406,7 +406,7 @@ fun MainScreen(
                 )
             }
         }
+        MultiFloatingActionButton(navController)
     }
-    MultiFloatingActionButton(navController)
 }
 
