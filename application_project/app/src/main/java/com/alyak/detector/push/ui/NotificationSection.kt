@@ -97,21 +97,37 @@ private enum class NotificationFilterTab(val label: String) {
 fun NotificationSection(
     notifications: List<NotificationItem>,
     showHeader: Boolean = true,
+    onNotificationClick: ((NotificationItem) -> Unit)? = null,
+    onMarkAllAsRead: (() -> Unit)? = null,
+    onClearReadNotifications: (() -> Unit)? = null,
     onFamilyInviteAccept: ((NotificationItem) -> Unit)? = null,
     onFamilyInviteReject: ((NotificationItem) -> Unit)? = null,
 ) {
     var selectedFilter by remember { mutableStateOf(NotificationFilterTab.ALL) }
-    val filtered = remember(notifications, selectedFilter) {
+    var filterSnapshotIds by remember { mutableStateOf<List<Int>>(emptyList()) }
+
+    val onFilterTabSelected: (NotificationFilterTab) -> Unit = { tab ->
+        selectedFilter = tab
+        filterSnapshotIds = when (tab) {
+            NotificationFilterTab.ALL -> emptyList()
+            NotificationFilterTab.UNREAD -> notifications.filter { !it.isRead }.map { it.id }
+            NotificationFilterTab.READ -> notifications.filter { it.isRead }.map { it.id }
+        }
+    }
+
+    val displayedNotifications = remember(notifications, selectedFilter, filterSnapshotIds) {
         when (selectedFilter) {
             NotificationFilterTab.ALL -> notifications
-            NotificationFilterTab.UNREAD -> notifications.filter { !it.isRead }
-            NotificationFilterTab.READ -> notifications.filter { it.isRead }
+            NotificationFilterTab.UNREAD,
+            NotificationFilterTab.READ,
+            -> filterSnapshotIds.mapNotNull { id -> notifications.find { it.id == id } }
         }
     }
 
     LaunchedEffect(notifications.isEmpty()) {
         if (notifications.isEmpty()) {
             selectedFilter = NotificationFilterTab.ALL
+            filterSnapshotIds = emptyList()
         }
     }
 
@@ -137,12 +153,14 @@ fun NotificationSection(
             item {
                 NotificationFilterChipRow(
                     selected = selectedFilter,
-                    onSelect = { selectedFilter = it },
+                    onSelect = onFilterTabSelected,
+                    onMarkAllAsRead = onMarkAllAsRead,
+                    onClearReadNotifications = onClearReadNotifications,
                 )
             }
         }
 
-        if (filtered.isEmpty()) {
+        if (displayedNotifications.isEmpty()) {
             item {
                 val message = if (notifications.isEmpty()) {
                     "알림이 없습니다."
@@ -159,9 +177,10 @@ fun NotificationSection(
                 }
             }
         } else {
-            items(filtered, key = { it.id }) { notification ->
+            items(displayedNotifications, key = { it.id }) { notification ->
                 NotificationCard(
                     item = notification,
+                    onNotificationClick = onNotificationClick,
                     onFamilyInviteAccept = onFamilyInviteAccept,
                     onFamilyInviteReject = onFamilyInviteReject,
                 )
@@ -174,16 +193,50 @@ fun NotificationSection(
 private fun NotificationFilterChipRow(
     selected: NotificationFilterTab,
     onSelect: (NotificationFilterTab) -> Unit,
+    onMarkAllAsRead: (() -> Unit)?,
+    onClearReadNotifications: (() -> Unit)?,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        NotificationFilterTab.entries.forEach { tab ->
-            FilterButton(
-                text = tab.label,
-                isSelected = selected == tab,
-                onClick = { onSelect(tab) },
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            NotificationFilterTab.entries.forEach { tab ->
+                FilterButton(
+                    text = tab.label,
+                    isSelected = selected == tab,
+                    onClick = { onSelect(tab) },
+                )
+            }
+        }
+
+        val actionLabel: String?
+        val actionOnClick: (() -> Unit)?
+        when (selected) {
+            NotificationFilterTab.ALL,
+            NotificationFilterTab.UNREAD,
+            -> {
+                actionLabel = if (onMarkAllAsRead != null) "모두 읽음 처리" else null
+                actionOnClick = onMarkAllAsRead
+            }
+            NotificationFilterTab.READ -> {
+                actionLabel = if (onClearReadNotifications != null) "알림 비우기" else null
+                actionOnClick = onClearReadNotifications
+            }
+        }
+        if (actionLabel != null && actionOnClick != null) {
+            Text(
+                text = actionLabel,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .clickable(onClick = actionOnClick),
+                color = Color.Gray,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Thin,
+                maxLines = 2,
             )
         }
     }
@@ -192,6 +245,7 @@ private fun NotificationFilterChipRow(
 @Composable
 fun NotificationCard(
     item: NotificationItem,
+    onNotificationClick: ((NotificationItem) -> Unit)? = null,
     onFamilyInviteAccept: ((NotificationItem) -> Unit)? = null,
     onFamilyInviteReject: ((NotificationItem) -> Unit)? = null,
 ) {
@@ -203,11 +257,22 @@ fun NotificationCard(
     var inviteExpanded by remember(item.id) { mutableStateOf(false) }
     val expandFadeSpec = tween<Float>(280, easing = FastOutSlowInEasing)
     val expandSizeSpec = tween<IntSize>(280, easing = FastOutSlowInEasing)
-    val notificationIconTint = when {
-        !item.isRead && item.type == "FAMILY" -> Color(0xFF1976D2)
-        !item.isRead -> primaryBlue
-        item.type == "FAMILY" -> Color(0xFF90CAF9)
-        else -> Color(0xFFB0BEC5)
+    val readIconBackground = Color(0xFFECEFF1)
+    val readIconTint = Color(0xFF9E9E9E)
+    val notificationIconTint =
+        if (item.isRead) readIconTint
+        else when {
+            item.type == "FAMILY" -> Color(0xFF1976D2)
+            else -> primaryBlue
+        }
+    val notificationIconCircleColor =
+        if (item.isRead) readIconBackground
+        else if (item.type == "FAMILY") Color(0xFFE3F2FD)
+        else Color(0xFFF5F5F5)
+
+    fun onMainAreaInteract() {
+        if (!item.isRead) onNotificationClick?.invoke(item)
+        if (hasFamilyInviteActions) inviteExpanded = !inviteExpanded
     }
 
     Card(
@@ -222,8 +287,8 @@ fun NotificationCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(
-                        if (hasFamilyInviteActions) {
-                            Modifier.clickable { inviteExpanded = !inviteExpanded }
+                        if (hasFamilyInviteActions || onNotificationClick != null) {
+                            Modifier.clickable { onMainAreaInteract() }
                         } else {
                             Modifier
                         },
@@ -236,9 +301,7 @@ fun NotificationCard(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(
-                            if (item.type == "FAMILY") Color(0xFFE3F2FD) else Color(0xFFF5F5F5)
-                        ),
+                        .background(notificationIconCircleColor),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -292,7 +355,7 @@ fun NotificationCard(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(end = 10.dp, bottom = 10.dp)
-                        .clickable { inviteExpanded = !inviteExpanded }
+                        .clickable { onMainAreaInteract() }
                         .size(24.dp),
                 )
             }

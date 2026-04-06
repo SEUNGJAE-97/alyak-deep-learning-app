@@ -394,6 +394,9 @@ fun MainScreen(
                         NotificationSection(
                             notifications = notifications,
                             showHeader = false,
+                            onNotificationClick = viewModel::markNotificationAsRead,
+                            onMarkAllAsRead = viewModel::markAllNotificationsAsRead,
+                            onClearReadNotifications = viewModel::clearReadNotifications,
                             onFamilyInviteAccept = viewModel::onFamilyInviteAccept,
                             onFamilyInviteReject = viewModel::onFamilyInviteReject,
                         )

@@ -220,4 +220,25 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun markNotificationAsRead(item: NotificationItem) {
+        if (item.isRead) return
+        viewModelScope.launch {
+            notificationDao.markAsRead(item.id)
+        }
+    }
+
+    fun markAllNotificationsAsRead() {
+        viewModelScope.launch {
+            notificationDao.markAllAsRead()
+            _toastMessage.tryEmit("모든 알림을 읽음 처리했습니다.")
+        }
+    }
+
+    fun clearReadNotifications() {
+        viewModelScope.launch {
+            notificationDao.deleteAllRead()
+            _toastMessage.tryEmit("읽은 알림을 모두 삭제했습니다.")
+        }
+    }
+
 }
