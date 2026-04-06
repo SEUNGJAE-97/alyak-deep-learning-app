@@ -37,7 +37,7 @@ class FusedLocationRepo @Inject constructor(
     @Suppress("MissingPermission")
     override suspend fun getCurrentLocation(): LocationDto? = suspendCancellableCoroutine { cont ->
         val request = CurrentLocationRequest.Builder()
-            .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
+            .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
             .setMaxUpdateAgeMillis(10_000)
             .setDurationMillis(15_000)
             .build()

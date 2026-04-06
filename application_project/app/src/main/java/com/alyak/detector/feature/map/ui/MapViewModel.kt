@@ -114,7 +114,7 @@ class MapViewModel @Inject constructor(
         }
     }
 
-    /** 내 위치 갱신할때 사용 */
+    /** 내 위치 갱신할때 사용, 맵 중앙에 내 위치가 나오게 이동 */
     fun fetchLocation() {
         viewModelScope.launch {
             val result = locRepo.getCurrentLocation() ?: return@launch
