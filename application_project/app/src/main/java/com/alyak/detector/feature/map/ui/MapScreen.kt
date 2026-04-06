@@ -27,6 +27,9 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,7 +49,7 @@ import com.alyak.detector.feature.map.data.model.KakaoPlaceDto
 import com.alyak.detector.feature.map.data.model.LocationDto
 import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.feature.map.ui.components.HospitalInfo
-import com.alyak.detector.feature.pill.ui.search.components.SearchBar
+import com.alyak.detector.feature.map.ui.components.MapSearchBar
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.HeaderForm
 
@@ -58,6 +61,7 @@ fun MapScreen(
 ) {
     val name by viewModel.userName.collectAsState()
     val places by viewModel.places.collectAsState()
+    var mapSearchQuery by remember { mutableStateOf("") }
     val scaffoldState = rememberBottomSheetScaffoldState()
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -86,7 +90,11 @@ fun MapScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.Top
                 ) {
-                    SearchBar()
+                    MapSearchBar(
+                        query = mapSearchQuery,
+                        onQueryChange = { mapSearchQuery = it },
+                        onSearch = { /* 장소 키워드 검색 연동 시 구현 */ },
+                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

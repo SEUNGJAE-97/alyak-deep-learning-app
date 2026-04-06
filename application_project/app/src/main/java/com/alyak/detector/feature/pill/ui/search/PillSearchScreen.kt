@@ -53,7 +53,7 @@ import com.alyak.detector.feature.pill.ui.search.components.MarkingIcon
 import com.alyak.detector.feature.pill.ui.search.components.PillInfoBox
 import com.alyak.detector.feature.pill.ui.search.components.RecentSearch
 import com.alyak.detector.feature.pill.ui.search.components.SearchActionButtons
-import com.alyak.detector.feature.pill.ui.search.components.SearchBar
+import com.alyak.detector.feature.pill.ui.search.components.PillSearchBar
 import com.alyak.detector.feature.pill.ui.search.components.ShapeIcon
 import com.alyak.detector.ui.components.HeaderForm
 import kotlinx.coroutines.launch
@@ -200,7 +200,7 @@ fun PillSearchScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(Modifier.height(20.dp))
-            SearchBar(
+            PillSearchBar(
                 query = searchQuery,
                 onQueryChange = { searchQuery = it },
                 onSearch = { text ->
@@ -212,8 +212,7 @@ fun PillSearchScreen(
                     }
                 },
                 onCameraClick = { navController.navigate("CameraScreen") },
-                onMicClick = {/*음성 인식 추후 추가..*/ }
-
+                onMicClick = { /* 음성 인식 추후 추가 */ },
             )
             Spacer(Modifier.height(20.dp))
             FilterBar(

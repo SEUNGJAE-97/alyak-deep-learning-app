@@ -1,8 +1,9 @@
-package com.alyak.detector.feature.pill.ui.search.components
+package com.alyak.detector.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,11 +15,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,11 +36,11 @@ import com.alyak.detector.R
 @Composable
 fun SearchBar(
     modifier: Modifier = Modifier,
-    query: String = "",
-    onQueryChange: (String) -> Unit = {},
-    onMicClick: () -> Unit = {},
-    onCameraClick: () -> Unit = {},
+    query: String,
+    onQueryChange: (String) -> Unit,
+    placeholder: String,
     onSearch: (String) -> Unit = {},
+    trailing: @Composable RowScope.() -> Unit = {},
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -51,7 +49,7 @@ fun SearchBar(
         onValueChange = onQueryChange,
         textStyle = TextStyle(
             fontSize = 14.sp,
-            color = Color.Black
+            color = Color.Black,
         ),
         singleLine = true,
         cursorBrush = SolidColor(colorResource(R.color.primaryBlue)),
@@ -60,7 +58,7 @@ fun SearchBar(
             onSearch = {
                 onSearch(query)
                 keyboardController?.hide()
-            }
+            },
         ),
         decorationBox = { innerTextField ->
             Row(
@@ -70,70 +68,43 @@ fun SearchBar(
                     .shadow(4.dp, shape = RoundedCornerShape(24.dp))
                     .background(color = Color.White, shape = RoundedCornerShape(24.dp))
                     .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                // 1. 검색 아이콘
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = "검색",
                     tint = Color.Gray.copy(alpha = 0.5f),
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // 2. 입력 필드 및 placeholder 영역
                 Box(
                     modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.CenterStart
+                    contentAlignment = Alignment.CenterStart,
                 ) {
                     if (query.isEmpty()) {
                         Text(
-                            text = "약 이름, 성분, 식별 문자 검색",
+                            text = placeholder,
                             color = Color.Gray.copy(alpha = 0.5f),
-                            fontSize = 14.sp
+                            fontSize = 14.sp,
                         )
                     }
                     innerTextField()
                 }
 
-                // 3. 우측 아이콘들 (마이크, 카메라)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = onMicClick,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Mic,
-                            contentDescription = "음성 검색",
-                            tint = Color.Gray.copy(alpha = 0.5f),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    IconButton(
-                        onClick = onCameraClick,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "사진 검색",
-                            tint = Color.Gray.copy(alpha = 0.5f),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
+                trailing()
             }
-        }
+        },
     )
 }
 
-@Composable
 @Preview(showBackground = true)
-fun SearchBarPrev() {
-    SearchBar()
+@Composable
+private fun SearchBarPreview() {
+    SearchBar(
+        query = "",
+        onQueryChange = {},
+        placeholder = "placeholder",
+    )
 }
