@@ -9,7 +9,7 @@ import com.alyak.detector.push.dto.NotificationEntity
 
 @Database(
     entities = [RecentSearchEntity::class, NotificationEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class PillDatabase : RoomDatabase() {

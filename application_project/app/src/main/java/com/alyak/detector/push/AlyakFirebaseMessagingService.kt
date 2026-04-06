@@ -112,6 +112,7 @@ class AlyakFirebaseMessagingService : FirebaseMessagingService() {
                     title = title,
                     body = body,
                     type = type,
+                    inviterUserId = data["inviterUserId"]?.toLongOrNull(),
                 )
             )
         }

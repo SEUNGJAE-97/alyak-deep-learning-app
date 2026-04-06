@@ -12,4 +12,6 @@ data class NotificationEntity(
     val type: String?,
     val timestamp: Long = System.currentTimeMillis(),
     val isRead: Boolean = false,
+    /** FCM `inviterUserId` — 가족 초대 알림에서만 사용 */
+    val inviterUserId: Long? = null,
 )

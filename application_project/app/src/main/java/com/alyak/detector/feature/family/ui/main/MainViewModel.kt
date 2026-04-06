@@ -15,6 +15,8 @@ import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.core.auth.UserSession
 import com.alyak.detector.core.network.ApiResult
 import com.alyak.detector.core.util.AlarmScheduler
+import com.alyak.detector.feature.family.data.api.FamilyApi
+import com.alyak.detector.feature.family.data.model.AcceptFamilyInviteRequest
 import com.alyak.detector.feature.family.data.model.DailyMedicationStat
 import com.alyak.detector.feature.family.data.model.FamilyMember
 import com.alyak.detector.feature.family.data.model.MedicineSchedule
@@ -24,9 +26,11 @@ import com.alyak.detector.push.ui.NotificationItem
 import com.alyak.detector.push.ui.toNotificationItemUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -37,11 +41,15 @@ import java.util.Locale
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val familyRepo: FamilyRepo,
+    private val familyApi: FamilyApi,
     private val tokenManager: TokenManager,
     private val alarmScheduler: AlarmScheduler,
     private val sessionManager: SessionManager,
     private val notificationDao: NotificationDao
 ) : ViewModel() {
+
+    private val _toastMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val toastMessage = _toastMessage.asSharedFlow()
 
     val unreadNotificationCount = notificationDao.getUnreadCountFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -183,6 +191,33 @@ class MainViewModel @Inject constructor(
         val minutes = timeLeftString.toIntOrNull() ?: return
         alarmScheduler.scheduleAlarm(minutes)
 
+    }
+
+    fun onFamilyInviteAccept(item: NotificationItem) {
+        val inviterId = item.inviterUserId ?: return
+        viewModelScope.launch {
+            try {
+                val response = familyApi.acceptFamilyInvite(
+                    AcceptFamilyInviteRequest(inviterId),
+                )
+                if (response.isSuccessful) {
+                    notificationDao.deleteById(item.id)
+                    refreshFamilyMembers()
+                    _toastMessage.tryEmit("가족 초대를 수락했습니다.")
+                } else {
+                    _toastMessage.tryEmit("수락에 실패했습니다. (${response.code()})")
+                }
+            } catch (_: Exception) {
+                _toastMessage.tryEmit("네트워크 오류가 발생했습니다.")
+            }
+        }
+    }
+
+    fun onFamilyInviteReject(item: NotificationItem) {
+        viewModelScope.launch {
+            notificationDao.deleteById(item.id)
+            _toastMessage.tryEmit("초대를 거절했습니다.")
+        }
     }
 
 }

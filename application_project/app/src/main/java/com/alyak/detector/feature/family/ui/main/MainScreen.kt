@@ -1,5 +1,6 @@
 package com.alyak.detector.feature.family.ui.main
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -38,6 +39,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -85,6 +88,12 @@ fun MainScreen(
     val schedule = viewModel.nearestSchedule.value
     val name by viewModel.userName.collectAsState()
     val notifications by viewModel.notificationItems.collectAsState()
+    val context = LocalContext.current
+    LaunchedEffect(viewModel) {
+        viewModel.toastMessage.collect { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showBottomSheet by remember { mutableStateOf(false) }
     var isNotificationSideSheetOpen by remember { mutableStateOf(false) }
@@ -385,6 +394,8 @@ fun MainScreen(
                         NotificationSection(
                             notifications = notifications,
                             showHeader = false,
+                            onFamilyInviteAccept = viewModel::onFamilyInviteAccept,
+                            onFamilyInviteReject = viewModel::onFamilyInviteReject,
                         )
                     }
                 }
