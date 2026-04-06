@@ -3,12 +3,16 @@ package com.alyak.detector.feature.map.ui
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
+import android.graphics.Point
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -17,15 +21,27 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.alyak.detector.BuildConfig
 import com.alyak.detector.R
 import com.alyak.detector.feature.map.data.model.LocationDto
@@ -42,6 +58,7 @@ import com.kakao.vectormap.label.LabelStyles
 import com.kakao.vectormap.route.RouteLineOptions
 import com.kakao.vectormap.route.RouteLineSegment
 import com.kakao.vectormap.route.RouteLineStyle
+import kotlinx.coroutines.isActive
 
 private const val TAG = "KakaoMapView"
 
@@ -52,21 +69,24 @@ fun KakaoMapView(
 ) {
     val kakaoMapState = remember { mutableStateOf<KakaoMap?>(null) }
     val markerList by viewModel.places.collectAsState()
-    val loc by viewModel.curLocation.collectAsState()
     val context = LocalContext.current
-    val mapView = rememberMapViewWithLifecycle(kakaoMapState, context)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var locationGranted by remember { mutableStateOf(false) }
+    val mapView = rememberMapViewWithLifecycle(kakaoMapState, context) {
+        viewModel.syncMapCameraToStoredLocation()
+    }
     val routePath by viewModel.routePath.collectAsState()
+    val curLocation by viewModel.curLocation.collectAsState()
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         // 권한 요청 결과 처리
         val allPermissionsGranted = permissions.values.all { it }
         if (allPermissionsGranted) {
-            // 모든 권한이 허용되었을 때
             Log.d(TAG, "모든 권한이 허용되었습니다.")
-            viewModel.fetchLocation()
+            locationGranted = true
+            viewModel.startContinuousLocationTracking()
         } else {
-            // 하나라도 거부된 권한이 있을 때
             Toast.makeText(context, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
         }
     }
@@ -82,23 +102,21 @@ fun KakaoMapView(
         permissionLauncher.launch(permissionsToRequest)
     }
 
-    LaunchedEffect(loc, kakaoMapState.value) {
-        val kakaoMap = kakaoMapState.value ?: return@LaunchedEffect
-
-        if (loc.latitude != 0.0 && loc.longitude != 0.0) {
-            val position = LatLng.from(loc.latitude, loc.longitude)
-            kakaoMap.moveCamera(CameraUpdateFactory.newCenterPosition(position, 15))
-
-            val apiKey = "KakaoAK ${BuildConfig.REST_API_KEY}"
-            val categoryGroupCode = "HP8"
-            val radius = 2000
-            viewModel.fetchPlaces(
-                apiKey,
-                categoryGroupCode,
-                loc.longitude.toString(),
-                loc.latitude.toString(),
-                radius
-            )
+    DisposableEffect(lifecycleOwner, locationGranted) {
+        if (!locationGranted) {
+            return@DisposableEffect onDispose { }
+        }
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> viewModel.startContinuousLocationTracking()
+                Lifecycle.Event.ON_PAUSE -> viewModel.stopContinuousLocationTracking()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.stopContinuousLocationTracking()
         }
     }
 
@@ -127,8 +145,6 @@ fun KakaoMapView(
         Log.d("routePath", routePath.toString())
         if (routePath.isNotEmpty()) {
             drawPathOnMap(kakaoMap, routePath)
-
-//            moveCameraToPath(kakaoMap, routePath)
         }
     }
 
@@ -142,21 +158,82 @@ fun KakaoMapView(
                 kakaoMap.moveCamera(cameraUpdate, cameraAnimation)
                 // 위치 갱신 시 주변 장소 갱신
                 val apiKey = "KakaoAK ${BuildConfig.REST_API_KEY}"
-                viewModel.fetchPlaces(apiKey, "HP8", location.longitude.toString(), location.latitude.toString(), 2000)
+                viewModel.fetchPlaces(
+                    apiKey,
+                    "HP8",
+                    location.longitude.toString(),
+                    location.latitude.toString(),
+                    2000
+                )
             }
         }
     }
 
-    AndroidView({ mapView }) { view -> }
+    Box(modifier.fillMaxSize()) {
+        AndroidView(
+            factory = { mapView },
+            modifier = Modifier.fillMaxSize(),
+            update = { },
+        )
+        if (locationGranted) {
+            MyLocationPulseOverlay(
+                kakaoMap = kakaoMapState.value,
+                location = curLocation,
+            )
+        }
+    }
+}
+
+private val MyLocationDotSize = 64.dp
+
+@Composable
+private fun MyLocationPulseOverlay(
+    kakaoMap: KakaoMap?,
+    location: LocationDto,
+) {
+    val density = LocalDensity.current
+    var screenPoint by remember { mutableStateOf<Point?>(null) }
+    val latestMap by rememberUpdatedState(kakaoMap)
+    val latestLocation by rememberUpdatedState(location)
+
+    LaunchedEffect(kakaoMap) {
+        if (kakaoMap == null) return@LaunchedEffect
+        while (isActive) {
+            withFrameNanos { }
+            val map = latestMap ?: continue
+            val loc = latestLocation
+            screenPoint = map.toScreenPoint(LatLng.from(loc.latitude, loc.longitude))
+        }
+    }
+
+    val point = screenPoint ?: return
+    val half = MyLocationDotSize / 2
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.red_pulsing_dot))
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever,
+    )
+    LottieAnimation(
+        composition = composition,
+        progress = { progress },
+        modifier = Modifier
+            .offset(
+                x = with(density) { point.x.toDp() } - half,
+                y = with(density) { point.y.toDp() } - half,
+            )
+            .size(MyLocationDotSize),
+    )
 }
 
 @Composable
 fun rememberMapViewWithLifecycle(
     kakaoMapState: MutableState<KakaoMap?>,
-    context: Context
+    context: Context,
+    onMapReady: () -> Unit = {},
 ): View {
     val mapView = remember { MapView(context) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val latestOnMapReady by rememberUpdatedState(onMapReady)
 
     DisposableEffect(lifecycle) {
         val observer = object : DefaultLifecycleObserver {
@@ -182,6 +259,7 @@ fun rememberMapViewWithLifecycle(
 
                         override fun onMapReady(kakaoMap: KakaoMap) {
                             kakaoMapState.value = kakaoMap
+                            latestOnMapReady()
                         }
                     }
                 )
@@ -242,19 +320,6 @@ private fun drawPathOnMap(kakaoMap: KakaoMap, routePath: List<LocationDto>) {
     val options = RouteLineOptions.from(segment)
     layer?.addRouteLine(options)
 }
-
-//private fun moveCameraToPath(kakaoMap: KakaoMap, routePath: List<LocationDto>) {
-//    if (routePath.isEmpty()) return
-//
-//    val points = routePath.map { LatLng.from(it.latitude, it.longitude) }
-//
-//    // 경로 전체를 포함하는 영역(Bounds) 생성
-//    val bounds = CameraUpdateFactory.
-//
-//    // 100 padding을 주고 해당 영역으로 이동
-//    val cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, 100)
-//    kakaoMap.moveCamera(cameraUpdate)
-//}
 
 @Preview(showBackground = true)
 @Composable

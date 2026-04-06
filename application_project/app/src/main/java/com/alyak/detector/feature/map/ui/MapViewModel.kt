@@ -22,22 +22,27 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private val FALLBACK_MAP_CENTER = LocationDto(37.2, 127.1)
+
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val repo: KakaoPlaceRepo,
     private val locRepo: FusedLocationRepo,
     private val apiRepo: ApiRepo,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
-    private val _curLocation = MutableStateFlow(LocationDto(37.2, 127.1))
+
+    private val _curLocation = MutableStateFlow(FALLBACK_MAP_CENTER)
     private val _places = MutableStateFlow<List<KakaoPlaceDto>>(emptyList())
     val places: StateFlow<List<KakaoPlaceDto>> = _places
     val curLocation: StateFlow<LocationDto> = _curLocation
     private val _routePath = MutableStateFlow<List<LocationDto>>(emptyList())
     val routePath: StateFlow<List<LocationDto>> = _routePath
-    private val _moveToCurrentLocationEvent = MutableSharedFlow<LocationDto>()
+    private val _moveToCurrentLocationEvent =
+        MutableSharedFlow<LocationDto>(extraBufferCapacity = 1)
     val moveToCurrentLocationEvent: SharedFlow<LocationDto> =
         _moveToCurrentLocationEvent.asSharedFlow()
+
     val userName: StateFlow<String> = sessionManager.userSession
         .map { session ->
             when (session) {
@@ -48,21 +53,45 @@ class MapViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "로딩 중.."
+            initialValue = "로딩 중..",
         )
 
+    init {
+        viewModelScope.launch {
+            val initial = locRepo.getInitialLocationForMap() ?: FALLBACK_MAP_CENTER
+            _curLocation.value = initial
+        }
+    }
+
+    override fun onCleared() {
+        locRepo.stopLocationUpdate()
+        super.onCleared()
+    }
+
     /**
-     * 카카오 장소 카테고리 검색 요청
-     *
-     * @param apiKey           카카오 REST API 키 ("KakaoAK {REST_API_KEY}" 형식)
-     * @param categoryGroupCode 카테고리 그룹 코드 (예: "CE7"=카페, "FD6"=음식점 등)
-     * @param x                중심 좌표의 경도(Longitude) (예: "127.027583")
-     * @param y                중심 좌표의 위도(Latitude) (예: "37.497942")
-     * @param radius           검색 반경(미터, 0~20000, 기본 500)
-     * @param page             결과 페이지 번호 (1~45, 기본 1, 선택)
-     * @param size             한 페이지에 보여질 문서 수 (1~15, 기본 15, 선택)
-     * @param sort             정렬 방식 ("distance" 또는 "accuracy", 기본 "accuracy", 선택)
+     * 맵 준비 직후: 저장·캐시된 [curLocation]으로 카메라·주변 검색 한 번 동기화.
      */
+    fun syncMapCameraToStoredLocation() {
+        viewModelScope.launch {
+            _moveToCurrentLocationEvent.emit(_curLocation.value)
+        }
+    }
+
+    /** 맵 화면 ON_RESUME*/
+    fun startContinuousLocationTracking() {
+        locRepo.startLocationUpdate { dto ->
+            _curLocation.value = dto
+            viewModelScope.launch {
+                _moveToCurrentLocationEvent.emit(dto)
+            }
+        }
+    }
+
+    /** 맵 화면 ON_PAUSE */
+    fun stopContinuousLocationTracking() {
+        locRepo.stopLocationUpdate()
+    }
+
     fun fetchPlaces(
         apiKey: String,
         categoryGroupCode: String,
@@ -71,25 +100,24 @@ class MapViewModel @Inject constructor(
         radius: Int,
         page: Int? = null,
         size: Int? = null,
-        sort: String? = null
+        sort: String? = null,
     ) {
-
         viewModelScope.launch {
             try {
                 val result = repo.searchPlace(
-                    apiKey, categoryGroupCode, x, y, radius, page, size, sort
+                    apiKey, categoryGroupCode, x, y, radius, page, size, sort,
                 )
                 _places.value = result
             } catch (e: Exception) {
-                // 에러 처리
                 Log.e("MapViewModel", "fetchPlaces error: ${e.message}", e)
             }
         }
     }
 
+    /** 내 위치 갱신할때 사용 */
     fun fetchLocation() {
         viewModelScope.launch {
-            val result = locRepo.getCurrentLocation()
+            val result = locRepo.getCurrentLocation() ?: return@launch
             _curLocation.value = result
             _moveToCurrentLocationEvent.emit(result)
             Log.d("MapViewModel", "fetchLocation: $result")
@@ -102,7 +130,7 @@ class MapViewModel @Inject constructor(
                 val start = _curLocation.value
                 val pathDto = apiRepo.pathFind(start, destination, destinationId.toIntOrNull() ?: 0)
                 _routePath.value = pathDto.path
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // 에러 처리
             }
         }
