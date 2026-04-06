@@ -25,6 +25,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.push.dto.NotificationEntity
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -63,11 +69,32 @@ data class NotificationItem(
     val isRead: Boolean = false
 )
 
+private enum class NotificationFilterTab(val label: String) {
+    ALL("전체"),
+    UNREAD("안 읽음"),
+    READ("읽음"),
+}
+
 @Composable
 fun NotificationSection(
     notifications: List<NotificationItem>,
     showHeader: Boolean = true,
 ) {
+    var selectedFilter by remember { mutableStateOf(NotificationFilterTab.ALL) }
+    val filtered = remember(notifications, selectedFilter) {
+        when (selectedFilter) {
+            NotificationFilterTab.ALL -> notifications
+            NotificationFilterTab.UNREAD -> notifications.filter { !it.isRead }
+            NotificationFilterTab.READ -> notifications.filter { it.isRead }
+        }
+    }
+
+    LaunchedEffect(notifications.isEmpty()) {
+        if (notifications.isEmpty()) {
+            selectedFilter = NotificationFilterTab.ALL
+        }
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -86,9 +113,54 @@ fun NotificationSection(
             }
         }
 
-        // 실제 구현 시에는 날짜별로 grouping하여 표시하면 더 좋습니다.
-        items(notifications) { notification ->
-            NotificationCard(notification)
+        if (notifications.isNotEmpty()) {
+            item {
+                NotificationFilterChipRow(
+                    selected = selectedFilter,
+                    onSelect = { selectedFilter = it },
+                )
+            }
+        }
+
+        if (filtered.isEmpty()) {
+            item {
+                val message = if (notifications.isEmpty()) {
+                    "알림이 없습니다."
+                } else {
+                    "해당 조건의 알림이 없습니다."
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(message, color = Color.Gray, fontSize = 15.sp)
+                }
+            }
+        } else {
+            items(filtered, key = { it.id }) { notification ->
+                NotificationCard(notification)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotificationFilterChipRow(
+    selected: NotificationFilterTab,
+    onSelect: (NotificationFilterTab) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        NotificationFilterTab.entries.forEach { tab ->
+            FilterButton(
+                text = tab.label,
+                isSelected = selected == tab,
+                onClick = { onSelect(tab) },
+            )
         }
     }
 }
@@ -101,6 +173,7 @@ fun NotificationCard(item: NotificationItem) {
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
+
         Row(
             modifier = Modifier
                 .padding(16.dp)
@@ -189,5 +262,13 @@ fun NotificationSectionPreview() {
 
     MaterialTheme {
         NotificationSection(notifications = mockData)
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF8F9FA)
+@Composable
+fun NotificationSectionPreviewEmpty() {
+    MaterialTheme {
+        NotificationSection(notifications = emptyList())
     }
 }
