@@ -1,11 +1,8 @@
 package com.alyak.detector.feature.pill.ui.search.components
 
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -21,7 +18,6 @@ fun PillSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
-    onMicClick: () -> Unit = {},
     onCameraClick: () -> Unit = {},
 ) {
     SearchBar(
@@ -31,20 +27,6 @@ fun PillSearchBar(
         placeholder = "약 이름, 성분, 식별 문자 검색",
         onSearch = onSearch,
         trailing = {
-            IconButton(
-                onClick = onMicClick,
-                modifier = Modifier.size(36.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Mic,
-                    contentDescription = "음성 검색",
-                    tint = Color.Gray.copy(alpha = 0.5f),
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-
-            Spacer(modifier = Modifier.width(4.dp))
-
             IconButton(
                 onClick = onCameraClick,
                 modifier = Modifier.size(36.dp),
