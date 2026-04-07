@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
@@ -56,6 +57,7 @@ import com.alyak.detector.feature.map.data.model.getFormattedDistance
 import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.feature.map.ui.components.HospitalInfo
 import com.alyak.detector.feature.map.ui.components.MapSearchBar
+import com.alyak.detector.feature.map.ui.model.MapListMode
 import com.alyak.detector.feature.map.ui.model.MapPlaceFilter
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.HeaderForm
@@ -69,8 +71,9 @@ fun MapScreen(
     val name by viewModel.userName.collectAsState()
     val displayedPlaces by viewModel.displayedPlaces.collectAsState()
     val placeFilter by viewModel.placeFilter.collectAsState()
-    val showSearchFromCurrentLocation by viewModel.showSearchFromCurrentLocationButton.collectAsState()
-    val cameraMapCenter by viewModel.cameraMapCenter.collectAsState()
+    val showFloatingMapAction by viewModel.showFloatingMapActionButton.collectAsState()
+    val mapListMode by viewModel.mapListMode.collectAsState()
+    val activeSearchQuery by viewModel.activeSearchQuery.collectAsState()
     var mapSearchQuery by remember { mutableStateOf("") }
     val scaffoldState = rememberBottomSheetScaffoldState()
     val focusManager = LocalFocusManager.current
@@ -86,6 +89,8 @@ fun MapScreen(
             HospitalListContent(
                 hospitals = displayedPlaces,
                 placeFilter = placeFilter,
+                mapListMode = mapListMode,
+                activeSearchQuery = activeSearchQuery,
                 viewModel = viewModel,
             )
         },
@@ -113,6 +118,7 @@ fun MapScreen(
                             if (searchQuery.isNotBlank()) {
                                 viewModel.searchPlaces(searchQuery)
                                 focusManager.clearFocus()
+
                             }
                         },
                     )
@@ -131,11 +137,10 @@ fun MapScreen(
                         }
                     }
                 }
-                if (showSearchFromCurrentLocation) {
+                if (showFloatingMapAction) {
                     SearchFromCurrentLocationButton(
-                        onClick = {
-                            cameraMapCenter?.let { viewModel.fetchPlacesAroundLocation(it) }
-                        },
+                        mapListMode = mapListMode,
+                        onClick = { viewModel.onFloatingMapButtonClick() },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 20.dp),
@@ -163,10 +168,19 @@ fun MapScreen(
 
 @Composable
 private fun SearchFromCurrentLocationButton(
+    mapListMode: MapListMode,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(24.dp)
+    val label = when (mapListMode) {
+        MapListMode.SEARCH -> "주변으로 보기"
+        MapListMode.NEARBY -> "현재 위치에서 검색"
+    }
+    val icon = when (mapListMode) {
+        MapListMode.SEARCH -> Icons.Default.Place
+        MapListMode.NEARBY -> Icons.Default.Search
+    }
     Button(
         onClick = onClick,
         modifier = modifier
@@ -187,13 +201,13 @@ private fun SearchFromCurrentLocationButton(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                imageVector = Icons.Default.Search,
+                imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "현재 위치에서 검색",
+                text = label,
                 color = Color.Black,
             )
         }
@@ -204,6 +218,8 @@ private fun SearchFromCurrentLocationButton(
 fun HospitalListContent(
     hospitals: List<KakaoPlaceDto>,
     placeFilter: MapPlaceFilter,
+    mapListMode: MapListMode,
+    activeSearchQuery: String,
     viewModel: MapViewModel,
 ) {
     Column(
@@ -219,7 +235,13 @@ fun HospitalListContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "총 ${hospitals.size}개의 ${placeFilter.sheetCountNoun}",
+                text = when (mapListMode) {
+                    MapListMode.NEARBY -> "총 ${hospitals.size}개의 ${placeFilter.sheetCountNoun}"
+                    MapListMode.SEARCH -> {
+                        val q = activeSearchQuery.ifBlank { "검색" }
+                        "\"$q\" 검색 결과 ${hospitals.size}곳"
+                    }
+                },
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )

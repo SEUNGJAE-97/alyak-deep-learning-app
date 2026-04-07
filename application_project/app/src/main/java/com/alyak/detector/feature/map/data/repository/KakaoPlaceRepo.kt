@@ -55,19 +55,22 @@ class KakaoPlaceRepo @Inject constructor(
      * @param query            검색을 원하는 질의어
      * @param x                중심 좌표의 경도(Longitude)
      * @param y                중심 좌표의 위도(Latitude)
+     * @param radius           검색 반경(미터, 0~20000, 기본 500)
+     *
      * */
     suspend fun searchByKeyword(
         apiKey: String,
         query: String,
         x: String,
-        y: String
+        y: String,
+        radius: Int = 10_000,
     ): List<KakaoPlaceDto> {
         val response = api.searchByKeyword(
             apiKey = apiKey,
             query = query,
             x = x,
             y = y,
-            radius = 10000 // 10km 반경 내
+            radius = radius.coerceIn(1, 20_000),
         )
         return response.body()?.documents ?: emptyList()
     }

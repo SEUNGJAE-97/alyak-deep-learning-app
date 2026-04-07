@@ -195,6 +195,16 @@ fun KakaoMapView(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.focusCameraOnPlaceEvent.collect { location ->
+            val kakaoMap = kakaoMapState.value ?: return@collect
+            val position = LatLng.from(location.latitude, location.longitude)
+            val cameraUpdate = CameraUpdateFactory.newCenterPosition(position, 15)
+            val cameraAnimation = CameraAnimation.from(500)
+            kakaoMap.moveCamera(cameraUpdate, cameraAnimation)
+        }
+    }
+
     Box(modifier.fillMaxSize()) {
         AndroidView(
             factory = { mapView },

@@ -12,6 +12,7 @@ import com.alyak.detector.feature.map.data.model.LocationDto
 import com.alyak.detector.feature.map.data.repository.ApiRepo
 import com.alyak.detector.feature.map.data.repository.FusedLocationRepo
 import com.alyak.detector.feature.map.data.repository.KakaoPlaceRepo
+import com.alyak.detector.feature.map.ui.model.MapListMode
 import com.alyak.detector.feature.map.ui.model.MapPlaceFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -40,6 +41,9 @@ const val KAKAO_CATEGORY_PHARMACY = "PM9"
 /** 카메라 중심과 내 위치가 이 거리(미터) 이상이면 「현재 위치에서 검색」 노출 */
 private const val SEARCH_HERE_DISTANCE_THRESHOLD_M = 5000f
 
+private const val DEFAULT_KEYWORD_SEARCH_RADIUS_M = 10_000
+private const val MAX_KEYWORD_SEARCH_RADIUS_M = 20_000
+
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val repo: KakaoPlaceRepo,
@@ -61,9 +65,33 @@ class MapViewModel @Inject constructor(
     private val _placeFilter = MutableStateFlow(MapPlaceFilter.ALL)
     val placeFilter: StateFlow<MapPlaceFilter> = _placeFilter
 
-    /** 필터 반영 후 맵·시트에 쓰는 목록 */
+    private val _mapListMode = MutableStateFlow(MapListMode.NEARBY)
+    val mapListMode: StateFlow<MapListMode> = _mapListMode.asStateFlow()
+
+    /** [MapListMode.SEARCH]일 때 마지막 검색어(시트 헤더 등에 사용) */
+    private val _activeSearchQuery = MutableStateFlow("")
+    val activeSearchQuery: StateFlow<String> = _activeSearchQuery.asStateFlow()
+
+    /** 마지막 키워드 검색에 사용한 반경(m). 빈 결과 UI·반경 넓히기에 사용 */
+    private val _keywordSearchRadiusM = MutableStateFlow(DEFAULT_KEYWORD_SEARCH_RADIUS_M)
+    val keywordSearchRadiusM: StateFlow<Int> = _keywordSearchRadiusM.asStateFlow()
+
+    /** 키워드 검색 반경을 더 넓힐 수 있는지(최대 20km 미만) */
+    val canExpandKeywordSearchRadius: StateFlow<Boolean> =
+        _keywordSearchRadiusM.map { it < MAX_KEYWORD_SEARCH_RADIUS_M }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = true,
+            )
+
+    /** 필터 반영 후 맵·시트에 쓰는 목록. 모드에 따라 주변(_places) 또는 검색(_searchResults) 소스 */
     val displayedPlaces: StateFlow<List<KakaoPlaceDto>> =
-        combine(_places, _placeFilter) { list, filter ->
+        combine(_places, _searchResults, _placeFilter, _mapListMode) { places, searchResults, filter, mode ->
+            val list = when (mode) {
+                MapListMode.NEARBY -> places
+                MapListMode.SEARCH -> searchResults
+            }
             when (filter) {
                 MapPlaceFilter.ALL,
                 MapPlaceFilter.OPEN_NOW,
@@ -84,11 +112,11 @@ class MapViewModel @Inject constructor(
     val cameraMapCenter: StateFlow<LocationDto?> = _cameraMapCenter.asStateFlow()
 
     /**
-     * 내 위치와 카메라 중심 거리가 [SEARCH_HERE_DISTANCE_THRESHOLD_M] 이상이면 true.
-     * 카메라 중심을 아직 못 받으면 false.
+     * 하단 플로팅 버튼 노출: 검색 모드이거나, 카메라가 내 위치에서 [SEARCH_HERE_DISTANCE_THRESHOLD_M] 이상 떨어졌을 때.
      */
-    val showSearchFromCurrentLocationButton: StateFlow<Boolean> =
-        combine(_curLocation, _cameraMapCenter) { cur, cam ->
+    val showFloatingMapActionButton: StateFlow<Boolean> =
+        combine(_mapListMode, _curLocation, _cameraMapCenter) { mode, cur, cam ->
+            if (mode == MapListMode.SEARCH) return@combine true
             if (cam == null) return@combine false
             val dist = FloatArray(1)
             Location.distanceBetween(
@@ -111,6 +139,12 @@ class MapViewModel @Inject constructor(
         MutableSharedFlow<LocationDto>(extraBufferCapacity = 1)
     val moveToCurrentLocationEvent: SharedFlow<LocationDto> =
         _moveToCurrentLocationEvent.asSharedFlow()
+
+    /** 키워드 검색 후 가장 가까운 결과로 카메라만 이동할 때 사용. [fetchPlaces] 호출 없음 */
+    private val _focusCameraOnPlaceEvent =
+        MutableSharedFlow<LocationDto>(extraBufferCapacity = 1)
+    val focusCameraOnPlaceEvent: SharedFlow<LocationDto> =
+        _focusCameraOnPlaceEvent.asSharedFlow()
 
     val userName: StateFlow<String> = sessionManager.userSession
         .map { session ->
@@ -199,9 +233,36 @@ class MapViewModel @Inject constructor(
                     }
                     val merged = hospital.await() + pharmacy.await()
                     _places.value = merged.distinctBy { it.id }
+                    exitSearchToNearby()
                 }
             } catch (e: Exception) {
                 Log.e("MapViewModel", "fetchPlaces error: ${e.message}", e)
+            }
+        }
+    }
+
+    /** 검색 모드를 끄고 주변 목록(_places)만 바텀시트·마커에 반영 */
+    fun exitSearchToNearby() {
+        _mapListMode.value = MapListMode.NEARBY
+        _searchResults.value = emptyList()
+        _activeSearchQuery.value = ""
+        _keywordSearchRadiusM.value = DEFAULT_KEYWORD_SEARCH_RADIUS_M
+    }
+
+    /** 검색을 종료하고 카메라 중심(없으면 GPS) 기준으로 주변 장소를 다시 불러옴 */
+    fun returnToNearbyFromSearch() {
+        exitSearchToNearby()
+        val loc = _cameraMapCenter.value ?: _curLocation.value
+        fetchPlacesAroundLocation(loc)
+    }
+
+    /** 하단 플로팅 버튼: 검색 모드면 [returnToNearbyFromSearch], 주변 모드면 카메라 중심 기준 재조회 */
+    fun onFloatingMapButtonClick() {
+        when (_mapListMode.value) {
+            MapListMode.SEARCH -> returnToNearbyFromSearch()
+            MapListMode.NEARBY -> {
+                val cam = _cameraMapCenter.value ?: return
+                fetchPlacesAroundLocation(cam)
             }
         }
     }
@@ -232,23 +293,65 @@ class MapViewModel @Inject constructor(
         }
     }
 
-    fun searchPlaces(query: String) {
+    fun searchPlaces(
+        query: String,
+        radiusMeters: Int = DEFAULT_KEYWORD_SEARCH_RADIUS_M,
+    ) {
         if (query.isBlank()) return
         viewModelScope.launch {
             try {
                 val curLoc = _curLocation.value
                 val apiKey = "KakaoAK ${BuildConfig.REST_API_KEY}"
+                val r = radiusMeters.coerceIn(1, MAX_KEYWORD_SEARCH_RADIUS_M)
                 val result = repo.searchByKeyword(
                     apiKey,
                     query,
                     curLoc.longitude.toString(),
-                    curLoc.latitude.toString()
+                    curLoc.latitude.toString(),
+                    radius = r,
                 )
                 Log.d("MapViewModel", "searchPlaces: $result")
+                _keywordSearchRadiusM.value = r
                 _searchResults.value = result
+                _mapListMode.value = MapListMode.SEARCH
+                _activeSearchQuery.value = query
+                result.closestPlaceTo(curLoc)?.toLocationDtoOrNull()?.let { loc ->
+                    _focusCameraOnPlaceEvent.emit(loc)
+                }
             } catch (e: Exception) {
                 Log.e("MapViewModel", "searchPlaces error: ${e.message}", e)
             }
         }
+    }
+
+    /** 키워드 검색 빈 결과 시 최대 반경(20km)으로 한 번 더 검색 */
+    fun searchPlacesExpandedRadius() {
+        val q = _activeSearchQuery.value
+        if (q.isBlank()) return
+        if (_keywordSearchRadiusM.value >= MAX_KEYWORD_SEARCH_RADIUS_M) return
+        searchPlaces(q, radiusMeters = MAX_KEYWORD_SEARCH_RADIUS_M)
+    }
+
+    private fun KakaoPlaceDto.toLocationDtoOrNull(): LocationDto? {
+        val lat = y.toDoubleOrNull() ?: return null
+        val lng = x.toDoubleOrNull() ?: return null
+        return LocationDto(lat, lng)
+    }
+
+    /**
+     * 카카오 [distance]가 있으면 그대로(검색 중심 기준 m), 없으면 [ref]와의 직선거리(m).
+     */
+    private fun KakaoPlaceDto.distanceMetersForSort(ref: LocationDto): Double {
+        distance.toDoubleOrNull()?.let { return it }
+        val lat = y.toDoubleOrNull() ?: return Double.MAX_VALUE
+        val lng = x.toDoubleOrNull() ?: return Double.MAX_VALUE
+        val dist = FloatArray(1)
+        Location.distanceBetween(ref.latitude, ref.longitude, lat, lng, dist)
+        return dist[0].toDouble()
+    }
+
+    private fun List<KakaoPlaceDto>.closestPlaceTo(ref: LocationDto): KakaoPlaceDto? {
+        if (isEmpty()) return null
+        return minByOrNull { it.distanceMetersForSort(ref) }
     }
 }
