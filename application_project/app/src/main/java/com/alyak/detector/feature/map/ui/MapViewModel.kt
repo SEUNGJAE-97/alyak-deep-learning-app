@@ -110,9 +110,6 @@ class MapViewModel @Inject constructor(
     fun startContinuousLocationTracking() {
         locRepo.startLocationUpdate { dto ->
             _curLocation.value = dto
-            viewModelScope.launch {
-                _moveToCurrentLocationEvent.emit(dto)
-            }
         }
     }
 
