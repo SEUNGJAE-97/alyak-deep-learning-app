@@ -7,13 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -51,6 +51,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.alyak.detector.R
 import com.alyak.detector.feature.map.data.model.KakaoPlaceDto
 import com.alyak.detector.feature.map.data.model.LocationDto
+import com.alyak.detector.feature.map.data.model.getFormattedDistance
 import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.feature.map.ui.components.HospitalInfo
 import com.alyak.detector.feature.map.ui.components.MapSearchBar
@@ -229,13 +230,14 @@ fun HospitalListContent(
             contentPadding = PaddingValues(bottom = 20.dp)
         ) {
             items(hospitals.size) { index ->
+                val place = hospitals[index]
                 HospitalInfo(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    hospitalName = hospitals[index].place_name,
-                    hospitalAddress = hospitals[index].address_name,
+                    hospitalName = place.place_name,
+                    hospitalAddress = place.address_name,
 //                    hospitalDepartment = hospitals[index].category_name.
                     hospitalDepartment = arrayListOf("안과", "정형외과"),
-                    hospitalDistance = hospitals[index].distance,
+                    hospitalDistance = place.getFormattedDistance(),
                     onClick = {
                         Log.d(
                             "HospitalInfo",

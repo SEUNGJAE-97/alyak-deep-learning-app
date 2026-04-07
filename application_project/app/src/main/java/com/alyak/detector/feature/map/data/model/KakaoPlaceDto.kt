@@ -31,3 +31,17 @@ data class KakaoPlaceDto(
     val distance: String
 )
 
+/**
+ * 거리를 포맷팅하여 반환합니다.
+ * 1000m 이상일 경우 소수점 한자리 km로 표시하고, 그 미만은 m로 표시합니다.
+ */
+fun KakaoPlaceDto.getFormattedDistance(): String {
+    val meters = distance.toDoubleOrNull() ?: return "0m"
+
+    return if (meters >= 1000) {
+        val km = meters / 1000
+        String.format("%.1fkm", km)
+    } else {
+        "${meters.toInt()}m"
+    }
+}
