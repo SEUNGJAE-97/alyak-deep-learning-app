@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -76,6 +77,7 @@ class MapViewModel @Inject constructor(
 
     /** 마지막으로 알려진 카메라 중심(지도 중심). [onCameraMoveEnd]에서만 갱신 */
     private val _cameraMapCenter = MutableStateFlow<LocationDto?>(null)
+    val cameraMapCenter: StateFlow<LocationDto?> = _cameraMapCenter.asStateFlow()
 
     /**
      * 내 위치와 카메라 중심 거리가 [SEARCH_HERE_DISTANCE_THRESHOLD_M] 이상이면 true.
@@ -156,9 +158,10 @@ class MapViewModel @Inject constructor(
         _cameraMapCenter.value = LocationDto(latitude, longitude)
     }
 
-    /** 내 위치(GPS) 기준으로 주변 장소만 다시 조회. 카메라는 움직이지 않음. */
-    fun fetchPlacesAroundCurrentLocation() {
-        val loc = _curLocation.value
+    /**
+     * 좌표 기준 반경 내 장소 재조회.
+     */
+    fun fetchPlacesAroundLocation(loc: LocationDto) {
         val apiKey = "KakaoAK ${BuildConfig.REST_API_KEY}"
         fetchPlaces(
             apiKey,
