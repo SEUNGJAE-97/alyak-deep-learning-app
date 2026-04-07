@@ -3,6 +3,8 @@ package com.alyak.detector.feature.map.data.repository
 import android.util.Log
 import com.alyak.detector.feature.map.data.api.KakaoLocalApi
 import com.alyak.detector.feature.map.data.model.KakaoPlaceDto
+import kotlinx.coroutines.async
+import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 class KakaoPlaceRepo @Inject constructor(
@@ -64,15 +66,40 @@ class KakaoPlaceRepo @Inject constructor(
         x: String,
         y: String,
         radius: Int = 10_000,
-    ): List<KakaoPlaceDto> {
-        val response = api.searchByKeyword(
-            apiKey = apiKey,
-            query = query,
-            x = x,
-            y = y,
-            radius = radius.coerceIn(1, 20_000),
-        )
-        return response.body()?.documents ?: emptyList()
+    ): List<KakaoPlaceDto> = supervisorScope {
+        // 1. 병원 카테고리 검색
+        val hospitalDeferred = async {
+            api.searchByKeyword(
+                apiKey = apiKey,
+                query = query,
+                x = x,
+                y = y,
+                radius = radius.coerceIn(1, 20_000),
+                categoryGroupCode = "HP8" // 병원 코드
+            ).body()?.documents ?: emptyList()
+        }
+
+        // 2. 약국 카테고리 검색
+        val pharmacyDeferred = async {
+            api.searchByKeyword(
+                apiKey = apiKey,
+                query = query,
+                x = x,
+                y = y,
+                radius = radius.coerceIn(1, 20_000),
+                categoryGroupCode = "PM9" // 약국 코드
+            ).body()?.documents ?: emptyList()
+        }
+
+        try {
+            // 3. 두 결과 합치기 및 ID 기준 중복 제거
+            val hospitals = hospitalDeferred.await()
+            val pharmacies = pharmacyDeferred.await()
+            (hospitals + pharmacies).distinctBy { it.id }
+        } catch (e: Exception) {
+            Log.e("KakaoPlaceRepo", "Keyword Search Error: ${e.message}")
+            emptyList()
+        }
     }
 }
 

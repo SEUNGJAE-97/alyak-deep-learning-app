@@ -26,6 +26,7 @@ interface KakaoLocalApi {
         @Query("x") x: String? = null,
         @Query("y") y: String? = null,
         @Query("radius") radius: Int? = null,
+        @Query("category_group_code") categoryGroupCode: String? = null,
         @Query("sort") sort: String = "distance"
     ): Response<KakaoPlaceResponse>
 }
