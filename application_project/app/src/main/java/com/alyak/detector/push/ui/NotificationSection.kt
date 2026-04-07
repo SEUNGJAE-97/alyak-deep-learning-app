@@ -2,11 +2,14 @@ package com.alyak.detector.push.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +60,10 @@ import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
 import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.push.ui.model.NotificationItem
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+private const val ClearReadSlideOutMs = 400
 
 private enum class NotificationFilterTab(val label: String) {
     ALL("전체"),
@@ -101,6 +109,27 @@ fun NotificationSection(
         }
     }
 
+    var exitingNotificationIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
+    var isClearingRead by remember { mutableStateOf(false) }
+    val clearReadScope = rememberCoroutineScope()
+    val runExitAnimation: (List<Int>, () -> Unit) -> Unit = { ids, action ->
+        if (!isClearingRead && ids.isNotEmpty()) {
+            clearReadScope.launch {
+                isClearingRead = true
+                ids.forEachIndexed { index, id ->
+                    launch {
+                        delay(index * 50L)
+                        exitingNotificationIds = exitingNotificationIds + id
+                    }
+                }
+                delay(ClearReadSlideOutMs.toLong() + (ids.size * 50L))
+
+                action()
+                exitingNotificationIds = emptySet()
+                isClearingRead = false
+            }
+        }
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -124,8 +153,19 @@ fun NotificationSection(
                 NotificationFilterChipRow(
                     selected = selectedFilter,
                     onSelect = onFilterTabSelected,
-                    onMarkAllAsRead = onMarkAllAsRead,
-                    onClearReadNotifications = onClearReadNotifications,
+                    onMarkAllAsRead = onMarkAllAsRead?.let { action ->
+                        {
+                            val unreadIds =
+                                displayedNotifications.filter { !it.isRead }.map { it.id }
+                            runExitAnimation(unreadIds, action)
+                        }
+                    },
+                    onClearReadNotifications = onClearReadNotifications?.let { action ->
+                        {
+                            val readIds = displayedNotifications.filter { it.isRead }.map { it.id }
+                            runExitAnimation(readIds, action)
+                        }
+                    }
                 )
             }
         }
@@ -152,12 +192,31 @@ fun NotificationSection(
             }
         } else {
             items(displayedNotifications, key = { it.id }) { notification ->
-                NotificationCard(
-                    item = notification,
-                    onNotificationClick = onNotificationClick,
-                    onFamilyInviteAccept = onFamilyInviteAccept,
-                    onFamilyInviteReject = onFamilyInviteReject,
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateItem(
+                            fadeInSpec = null,
+                            fadeOutSpec = tween(ClearReadSlideOutMs),
+                            placementSpec = spring(stiffness = Spring.StiffnessLow)
+                        )
+                ) {
+                    AnimatedVisibility(
+                        visible = notification.id !in exitingNotificationIds,
+                        exit = slideOutHorizontally(
+                            animationSpec = tween(ClearReadSlideOutMs),
+                            targetOffsetX = { fullWidth -> fullWidth },
+                        ) + fadeOut(tween(ClearReadSlideOutMs)),
+                        enter = fadeIn(tween(220)),
+                    ) {
+                        NotificationCard(
+                            item = notification,
+                            onNotificationClick = onNotificationClick,
+                            onFamilyInviteAccept = onFamilyInviteAccept,
+                            onFamilyInviteReject = onFamilyInviteReject,
+                        )
+                    }
+                }
             }
         }
     }
@@ -235,7 +294,7 @@ fun NotificationCard(
     val category = NotificationCategory.from(item)
     val isFamilyBlueTheme =
         category == NotificationCategory.FAMILY_INVITE ||
-            category == NotificationCategory.FAMILY_ACTIVITY
+                category == NotificationCategory.FAMILY_ACTIVITY
     val readIconBackground = colorResource(R.color.notification_icon_read_background)
     val readIconTint = colorResource(R.color.notification_icon_read_tint)
     val familyIconTint = colorResource(R.color.notification_family_icon_tint)
