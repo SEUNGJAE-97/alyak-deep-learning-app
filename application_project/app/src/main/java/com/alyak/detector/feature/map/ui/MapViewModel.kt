@@ -1,8 +1,10 @@
 package com.alyak.detector.feature.map.ui
 
+import android.location.Location
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alyak.detector.BuildConfig
 import com.alyak.detector.core.auth.SessionManager
 import com.alyak.detector.core.auth.UserSession
 import com.alyak.detector.feature.map.data.model.KakaoPlaceDto
@@ -33,6 +35,9 @@ const val KAKAO_CATEGORY_HOSPITAL = "HP8"
 
 /** 카카오 로컬 카테고리 그룹: 약국 */
 const val KAKAO_CATEGORY_PHARMACY = "PM9"
+
+/** 카메라 중심과 내 위치가 이 거리(미터) 이상이면 「현재 위치에서 검색」 노출 */
+private const val SEARCH_HERE_DISTANCE_THRESHOLD_M = 5000f
 
 @HiltViewModel
 class MapViewModel @Inject constructor(
@@ -68,6 +73,32 @@ class MapViewModel @Inject constructor(
             initialValue = emptyList(),
         )
     val curLocation: StateFlow<LocationDto> = _curLocation
+
+    /** 마지막으로 알려진 카메라 중심(지도 중심). [onCameraMoveEnd]에서만 갱신 */
+    private val _cameraMapCenter = MutableStateFlow<LocationDto?>(null)
+
+    /**
+     * 내 위치와 카메라 중심 거리가 [SEARCH_HERE_DISTANCE_THRESHOLD_M] 이상이면 true.
+     * 카메라 중심을 아직 못 받으면 false.
+     */
+    val showSearchFromCurrentLocationButton: StateFlow<Boolean> =
+        combine(_curLocation, _cameraMapCenter) { cur, cam ->
+            if (cam == null) return@combine false
+            val dist = FloatArray(1)
+            Location.distanceBetween(
+                cur.latitude,
+                cur.longitude,
+                cam.latitude,
+                cam.longitude,
+                dist,
+            )
+            dist[0] >= SEARCH_HERE_DISTANCE_THRESHOLD_M
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
+
     private val _routePath = MutableStateFlow<List<LocationDto>>(emptyList())
     val routePath: StateFlow<List<LocationDto>> = _routePath
     private val _moveToCurrentLocationEvent =
@@ -121,6 +152,22 @@ class MapViewModel @Inject constructor(
     /**
      * 주변 병원(HP8)·약국(PM9)을 각각 조회한 뒤 합치고, 같은 [id]는 한 번만 둡니다.
      */
+    fun updateCameraMapCenter(latitude: Double, longitude: Double) {
+        _cameraMapCenter.value = LocationDto(latitude, longitude)
+    }
+
+    /** 내 위치(GPS) 기준으로 주변 장소만 다시 조회. 카메라는 움직이지 않음. */
+    fun fetchPlacesAroundCurrentLocation() {
+        val loc = _curLocation.value
+        val apiKey = "KakaoAK ${BuildConfig.REST_API_KEY}"
+        fetchPlaces(
+            apiKey,
+            loc.longitude.toString(),
+            loc.latitude.toString(),
+            2000,
+        )
+    }
+
     fun fetchPlaces(
         apiKey: String,
         x: String,

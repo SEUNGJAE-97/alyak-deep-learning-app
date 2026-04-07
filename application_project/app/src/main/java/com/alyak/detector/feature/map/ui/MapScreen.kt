@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +20,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -63,6 +67,7 @@ fun MapScreen(
     val name by viewModel.userName.collectAsState()
     val displayedPlaces by viewModel.displayedPlaces.collectAsState()
     val placeFilter by viewModel.placeFilter.collectAsState()
+    val showSearchFromCurrentLocation by viewModel.showSearchFromCurrentLocationButton.collectAsState()
     var mapSearchQuery by remember { mutableStateOf("") }
     val scaffoldState = rememberBottomSheetScaffoldState()
     BottomSheetScaffold(
@@ -79,7 +84,7 @@ fun MapScreen(
                 viewModel = viewModel,
             )
         },
-        topBar = { HeaderForm( name ) },
+        topBar = { HeaderForm(name) },
         sheetDragHandle = { DragHandler() }
     ) { paddingValues ->
         Column {
@@ -116,6 +121,14 @@ fun MapScreen(
                         }
                     }
                 }
+                if (showSearchFromCurrentLocation) {
+                    SearchFromCurrentLocationButton(
+                        onClick = { viewModel.fetchPlacesAroundCurrentLocation() },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 20.dp),
+                    )
+                }
                 CustomButton(
                     text = "",
                     onClick = {
@@ -132,6 +145,45 @@ fun MapScreen(
                         .align(Alignment.BottomEnd)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun SearchFromCurrentLocationButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(24.dp)
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .shadow(5.dp, shape)
+            .clip(shape),
+        shape = shape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = colorResource(R.color.white),
+            contentColor = Color.Black,
+        ),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 3.dp),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+        ),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "현재 위치에서 검색",
+                color = Color.Black,
+            )
         }
     }
 }

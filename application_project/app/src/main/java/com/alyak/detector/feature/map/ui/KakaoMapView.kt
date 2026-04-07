@@ -52,6 +52,7 @@ import com.alyak.detector.R
 import com.alyak.detector.feature.map.data.model.LocationDto
 import com.kakao.vectormap.KakaoMap
 import com.kakao.vectormap.KakaoMapReadyCallback
+import com.kakao.vectormap.GestureType
 import com.kakao.vectormap.LatLng
 import com.kakao.vectormap.MapLifeCycleCallback
 import com.kakao.vectormap.MapView
@@ -128,6 +129,18 @@ fun KakaoMapView(
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             viewModel.stopContinuousLocationTracking()
+        }
+    }
+
+    DisposableEffect(kakaoMapState.value) {
+        val kakaoMap = kakaoMapState.value ?: return@DisposableEffect onDispose { }
+        val listener = KakaoMap.OnCameraMoveEndListener { _, cameraPosition, _: GestureType ->
+            val latLng = cameraPosition.position
+            viewModel.updateCameraMapCenter(latLng.latitude, latLng.longitude)
+        }
+        kakaoMap.setOnCameraMoveEndListener(listener)
+        onDispose {
+            kakaoMap.setOnCameraMoveEndListener(null)
         }
     }
 
