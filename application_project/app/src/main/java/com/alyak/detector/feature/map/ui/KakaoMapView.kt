@@ -3,6 +3,8 @@ package com.alyak.detector.feature.map.ui
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Point
 import android.util.Log
 import android.view.View
@@ -30,7 +32,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.annotation.RawRes
 import androidx.core.graphics.toColorInt
+import com.airbnb.lottie.LottieCompositionFactory
+import com.airbnb.lottie.LottieDrawable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
@@ -68,8 +73,14 @@ fun KakaoMapView(
     viewModel: MapViewModel = hiltViewModel()
 ) {
     val kakaoMapState = remember { mutableStateOf<KakaoMap?>(null) }
-    val markerList by viewModel.places.collectAsState()
+    val markerList by viewModel.displayedPlaces.collectAsState()
     val context = LocalContext.current
+    val hospitalPinStyle = remember(context) {
+        lottieRawResToLabelStyle(context, R.raw.hospital_pin, R.drawable.hospital)
+    }
+    val pharmacyPinStyle = remember(context) {
+        lottieRawResToLabelStyle(context, R.raw.pharmacy_pin, R.drawable.pharmacy)
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     var locationGranted by remember { mutableStateOf(false) }
     val mapView = rememberMapViewWithLifecycle(kakaoMapState, context) {
@@ -124,18 +135,21 @@ fun KakaoMapView(
         val kakaoMap = kakaoMapState.value ?: return@LaunchedEffect
         val labelManager = kakaoMap.labelManager ?: return@LaunchedEffect
         val labelLayer = labelManager.layer ?: return@LaunchedEffect
-        val style = LabelStyles.from(
-            "myStyleId",
-            getLabelStyleByCategory(context, "PM9"),
-            getLabelStyleByCategory(context, "HP8")
-        )
         labelLayer.removeAll()
         markerList.forEach { place ->
             val lat = place.y.toDoubleOrNull() ?: return@forEach
             val lng = place.x.toDoubleOrNull() ?: return@forEach
             val position = LatLng.from(lat, lng)
-            val label = LabelOptions.from(position)
-                .setStyles(style)
+            val pinStyle = when (place.category_group_code) {
+                "PM9" -> pharmacyPinStyle
+                "HP8" -> hospitalPinStyle
+                else -> hospitalPinStyle
+            }
+            val styles = LabelStyles.from(
+                "place_${place.id}",
+                pinStyle,
+            )
+            val label = LabelOptions.from(position).setStyles(styles)
             labelLayer.addLabel(label)
         }
     }
@@ -160,10 +174,9 @@ fun KakaoMapView(
                 val apiKey = "KakaoAK ${BuildConfig.REST_API_KEY}"
                 viewModel.fetchPlaces(
                     apiKey,
-                    "HP8",
                     location.longitude.toString(),
                     location.latitude.toString(),
-                    2000
+                    2000,
                 )
             }
         }
@@ -294,14 +307,42 @@ fun rememberMapViewWithLifecycle(
     return mapView
 }
 
-fun getLabelStyleByCategory(context: Context, category: String): LabelStyle {
-    val mark =
-        when (category) {
-            "PM9" -> R.drawable.pharmacy
-            "HP8" -> R.drawable.pharmacy
-            else -> R.drawable.hospital
-        }
-    return LabelStyle.from(mark).setZoomLevel(10).setApplyDpScale(true)
+/**
+ * `res/raw`의 Lottie 핀을 첫 화면에 가깝게 렌더링해 카카오 [LabelStyle]로 만듭니다.
+ * 로드 실패 시 [fallbackDrawable]을 사용합니다.
+ */
+private fun lottieRawResToLabelStyle(
+    context: Context,
+    @RawRes rawRes: Int,
+    fallbackDrawable: Int,
+): LabelStyle {
+    val result = LottieCompositionFactory.fromRawResSync(context, rawRes)
+    val composition = result.value
+    if (composition == null) {
+        Log.e(TAG, "Lottie pin load failed (raw=$rawRes)", result.exception)
+        return LabelStyle.from(fallbackDrawable).setZoomLevel(10).setApplyDpScale(true)
+    }
+    val drawable = LottieDrawable()
+    drawable.composition = composition
+    val bounds = composition.bounds
+    val srcW = bounds.width().toInt().coerceAtLeast(1)
+    val srcH = bounds.height().toInt().coerceAtLeast(1)
+    drawable.setBounds(0, 0, srcW, srcH)
+    // 일부 애니메는 0프레임에서 투명 — 중간 프레임을 스냅샷으로 사용
+    drawable.progress = 0.5f
+    val srcBitmap = Bitmap.createBitmap(srcW, srcH, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(srcBitmap)
+    drawable.draw(canvas)
+    val density = context.resources.displayMetrics.density
+    val targetPx = (48f * density).toInt().coerceAtLeast(32)
+    val scale = targetPx / srcW.toFloat()
+    val outW = (srcW * scale).toInt().coerceAtLeast(1)
+    val outH = (srcH * scale).toInt().coerceAtLeast(1)
+    val scaled = Bitmap.createScaledBitmap(srcBitmap, outW, outH, true)
+    if (!srcBitmap.isRecycled && srcBitmap != scaled) {
+        srcBitmap.recycle()
+    }
+    return LabelStyle.from(scaled).setZoomLevel(10).setApplyDpScale(true)
 }
 
 private fun drawPathOnMap(kakaoMap: KakaoMap, routePath: List<LocationDto>) {

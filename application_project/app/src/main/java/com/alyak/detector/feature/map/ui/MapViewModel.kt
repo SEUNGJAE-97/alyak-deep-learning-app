@@ -10,19 +10,29 @@ import com.alyak.detector.feature.map.data.model.LocationDto
 import com.alyak.detector.feature.map.data.repository.ApiRepo
 import com.alyak.detector.feature.map.data.repository.FusedLocationRepo
 import com.alyak.detector.feature.map.data.repository.KakaoPlaceRepo
+import com.alyak.detector.feature.map.ui.model.MapPlaceFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 private val FALLBACK_MAP_CENTER = LocationDto(37.2, 127.1)
+
+/** 카카오 로컬 카테고리 그룹: 병원 */
+const val KAKAO_CATEGORY_HOSPITAL = "HP8"
+
+/** 카카오 로컬 카테고리 그룹: 약국 */
+const val KAKAO_CATEGORY_PHARMACY = "PM9"
 
 @HiltViewModel
 class MapViewModel @Inject constructor(
@@ -34,7 +44,29 @@ class MapViewModel @Inject constructor(
 
     private val _curLocation = MutableStateFlow(FALLBACK_MAP_CENTER)
     private val _places = MutableStateFlow<List<KakaoPlaceDto>>(emptyList())
+
+    /** 병원+약국 병합 등 마지막으로 조회·저장한 전체 목록 */
     val places: StateFlow<List<KakaoPlaceDto>> = _places
+
+    private val _placeFilter = MutableStateFlow(MapPlaceFilter.ALL)
+    val placeFilter: StateFlow<MapPlaceFilter> = _placeFilter
+
+    /** 필터 반영 후 맵·시트에 쓰는 목록 */
+    val displayedPlaces: StateFlow<List<KakaoPlaceDto>> =
+        combine(_places, _placeFilter) { list, filter ->
+            when (filter) {
+                MapPlaceFilter.ALL,
+                MapPlaceFilter.OPEN_NOW,
+                    -> list
+
+                MapPlaceFilter.HOSPITAL -> list.filter { it.category_group_code == KAKAO_CATEGORY_HOSPITAL }
+                MapPlaceFilter.PHARMACY -> list.filter { it.category_group_code == KAKAO_CATEGORY_PHARMACY }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList(),
+        )
     val curLocation: StateFlow<LocationDto> = _curLocation
     private val _routePath = MutableStateFlow<List<LocationDto>>(emptyList())
     val routePath: StateFlow<List<LocationDto>> = _routePath
@@ -68,9 +100,6 @@ class MapViewModel @Inject constructor(
         super.onCleared()
     }
 
-    /**
-     * 맵 준비 직후: 저장·캐시된 [curLocation]으로 카메라·주변 검색 한 번 동기화.
-     */
     fun syncMapCameraToStoredLocation() {
         viewModelScope.launch {
             _moveToCurrentLocationEvent.emit(_curLocation.value)
@@ -92,9 +121,11 @@ class MapViewModel @Inject constructor(
         locRepo.stopLocationUpdate()
     }
 
+    /**
+     * 주변 병원(HP8)·약국(PM9)을 각각 조회한 뒤 합치고, 같은 [id]는 한 번만 둡니다.
+     */
     fun fetchPlaces(
         apiKey: String,
-        categoryGroupCode: String,
         x: String,
         y: String,
         radius: Int,
@@ -104,17 +135,31 @@ class MapViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
-                val result = repo.searchPlace(
-                    apiKey, categoryGroupCode, x, y, radius, page, size, sort,
-                )
-                _places.value = result
+                supervisorScope {
+                    val hospital = async {
+                        repo.searchPlace(
+                            apiKey, KAKAO_CATEGORY_HOSPITAL, x, y, radius, page, size, sort,
+                        )
+                    }
+                    val pharmacy = async {
+                        repo.searchPlace(
+                            apiKey, KAKAO_CATEGORY_PHARMACY, x, y, radius, page, size, sort,
+                        )
+                    }
+                    val merged = hospital.await() + pharmacy.await()
+                    _places.value = merged.distinctBy { it.id }
+                }
             } catch (e: Exception) {
                 Log.e("MapViewModel", "fetchPlaces error: ${e.message}", e)
             }
         }
     }
 
-    /** 내 위치 갱신할때 사용, 맵 중앙에 내 위치가 나오게 이동 */
+    fun setPlaceFilter(filter: MapPlaceFilter) {
+        _placeFilter.value = filter
+    }
+
+    /** 내 위치 버튼 */
     fun fetchLocation() {
         viewModelScope.launch {
             val result = locRepo.getCurrentLocation() ?: return@launch

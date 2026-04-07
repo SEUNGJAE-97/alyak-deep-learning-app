@@ -50,6 +50,7 @@ import com.alyak.detector.feature.map.data.model.LocationDto
 import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.feature.map.ui.components.HospitalInfo
 import com.alyak.detector.feature.map.ui.components.MapSearchBar
+import com.alyak.detector.feature.map.ui.model.MapPlaceFilter
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.HeaderForm
 
@@ -60,7 +61,8 @@ fun MapScreen(
     viewModel: MapViewModel = hiltViewModel()
 ) {
     val name by viewModel.userName.collectAsState()
-    val places by viewModel.places.collectAsState()
+    val displayedPlaces by viewModel.displayedPlaces.collectAsState()
+    val placeFilter by viewModel.placeFilter.collectAsState()
     var mapSearchQuery by remember { mutableStateOf("") }
     val scaffoldState = rememberBottomSheetScaffoldState()
     BottomSheetScaffold(
@@ -71,7 +73,11 @@ fun MapScreen(
         sheetShadowElevation = 10.dp,
         sheetPeekHeight = 200.dp,
         sheetContent = {
-            HospitalListContent(places, viewModel)
+            HospitalListContent(
+                hospitals = displayedPlaces,
+                placeFilter = placeFilter,
+                viewModel = viewModel,
+            )
         },
         topBar = { HeaderForm( name ) },
         sheetDragHandle = { DragHandler() }
@@ -101,10 +107,13 @@ fun MapScreen(
                             .padding(top = 16.dp, start = 16.dp, end = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        FilterButton("전체", isSelected = true, onClick = {})
-                        FilterButton("병원", isSelected = false, onClick = {})
-                        FilterButton("약국", isSelected = false, onClick = {})
-                        FilterButton("영업중", isSelected = false, onClick = {})
+                        MapPlaceFilter.entries.forEach { filter ->
+                            FilterButton(
+                                text = filter.chipLabel,
+                                isSelected = placeFilter == filter,
+                                onClick = { viewModel.setPlaceFilter(filter) },
+                            )
+                        }
                     }
                 }
                 CustomButton(
@@ -130,7 +139,8 @@ fun MapScreen(
 @Composable
 fun HospitalListContent(
     hospitals: List<KakaoPlaceDto>,
-    viewModel: MapViewModel
+    placeFilter: MapPlaceFilter,
+    viewModel: MapViewModel,
 ) {
     Column(
         modifier = Modifier
@@ -145,7 +155,7 @@ fun HospitalListContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "총 ${hospitals.size}개의 의료기관",
+                text = "총 ${hospitals.size}개의 ${placeFilter.sheetCountNoun}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )
