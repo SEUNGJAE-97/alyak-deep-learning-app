@@ -48,6 +48,10 @@ class MapViewModel @Inject constructor(
     private val sessionManager: SessionManager,
 ) : ViewModel() {
 
+    /** 검색 결과를 담을 flow*/
+    private val _searchResults = MutableStateFlow<List<KakaoPlaceDto>>(emptyList())
+    val searchResults: StateFlow<List<KakaoPlaceDto>> = _searchResults
+
     private val _curLocation = MutableStateFlow(FALLBACK_MAP_CENTER)
     private val _places = MutableStateFlow<List<KakaoPlaceDto>>(emptyList())
 
@@ -224,6 +228,26 @@ class MapViewModel @Inject constructor(
                 _routePath.value = pathDto.path
             } catch (_: Exception) {
                 // 에러 처리
+            }
+        }
+    }
+
+    fun searchPlaces(query: String) {
+        if (query.isBlank()) return
+        viewModelScope.launch {
+            try {
+                val curLoc = _curLocation.value
+                val apiKey = "KakaoAK ${BuildConfig.REST_API_KEY}"
+                val result = repo.searchByKeyword(
+                    apiKey,
+                    query,
+                    curLoc.longitude.toString(),
+                    curLoc.latitude.toString()
+                )
+                Log.d("MapViewModel", "searchPlaces: $result")
+                _searchResults.value = result
+            } catch (e: Exception) {
+                Log.e("MapViewModel", "searchPlaces error: ${e.message}", e)
             }
         }
     }

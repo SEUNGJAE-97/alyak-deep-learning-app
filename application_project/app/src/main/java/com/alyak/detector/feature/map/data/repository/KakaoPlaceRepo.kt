@@ -49,5 +49,27 @@ class KakaoPlaceRepo @Inject constructor(
             return emptyList()
         }
     }
+
+    /**
+     * @param apiKey           카카오 REST API 키
+     * @param query            검색을 원하는 질의어
+     * @param x                중심 좌표의 경도(Longitude)
+     * @param y                중심 좌표의 위도(Latitude)
+     * */
+    suspend fun searchByKeyword(
+        apiKey: String,
+        query: String,
+        x: String,
+        y: String
+    ): List<KakaoPlaceDto> {
+        val response = api.searchByKeyword(
+            apiKey = apiKey,
+            query = query,
+            x = x,
+            y = y,
+            radius = 10000 // 10km 반경 내
+        )
+        return response.body()?.documents ?: emptyList()
+    }
 }
 

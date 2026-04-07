@@ -18,5 +18,15 @@ interface KakaoLocalApi {
         @Query("size") size: Int? = null,
         @Query("sort") sort: String? = null
     ): Response<KakaoPlaceResponse>
+
+    @GET("v2/local/search/keyword.json")
+    suspend fun searchByKeyword(
+        @Header("Authorization") apiKey: String,
+        @Query("query") query: String,
+        @Query("x") x: String? = null,
+        @Query("y") y: String? = null,
+        @Query("radius") radius: Int? = null,
+        @Query("sort") sort: String = "distance"
+    ): Response<KakaoPlaceResponse>
 }
 

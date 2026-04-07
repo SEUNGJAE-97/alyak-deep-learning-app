@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -72,6 +73,8 @@ fun MapScreen(
     val cameraMapCenter by viewModel.cameraMapCenter.collectAsState()
     var mapSearchQuery by remember { mutableStateOf("") }
     val scaffoldState = rememberBottomSheetScaffoldState()
+    val focusManager = LocalFocusManager.current
+
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetContainerColor = Color.White,
@@ -86,7 +89,7 @@ fun MapScreen(
                 viewModel = viewModel,
             )
         },
-        topBar = { HeaderForm( name ) },
+        topBar = { HeaderForm(name) },
         sheetDragHandle = { DragHandler() }
     ) { paddingValues ->
         Column {
@@ -106,7 +109,12 @@ fun MapScreen(
                     MapSearchBar(
                         query = mapSearchQuery,
                         onQueryChange = { mapSearchQuery = it },
-                        onSearch = { /* 장소 키워드 검색 연동 시 구현 */ },
+                        onSearch = { searchQuery ->
+                            if (searchQuery.isNotBlank()) {
+                                viewModel.searchPlaces(searchQuery)
+                                focusManager.clearFocus()
+                            }
+                        },
                     )
                     Row(
                         modifier = Modifier
