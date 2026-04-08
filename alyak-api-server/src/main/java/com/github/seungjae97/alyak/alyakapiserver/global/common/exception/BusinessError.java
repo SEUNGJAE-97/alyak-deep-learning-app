@@ -16,6 +16,7 @@ public enum BusinessError {
     EMAIL_VERIFICATION_PENDING(HttpStatus.BAD_REQUEST, "이메일 인증을 진행해주세요."),
     EMAIL_VERIFICATION_REQUEST_NEEDED(HttpStatus.BAD_REQUEST, "이메일 인증을 먼저 진행해주세요."),
     EMAIL_VERIFICATION_EXPIRED(HttpStatus.BAD_REQUEST, "이메일 인증 시간이 만료되었습니다. 다시 인증해주세요."),
+    EMAIL_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "인증번호가 일치하지 않습니다."),
     USER_NOT_EXIST(HttpStatus.BAD_REQUEST, "존재하지 않는 유저입니다."),
     EXIST_USER(HttpStatus.BAD_REQUEST, "이미 가입한 유저 입니다."),
     KAKAO_LOGIN_ERROR(HttpStatus.BAD_REQUEST, "카카오 로그인에 실패했습니다."),

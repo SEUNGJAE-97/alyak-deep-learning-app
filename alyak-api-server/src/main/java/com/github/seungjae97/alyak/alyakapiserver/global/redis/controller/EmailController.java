@@ -25,9 +25,11 @@ public class EmailController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<Boolean> verifyEmailCode(@RequestBody EmailValidationRequest emailValidationRequest) {
-        String email = emailValidationRequest.getEmail();
-        String code = emailValidationRequest.getCode();
-        return ResponseEntity.ok(mailService.verifyAuthCode(email, code));
+    @Operation(summary = "이메일 인증번호 검증", description = "성공 시 200, 실패 시 BusinessError(title)로 사유를 구분합니다.")
+    public ResponseEntity<Void> verifyEmailCode(@RequestBody EmailValidationRequest emailValidationRequest) {
+        mailService.verifyEmailAuthCode(
+                emailValidationRequest.getEmail(),
+                emailValidationRequest.getCode());
+        return ResponseEntity.ok().build();
     }
 }

@@ -1,5 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.global.redis.service;
 
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import com.github.seungjae97.alyak.alyakapiserver.global.redis.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,16 +43,20 @@ public class RedisService {
         redisUtil.setDataExpire(toEmail, code, 30);
     }
 
-    public boolean verifyAuthCode(String email, String code) {
+    /** 인증 성공 시 `verified:` 키를 설정합니다. 실패 시 {@link BusinessException}. */
+    public void verifyEmailAuthCode(String email, String code) {
         String savedCode = redisUtil.getData(email);
-        if (savedCode == null) return false;
-
-        boolean matched = savedCode.equals(code);
-        if (matched) {
-            redisUtil.deleteData(email);
-            redisUtil.setDataExpire("verified:" + email, "verified", 60);
+        if (savedCode == null) {
+            if (redisUtil.existData("auth_request:" + email)) {
+                throw new BusinessException(BusinessError.EMAIL_VERIFICATION_EXPIRED);
+            }
+            throw new BusinessException(BusinessError.EMAIL_VERIFICATION_REQUEST_NEEDED);
         }
-        return matched;
+        if (!savedCode.equals(code)) {
+            throw new BusinessException(BusinessError.EMAIL_CODE_MISMATCH);
+        }
+        redisUtil.deleteData(email);
+        redisUtil.setDataExpire("verified:" + email, "verified", 60);
     }
 
     /**

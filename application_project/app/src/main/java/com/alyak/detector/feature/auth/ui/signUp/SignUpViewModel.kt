@@ -63,8 +63,13 @@ class SignUpViewModel @Inject constructor(
         _state.value = prev.copy(
             email = newEmail,
             verificationMailSent = if (emailChanged) false else prev.verificationMailSent,
-            emailVerified = if (verificationLost) false else prev.emailVerified
+            emailVerified = if (verificationLost) false else prev.emailVerified,
+            verifyCodeErrorMessage = if (emailChanged) null else prev.verifyCodeErrorMessage
         )
+    }
+
+    fun clearVerifyCodeError() {
+        _state.value = _state.value.copy(verifyCodeErrorMessage = null)
     }
 
     fun validatePassword(password: String) {
@@ -121,19 +126,28 @@ class SignUpViewModel @Inject constructor(
     }
 
     fun verifyCode(email: String, code: String) {
+        _state.value = _state.value.copy(verifyCodeErrorMessage = null)
         viewModelScope.launch {
             when (val result = safeCall { authApi.verifyCode(CodeValidateRequest(email, code)) }) {
                 is ApiResult.Success -> {
-                    _state.value = _state.value.copy(emailVerified = true)
+                    _state.value = _state.value.copy(
+                        emailVerified = true,
+                        verifyCodeErrorMessage = null,
+                    )
                 }
 
                 is ApiResult.Error -> {
-                    val errorMsg = "오류 ${result.code}: ${result.message}"
-                    Log.d("code error : ", errorMsg)
+                    val msg = result.message?.takeIf { it.isNotBlank() }
+                        ?: "인증에 실패했습니다. (${result.code})"
+                    _state.value = _state.value.copy(verifyCodeErrorMessage = msg)
+                    Log.d("SignUp", "verifyCode error: ${result.code} $msg")
                 }
 
                 is ApiResult.Exception -> {
-                    Log.d("code error : ", result.throwable.toString())
+                    _state.value = _state.value.copy(
+                        verifyCodeErrorMessage = "네트워크 오류가 발생했습니다.",
+                    )
+                    Log.d("SignUp", "verifyCode exception: ${result.throwable}")
                 }
             }
         }

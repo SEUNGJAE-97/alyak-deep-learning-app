@@ -28,8 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
@@ -45,6 +47,7 @@ fun SignUpCodeStep(
 ) {
     val state by viewModel.state.collectAsState()
     var verificationCode by remember { mutableStateOf("") }
+    val verifyError = state.verifyCodeErrorMessage
     val email = state.email
     val isDisabled = state.emailVerified
     val timeLeft by viewModel.timeLeft.collectAsState()
@@ -74,7 +77,10 @@ fun SignUpCodeStep(
 
         OutlinedTextField(
             value = verificationCode,
-            onValueChange = { verificationCode = it },
+            onValueChange = {
+                verificationCode = it
+                viewModel.clearVerifyCodeError()
+            },
             placeholder = {
                 Text(
                     text = "인증번호 6자리",
@@ -109,6 +115,16 @@ fun SignUpCodeStep(
 
         Spacer(modifier = Modifier.height(30.dp))
 
+        if (verifyError != null) {
+            Text(
+                text = verifyError,
+                color = Color(0xFFD32F2F),
+                fontSize = 13.sp,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         Button(
             modifier = Modifier
                 .fillMaxWidth()
@@ -133,15 +149,16 @@ fun SignUpCodeStep(
             Text(
                 text = "인증문자를 받지 못하셨나요?",
                 color = colorResource(R.color.lightGray),
-                fontSize = 12.sp,
+                fontSize = 15.sp,
             )
             Spacer(modifier = Modifier.size(10.dp))
 
             Text(
                 text = "다시 보내기",
                 color = colorResource(R.color.notification_title_text),
-                fontSize = 12.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
+                style = TextStyle(textDecoration = TextDecoration.Underline),
                 modifier = Modifier.clickable {
                     viewModel.requestCode(email)
                 }
