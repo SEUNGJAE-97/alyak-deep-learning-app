@@ -1,7 +1,6 @@
-package com.alyak.detector.feature.auth.ui.signIn
+package com.alyak.detector.feature.auth.ui.signUp
 
-import android.net.Uri
-import androidx.browser.customtabs.CustomTabsIntent
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,36 +11,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.alyak.detector.R
-import com.alyak.detector.feature.auth.ui.signIn.components.SignInForm
+import com.alyak.detector.feature.auth.ui.signUp.components.SignUpForm
 
 @Composable
-fun SignInScreen(
+fun SignUpScreen(
     navController: NavController,
-    signInViewModel: SignInViewModel
+    signUpViewModel: SignUpViewModel = hiltViewModel(),
 ) {
-    val state by signInViewModel.state.collectAsState()
-    val context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-        signInViewModel.loginEvent.collect { url ->
-            val customTabsIntent = CustomTabsIntent.Builder().build()
-            customTabsIntent.launchUrl(context, Uri.parse(url))
-        }
-    }
+    BackHandler { navController.popBackStack() }
 
     Column(
         modifier = Modifier
@@ -58,7 +46,7 @@ fun SignInScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "어서오세요!\n로그인을 진행해주세요",
+            text = "회원가입\n정보를 입력해주세요",
             style = MaterialTheme.typography.headlineMedium,
             color = Color.White,
             fontWeight = FontWeight.Bold,
@@ -72,14 +60,11 @@ fun SignInScreen(
         )
 
         Spacer(modifier = Modifier.height(70.dp))
-        SignInForm(
-            onNavigateToSignUp = { navController.navigate("SignUpScreen") },
-            onNavigateToFindPassword = { navController.navigate("FindPasswordScreen") },
-            state = state,
+
+        SignUpForm(
+            onNavigateToLogin = { navController.popBackStack() },
             navController = navController,
-            viewModel = signInViewModel,
-            onKakaoLoginClick = { signInViewModel.startKakaoLogin() },
-            onGoogleLoginClick = { signInViewModel.startGoogleLogin() }
+            viewModel = signUpViewModel
         )
     }
 }

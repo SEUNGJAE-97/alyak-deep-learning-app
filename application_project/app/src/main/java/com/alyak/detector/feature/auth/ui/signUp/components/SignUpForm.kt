@@ -61,7 +61,7 @@ fun SignUpForm(
     LaunchedEffect(signUpResult) {
         signUpResult?.onSuccess {
             Toast.makeText(context, "회원가입 성공!", Toast.LENGTH_SHORT).show()
-            navController.navigate("SignInScreen")
+            navController.popBackStack()
         }
         signUpResult?.onFailure {
             Toast.makeText(context, it.message ?: "알 수 없는 오류 발생", Toast.LENGTH_SHORT).show()

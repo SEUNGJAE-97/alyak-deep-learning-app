@@ -12,8 +12,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.core.util.PermissionManager
+import com.alyak.detector.feature.auth.ui.signIn.FindPasswordScreen
 import com.alyak.detector.feature.auth.ui.signIn.SignInScreen
 import com.alyak.detector.feature.auth.ui.signIn.SignInViewModel
+import com.alyak.detector.feature.auth.ui.signUp.SignUpScreen
 import com.alyak.detector.feature.auth.ui.signUp.SignUpViewModel
 import com.alyak.detector.feature.camera.ui.CAMERA_MODE_PILL
 import com.alyak.detector.feature.camera.ui.CAMERA_MODE_QR
@@ -51,8 +53,22 @@ fun Navigator(permissionManager: PermissionManager, tokenManager: TokenManager) 
 
         composable("SignInScreen") {
             val signInViewModel: SignInViewModel = hiltViewModel()
+            SignInScreen(
+                navController = navController,
+                signInViewModel = signInViewModel
+            )
+        }
+
+        composable("SignUpScreen") {
             val signUpViewModel: SignUpViewModel = hiltViewModel()
-            SignInScreen(navController, signInViewModel, signUpViewModel)
+            SignUpScreen(
+                navController = navController,
+                signUpViewModel = signUpViewModel
+            )
+        }
+
+        composable("FindPasswordScreen") {
+            FindPasswordScreen(navController = navController)
         }
 
         composable("MainScreen") {
