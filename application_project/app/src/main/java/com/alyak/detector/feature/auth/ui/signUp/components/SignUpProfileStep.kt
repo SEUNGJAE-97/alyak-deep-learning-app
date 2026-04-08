@@ -29,9 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.alyak.detector.R
 import com.alyak.detector.feature.auth.ui.signUp.SignUpViewModel
@@ -40,23 +41,19 @@ import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.CustomUnderlineTextField
 
 @Composable
-fun SignUpForm(
-    onNavigateToLogin: () -> Unit,
+fun SignUpProfileStep(
+    viewModel: SignUpViewModel,
     navController: NavController,
-    viewModel: SignUpViewModel = hiltViewModel()
+    onBackToEmailStep: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val signUpResult by viewModel.signUpResult.collectAsState()
 
-    // 자체 상태 관리
-    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var checkPassword by remember { mutableStateOf("") }
     var userName by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
-    var verificationCode by remember { mutableStateOf("") }
-    var isDisabled = state.isVerified
 
     LaunchedEffect(signUpResult) {
         signUpResult?.onSuccess {
@@ -67,72 +64,8 @@ fun SignUpForm(
             Toast.makeText(context, it.message ?: "알 수 없는 오류 발생", Toast.LENGTH_SHORT).show()
         }
     }
+
     ContentBox(modifier = Modifier.fillMaxWidth()) {
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(
-            text = "이메일",
-            color = colorResource(R.color.primaryBlue)
-        )
-
-        Spacer(modifier = Modifier.height(30.dp))
-
-        CustomUnderlineTextField(
-            value = email,
-            onValueChange = {
-                email = it
-                viewModel.validateEmail(it)
-            },
-            hint = "이메일",
-            trailingIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.clickable {
-                        viewModel.requestCode(email)
-                    }
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.check),
-                        modifier = Modifier.size(24.dp),
-                        contentDescription = "check email state"
-                    )
-                }
-            },
-            enabled = !isDisabled
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(
-            text = "이메일 인증 번호",
-            color = colorResource(R.color.primaryBlue)
-        )
-        Spacer(modifier = Modifier.height(30.dp))
-        CustomUnderlineTextField(
-            value = verificationCode,
-            onValueChange = {
-                verificationCode = it
-                viewModel.requestCode(it)
-            },
-            hint = "이메일로 전송된 인증 번호를 입력해주세요.",
-            trailingIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.clickable {
-                        viewModel.verifyCode(email, verificationCode)
-                    }
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.arrow),
-                        modifier = Modifier.size(24.dp),
-                        contentDescription = "check email state",
-                    )
-                }
-            },
-            enabled = !isDisabled
-        )
-
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
@@ -157,7 +90,8 @@ fun SignUpForm(
                         .clickable { isPasswordVisible = !isPasswordVisible }
                         .size(24.dp)
                 )
-            }
+            },
+            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
         )
 
         Text(
@@ -213,14 +147,14 @@ fun SignUpForm(
             Surface(
                 modifier = Modifier
                     .size(65.dp)
-                    .clickable { onNavigateToLogin() },
+                    .clickable { onBackToEmailStep() },
                 shape = RoundedCornerShape(50.dp),
                 color = colorResource(R.color.white),
                 shadowElevation = 2.dp
             ) {
                 Image(
                     painter = painterResource(R.drawable.arrow_back),
-                    contentDescription = "뒤로가기",
+                    contentDescription = "이전 단계",
                     modifier = Modifier
                         .padding(12.dp)
                         .size(30.dp)
@@ -232,7 +166,17 @@ fun SignUpForm(
             CustomButton(
                 text = "",
                 onClick = {
-                    viewModel.signUpUser(email, password, userName, context)
+                    when {
+                        !state.emailVerified ->
+                            Toast.makeText(context, "이메일 인증 정보가 없습니다.", Toast.LENGTH_SHORT).show()
+                        password != checkPassword ->
+                            Toast.makeText(context, "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show()
+                        !state.validPassword ->
+                            Toast.makeText(context, "비밀번호 형식을 확인해주세요.", Toast.LENGTH_SHORT).show()
+                        userName.isBlank() ->
+                            Toast.makeText(context, "이름을 입력해주세요.", Toast.LENGTH_SHORT).show()
+                        else -> viewModel.signUpUser(password, userName, context)
+                    }
                 },
                 image = painterResource(R.drawable.arrow),
                 containerColor = colorResource(R.color.primaryBlue),

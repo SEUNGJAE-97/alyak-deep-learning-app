@@ -29,12 +29,22 @@ class SignUpViewModel @Inject constructor(
     val signUpResult: StateFlow<Result<SignUpResponse>?> = _signUpResult
     private val _state = MutableStateFlow(SignUpState())
     val state: StateFlow<SignUpState> = _state
+
     private val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
-    fun validateEmail(email: String) {
-        val pattern: Pattern = Patterns.EMAIL_ADDRESS
-        val isValid = pattern.matcher(email).matches()
-        _state.value = _state.value.copy(validEmail = isValid)
+    fun isEmailFormatValid(email: String): Boolean =
+        Patterns.EMAIL_ADDRESS.matcher(email).matches()
+
+    /** 이메일 입력 변경 — 주소가 바뀌면 인증 메일 발송·인증 완료 상태 초기화 */
+    fun onSignUpEmailInputChanged(newEmail: String) {
+        val prev = _state.value
+        val emailChanged = newEmail != prev.email
+        val verificationLost = prev.emailVerified && emailChanged
+        _state.value = prev.copy(
+            email = newEmail,
+            verificationMailSent = if (emailChanged) false else prev.verificationMailSent,
+            emailVerified = if (verificationLost) false else prev.emailVerified
+        )
     }
 
     fun validatePassword(password: String) {
@@ -44,7 +54,10 @@ class SignUpViewModel @Inject constructor(
         _state.value = _state.value.copy(validPassword = isValid)
     }
 
-    fun signUpUser(email: String, password: String, name: String, context: Context) {
+    fun signUpUser(password: String, name: String, context: Context) {
+        val st = _state.value
+        if (!st.emailVerified || st.email.isBlank()) return
+        val email = st.email
         viewModelScope.launch {
             when (val result = safeCall { authApi.signUp(SignUpRequest(email, password, name)) }) {
                 is ApiResult.Success -> {
@@ -68,15 +81,18 @@ class SignUpViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = safeCall { authApi.requestCode(email) }) {
                 is ApiResult.Success -> {
+                    _state.value = _state.value.copy(verificationMailSent = true)
                     Log.d("code success : ", result.toString())
                 }
 
                 is ApiResult.Error -> {
+                    _state.value = _state.value.copy(verificationMailSent = false)
                     val errorMsg = "오류 ${result.code}: ${result.message}"
                     Log.d("code error : ", errorMsg)
                 }
 
                 is ApiResult.Exception -> {
+                    _state.value = _state.value.copy(verificationMailSent = false)
                     Log.d("code error : ", result.throwable.toString())
                 }
             }
@@ -87,7 +103,7 @@ class SignUpViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = safeCall { authApi.verifyCode(CodeValidateRequest(email, code)) }) {
                 is ApiResult.Success -> {
-                    _state.value = _state.value.copy(isVerified = true)
+                    _state.value = _state.value.copy(emailVerified = true)
                 }
 
                 is ApiResult.Error -> {
