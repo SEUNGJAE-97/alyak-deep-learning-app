@@ -15,6 +15,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RedisService {
 
+    /** 이메일로 보낸 6자리 인증코드가 Redis에 남아 있는 시간(초). */
+    private static final long EMAIL_AUTH_CODE_TTL_SECONDS = 180L;
+    /**
+     * 인증 메일 발송 이력. {@link #EMAIL_AUTH_CODE_TTL_SECONDS}보다 길게 두어,
+     * 코드 키가 만료된 뒤에도 "만료"와 "요청 없음"을 구분할 수 있게 한다.
+     */
+    private static final long EMAIL_AUTH_REQUEST_TTL_SECONDS = 300L;
+
     private final JavaMailSender mailSender;
     private final RedisUtil redisUtil;
 
@@ -39,8 +47,8 @@ public class RedisService {
         message.setSubject("이메일 인증번호 안내");
         message.setText("인증번호는 " + code + " 입니다.");
         mailSender.send(message);
-        redisUtil.setDataExpire("auth_request:" + toEmail, "requested", 120);
-        redisUtil.setDataExpire(toEmail, code, 30);
+        redisUtil.setDataExpire("auth_request:" + toEmail, "requested", EMAIL_AUTH_REQUEST_TTL_SECONDS);
+        redisUtil.setDataExpire(toEmail, code, EMAIL_AUTH_CODE_TTL_SECONDS);
     }
 
     /** 인증 성공 시 `verified:` 키를 설정합니다. 실패 시 {@link BusinessException}. */

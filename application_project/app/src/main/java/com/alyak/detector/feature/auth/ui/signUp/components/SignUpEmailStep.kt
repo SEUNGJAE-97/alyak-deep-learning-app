@@ -50,7 +50,10 @@ fun SignUpEmailStep(
 
         CustomUnderlineTextField(
             value = state.email,
-            onValueChange = { viewModel.onSignUpEmailInputChanged(it) },
+            onValueChange = {
+                viewModel.onSignUpEmailInputChanged(it)
+                viewModel.clearRequestCodeError()
+            },
             hint = "abc@example.com",
             trailingIcon = { },
         )
@@ -64,6 +67,16 @@ fun SignUpEmailStep(
         )
 
         Spacer(modifier = Modifier.height(30.dp))
+
+        state.requestCodeErrorMessage?.let { err ->
+            Text(
+                text = err,
+                color = Color(0xFFD32F2F),
+                fontSize = 13.sp,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
         Button(
             modifier = Modifier

@@ -116,7 +116,9 @@ fun SignUpProfileStep(
             trailingIcon = {
                 Icon(
                     painter = painterResource(R.drawable.cancle),
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { checkPassword = "" },
                     contentDescription = "check password state"
                 )
             }
@@ -169,12 +171,16 @@ fun SignUpProfileStep(
                     when {
                         !state.emailVerified ->
                             Toast.makeText(context, "이메일 인증 정보가 없습니다.", Toast.LENGTH_SHORT).show()
+
                         password != checkPassword ->
                             Toast.makeText(context, "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show()
+
                         !state.validPassword ->
                             Toast.makeText(context, "비밀번호 형식을 확인해주세요.", Toast.LENGTH_SHORT).show()
+
                         userName.isBlank() ->
                             Toast.makeText(context, "이름을 입력해주세요.", Toast.LENGTH_SHORT).show()
+
                         else -> viewModel.signUpUser(password, userName, context)
                     }
                 },

@@ -31,8 +31,6 @@ class SignUpViewModel @Inject constructor(
     val timeLeft: StateFlow<Int> = _timeLeft
 
     private val _isTimerRunning = MutableStateFlow(false)
-    val isTimerRunning: StateFlow<Boolean> = _isTimerRunning
-
     fun startTimer() {
         _timeLeft.value = 180
         _isTimerRunning.value = true
@@ -64,12 +62,17 @@ class SignUpViewModel @Inject constructor(
             email = newEmail,
             verificationMailSent = if (emailChanged) false else prev.verificationMailSent,
             emailVerified = if (verificationLost) false else prev.emailVerified,
-            verifyCodeErrorMessage = if (emailChanged) null else prev.verifyCodeErrorMessage
+            verifyCodeErrorMessage = if (emailChanged) null else prev.verifyCodeErrorMessage,
+            requestCodeErrorMessage = if (emailChanged) null else prev.requestCodeErrorMessage,
         )
     }
 
     fun clearVerifyCodeError() {
         _state.value = _state.value.copy(verifyCodeErrorMessage = null)
+    }
+
+    fun clearRequestCodeError() {
+        _state.value = _state.value.copy(requestCodeErrorMessage = null)
     }
 
     fun validatePassword(password: String) {
@@ -103,22 +106,33 @@ class SignUpViewModel @Inject constructor(
     }
 
     fun requestCode(email: String) {
+        _state.value = _state.value.copy(requestCodeErrorMessage = null)
         viewModelScope.launch {
             when (val result = safeCall { authApi.requestCode(email) }) {
                 is ApiResult.Success -> {
-                    _state.value = _state.value.copy(verificationMailSent = true)
+                    _state.value = _state.value.copy(
+                        verificationMailSent = true,
+                        requestCodeErrorMessage = null,
+                    )
                     startTimer()
                     Log.d("code success : ", result.toString())
                 }
 
                 is ApiResult.Error -> {
-                    _state.value = _state.value.copy(verificationMailSent = false)
-                    val errorMsg = "오류 ${result.code}: ${result.message}"
-                    Log.d("code error : ", errorMsg)
+                    val msg = result.message?.takeIf { it.isNotBlank() }
+                        ?: "인증번호를 보낼 수 없습니다. (${result.code})"
+                    _state.value = _state.value.copy(
+                        verificationMailSent = false,
+                        requestCodeErrorMessage = msg,
+                    )
+                    Log.d("code error : ", "${result.code} $msg")
                 }
 
                 is ApiResult.Exception -> {
-                    _state.value = _state.value.copy(verificationMailSent = false)
+                    _state.value = _state.value.copy(
+                        verificationMailSent = false,
+                        requestCodeErrorMessage = "네트워크 오류가 발생했습니다.",
+                    )
                     Log.d("code error : ", result.throwable.toString())
                 }
             }
