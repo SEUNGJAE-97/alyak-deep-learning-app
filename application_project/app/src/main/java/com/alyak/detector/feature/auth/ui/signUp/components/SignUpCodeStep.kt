@@ -11,7 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -27,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,7 +71,7 @@ fun SignUpCodeStep(
             color = colorResource(R.color.primaryBlue)
         )
         Spacer(modifier = Modifier.height(30.dp))
-        
+
         OutlinedTextField(
             value = verificationCode,
             onValueChange = { verificationCode = it },
@@ -91,16 +93,6 @@ fun SignUpCodeStep(
                         fontSize = 14.sp,
                         color = if (timeLeft <= 30) Color.Red else Color.Gray
                     )
-                    Icon(
-                        painter = painterResource(R.drawable.arrow),
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable(enabled = email.isNotBlank() && timeLeft > 0) {
-                                viewModel.verifyCode(email, verificationCode)
-                            },
-                        contentDescription = "인증 확인",
-                        tint = Color.Gray
-                    )
                 }
             },
             enabled = !isDisabled && timeLeft > 0,
@@ -109,13 +101,52 @@ fun SignUpCodeStep(
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = colorResource(R.color.primaryBlue),
-                unfocusedBorderColor = Color(0xFFDEE2E6),
+                unfocusedBorderColor = colorResource(R.color.black),
                 disabledBorderColor = Color(0xFFDEE2E6),
             ),
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(30.dp))
+
+        Button(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            onClick = { viewModel.verifyCode(email, verificationCode) },
+            enabled = email.isNotBlank() && timeLeft > 0,
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colorResource(R.color.primaryBlue),
+                contentColor = Color.White,
+                disabledContainerColor = Color.Gray,
+                disabledContentColor = Color.White.copy(alpha = 0.6f),
+            )
+        ) {
+            Text(text = "인증 확인")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "인증문자를 받지 못하셨나요?",
+                color = colorResource(R.color.lightGray),
+                fontSize = 12.sp,
+            )
+            Spacer(modifier = Modifier.size(10.dp))
+
+            Text(
+                text = "다시 보내기",
+                color = colorResource(R.color.notification_title_text),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable {
+                    viewModel.requestCode(email)
+                }
+            )
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
