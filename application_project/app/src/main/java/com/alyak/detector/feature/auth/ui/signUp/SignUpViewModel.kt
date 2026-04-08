@@ -15,6 +15,7 @@ import com.alyak.detector.feature.auth.data.model.CodeValidateRequest
 import com.alyak.detector.feature.auth.data.model.SignUpRequest
 import com.alyak.detector.feature.auth.data.model.SignUpResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -25,6 +26,25 @@ import javax.inject.Inject
 class SignUpViewModel @Inject constructor(
     private val authApi: AuthApi
 ) : ViewModel() {
+    /*타이머 관련 변수*/
+    private val _timeLeft = MutableStateFlow(180)
+    val timeLeft: StateFlow<Int> = _timeLeft
+
+    private val _isTimerRunning = MutableStateFlow(false)
+    val isTimerRunning: StateFlow<Boolean> = _isTimerRunning
+
+    fun startTimer() {
+        _timeLeft.value = 180
+        _isTimerRunning.value = true
+        viewModelScope.launch {
+            while (_isTimerRunning.value && _timeLeft.value > 0) {
+                delay(1000L)
+                _timeLeft.value--
+            }
+            _isTimerRunning.value = false
+        }
+    }
+
     private val _signUpResult = MutableStateFlow<Result<SignUpResponse>?>(null)
     val signUpResult: StateFlow<Result<SignUpResponse>?> = _signUpResult
     private val _state = MutableStateFlow(SignUpState())
@@ -82,6 +102,7 @@ class SignUpViewModel @Inject constructor(
             when (val result = safeCall { authApi.requestCode(email) }) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(verificationMailSent = true)
+                    startTimer()
                     Log.d("code success : ", result.toString())
                 }
 
