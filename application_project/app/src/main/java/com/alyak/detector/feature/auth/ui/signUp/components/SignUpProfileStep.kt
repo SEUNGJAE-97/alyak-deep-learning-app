@@ -1,6 +1,10 @@
 package com.alyak.detector.feature.auth.ui.signUp.components
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,16 +31,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
+import com.alyak.detector.feature.auth.ui.signUp.SignUpState
 import com.alyak.detector.feature.auth.ui.signUp.SignUpViewModel
+import com.alyak.detector.feature.user.ui.EditableProfileImage
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.CustomUnderlineTextField
@@ -47,14 +57,42 @@ fun SignUpProfileStep(
     onBackToEmailStep: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
-    val context = LocalContext.current
     val signUpResult by viewModel.signUpResult.collectAsState()
+    val context = LocalContext.current
+
+    SignUpProfileStepContent(
+        state = state,
+        signUpResult = signUpResult,
+        onPasswordChanged = { viewModel.validatePassword(it) },
+        onSignUp = { password, userName -> viewModel.signUpUser(password, userName, context) },
+        navController = navController,
+        onBackToEmailStep = onBackToEmailStep
+    )
+}
+
+@Composable
+fun SignUpProfileStepContent(
+    state: SignUpState,
+    signUpResult: Result<com.alyak.detector.feature.auth.data.model.SignUpResponse>? = null,
+    onPasswordChanged: (String) -> Unit,
+    onSignUp: (String, String) -> Unit,
+    navController: NavController,
+    onBackToEmailStep: () -> Unit,
+) {
+    val context = LocalContext.current
 
     var password by remember { mutableStateOf("") }
     var checkPassword by remember { mutableStateOf("") }
     var userName by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
-
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    val pickMedia = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            imageUri = uri
+        }
+    }
     LaunchedEffect(signUpResult) {
         signUpResult?.onSuccess {
             Toast.makeText(context, "회원가입 성공!", Toast.LENGTH_SHORT).show()
@@ -66,6 +104,13 @@ fun SignUpProfileStep(
     }
 
     ContentBox(modifier = Modifier.fillMaxWidth()) {
+        EditableProfileImage(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            selectedImageUri = imageUri,
+            onClickEdit = {
+                pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            }
+        )
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
@@ -79,7 +124,7 @@ fun SignUpProfileStep(
             value = password,
             onValueChange = {
                 password = it
-                viewModel.validatePassword(it)
+                onPasswordChanged(it)
             },
             hint = "비밀번호",
             trailingIcon = {
@@ -181,7 +226,7 @@ fun SignUpProfileStep(
                         userName.isBlank() ->
                             Toast.makeText(context, "이름을 입력해주세요.", Toast.LENGTH_SHORT).show()
 
-                        else -> viewModel.signUpUser(password, userName, context)
+                        else -> onSignUp(password, userName)
                     }
                 },
                 image = painterResource(R.drawable.arrow),
@@ -189,6 +234,24 @@ fun SignUpProfileStep(
                 modifier = Modifier.size(80.dp),
                 shape = RoundedCornerShape(50.dp),
                 imageSize = 40.dp
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SignUpProfileStepPreview() {
+    val navController = rememberNavController()
+    MaterialTheme {
+        Surface(color = Color.White) {
+            SignUpProfileStepContent(
+                state = SignUpState(),
+                signUpResult = null,
+                onPasswordChanged = {},
+                onSignUp = { _, _ -> },
+                navController = navController,
+                onBackToEmailStep = { /* 이전 단계 이동 액션 */ }
             )
         }
     }
