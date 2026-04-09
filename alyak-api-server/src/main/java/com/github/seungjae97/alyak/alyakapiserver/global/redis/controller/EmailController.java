@@ -22,10 +22,20 @@ public class EmailController {
     private final UserRepository userRepository;
 
     @PostMapping("/send")
-    @Operation(summary = "이메일 전송" , description = "입력한 이메일로 6자리의 인증코드를 전송한다. 이미 가입된 이메일이면 전송하지 않는다.")
+    @Operation(summary = "이메일 전송(회원가입)", description = "미가입 이메일로만 인증코드를 보냅니다. 이미 가입된 이메일이면 전송하지 않습니다.")
     public ResponseEntity<Void> sendEmail(@RequestParam String email) {
         if (userRepository.existsByEmail(email)) {
             throw new BusinessException(BusinessError.EMAIL_ALREADY_EXISTS);
+        }
+        mailService.sendAuthEmail(email);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/send/reset")
+    @Operation(summary = "이메일 전송(비밀번호 찾기)", description = "가입된 이메일로만 인증코드를 보냅니다. 존재하지 않는 이메일이면 보내지 않습니다.")
+    public ResponseEntity<Void> sendEmailForPasswordReset(@RequestParam String email) {
+        if (!userRepository.existsByEmail(email)) {
+            throw new BusinessException(BusinessError.USER_NOT_EXIST);
         }
         mailService.sendAuthEmail(email);
         return ResponseEntity.ok().build();

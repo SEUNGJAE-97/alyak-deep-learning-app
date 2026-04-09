@@ -1,6 +1,7 @@
 package com.alyak.detector.feature.auth.data.api
 
 import com.alyak.detector.feature.auth.data.model.CodeValidateRequest
+import com.alyak.detector.feature.auth.data.model.PasswordResetRequest
 import com.alyak.detector.feature.auth.data.model.SignInRequest
 import com.alyak.detector.feature.auth.data.model.SignInResponse
 import com.alyak.detector.feature.auth.data.model.SignUpRequest
@@ -31,9 +32,21 @@ interface AuthApi {
     ): Response<Unit>
 
     @NoAuth
+    @POST("/api/email/send/reset")
+    suspend fun requestResetCode(
+        @Query("email") email: String
+    ): Response<Unit>
+
+    @NoAuth
     @POST("/api/email/verify")
     suspend fun verifyCode(
         @Body request: CodeValidateRequest
+    ): Response<Unit>
+
+    @NoAuth
+    @POST("/api/auth/password/reset")
+    suspend fun resetPassword(
+        @Body request: PasswordResetRequest
     ): Response<Unit>
 
     @NoAuth

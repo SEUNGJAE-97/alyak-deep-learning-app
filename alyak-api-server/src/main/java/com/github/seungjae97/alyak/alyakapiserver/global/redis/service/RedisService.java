@@ -15,13 +15,12 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RedisService {
 
-    /** 이메일로 보낸 6자리 인증코드가 Redis에 남아 있는 시간(초). */
-    private static final long EMAIL_AUTH_CODE_TTL_SECONDS = 180L;
+    /** 인증코드·인증 완료(verified) 공통 TTL — 5분 */
+    private static final long EMAIL_AUTH_FIVE_MINUTES_SECONDS = 300L;
     /**
-     * 인증 메일 발송 이력. {@link #EMAIL_AUTH_CODE_TTL_SECONDS}보다 길게 두어,
-     * 코드 키가 만료된 뒤에도 "만료"와 "요청 없음"을 구분할 수 있게 한다.
+     * 인증 메일 발송 이력. 코드 TTL보다 길게 두어 만료/미요청을 구분한다.
      */
-    private static final long EMAIL_AUTH_REQUEST_TTL_SECONDS = 300L;
+    private static final long EMAIL_AUTH_REQUEST_TTL_SECONDS = 420L;
 
     private final JavaMailSender mailSender;
     private final RedisUtil redisUtil;
@@ -48,7 +47,7 @@ public class RedisService {
         message.setText("인증번호는 " + code + " 입니다.");
         mailSender.send(message);
         redisUtil.setDataExpire("auth_request:" + toEmail, "requested", EMAIL_AUTH_REQUEST_TTL_SECONDS);
-        redisUtil.setDataExpire(toEmail, code, EMAIL_AUTH_CODE_TTL_SECONDS);
+        redisUtil.setDataExpire(toEmail, code, EMAIL_AUTH_FIVE_MINUTES_SECONDS);
     }
 
     /** 인증 성공 시 `verified:` 키를 설정합니다. 실패 시 {@link BusinessException}. */
@@ -64,7 +63,7 @@ public class RedisService {
             throw new BusinessException(BusinessError.EMAIL_CODE_MISMATCH);
         }
         redisUtil.deleteData(email);
-        redisUtil.setDataExpire("verified:" + email, "verified", 60);
+        redisUtil.setDataExpire("verified:" + email, "verified", EMAIL_AUTH_FIVE_MINUTES_SECONDS);
     }
 
     /**

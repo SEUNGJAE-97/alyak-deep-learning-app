@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.user.controller;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.user.dto.UserUpdateRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.dto.PasswordUpdateRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.service.UserService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.UserDetailsImpl;
@@ -31,14 +31,18 @@ public class UserController {
                   .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping
-    @Operation(summary = "회원정보 수정", description = "사용자 정보를 수정할때 사용하는 API")
-    public ResponseEntity<User> updateUser(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestBody UserUpdateRequest request) {
+    @PutMapping("/password")
+    @Operation(
+            summary = "비밀번호 변경(로그인 상태)",
+            description = "이미 로그인한 사용자가 설정 등에서 비밀번호만 바꿀 때 사용합니다. Authorization Bearer JWT 필요. 비밀번호 찾기(비로그인)는 POST /api/auth/password/reset 입니다.")
+    public ResponseEntity<User> updatePassword(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody PasswordUpdateRequest request) {
         Optional<User> existingUser = userService.getById(userDetails.getUser().getUserId());
         if (existingUser.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        User updatedUser = userService.update(existingUser.get().getUserId(), request);
+        User updatedUser = userService.updatePassword(existingUser.get().getUserId(), request);
         return ResponseEntity.ok(updatedUser);
     }
 

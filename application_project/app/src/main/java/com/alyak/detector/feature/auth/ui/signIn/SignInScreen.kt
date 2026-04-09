@@ -65,10 +65,11 @@ fun SignInScreen(
             lineHeight = 80.sp,
             modifier = Modifier
                 .padding(
-                    start = 0.dp,
+                    start = 30.dp,
                     top = 50.dp,
                     end = 80.dp
                 )
+                .align(Alignment.Start)
         )
 
         Spacer(modifier = Modifier.height(70.dp))

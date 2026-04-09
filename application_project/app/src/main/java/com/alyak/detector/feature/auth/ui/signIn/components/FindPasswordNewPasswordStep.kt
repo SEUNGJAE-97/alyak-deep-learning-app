@@ -1,5 +1,6 @@
 package com.alyak.detector.feature.auth.ui.signIn.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,35 +9,53 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
+import com.alyak.detector.feature.auth.ui.signIn.FindPasswordViewModel
 import com.alyak.detector.ui.components.ContentBox
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.CustomUnderlineTextField
 
 @Composable
-fun FindPasswordForm(
+fun FindPasswordNewPasswordStep(
+    viewModel: FindPasswordViewModel,
+    onBackToCodeStep: () -> Unit,
+    onResetSuccess: () -> Unit,
 ) {
+    val state by viewModel.state.collectAsState()
+    val passwordResetSuccess by viewModel.passwordResetSuccess.collectAsState()
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(passwordResetSuccess) {
+        if (passwordResetSuccess) {
+            viewModel.consumePasswordResetSuccess()
+            onResetSuccess()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -46,27 +65,25 @@ fun FindPasswordForm(
     ) {
         ContentBox(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "비밀번호",
+                text = "새 비밀번호",
                 color = colorResource(R.color.primaryBlue)
             )
 
             CustomUnderlineTextField(
                 value = password,
-                onValueChange = {
-                    password = it
-                },
+                onValueChange = { password = it },
                 hint = "새 패스워드",
                 trailingIcon = {
                     Icon(
                         painter = painterResource(R.drawable.check),
                         modifier = Modifier.size(24.dp),
-                        contentDescription = "check email state"
+                        contentDescription = null
                     )
                 }
             )
 
             Text(
-                text = "10자리 이상의 영문, 숫자, 특수기호를 포함해야합니다.",
+                text = "8~20자, 영문·숫자·특수기호($@$!%*#?&) 포함",
                 color = colorResource(R.color.lightGray),
                 fontSize = 10.sp
             )
@@ -78,10 +95,8 @@ fun FindPasswordForm(
             )
 
             CustomUnderlineTextField(
-                value = password,
-                onValueChange = {
-                    password = it
-                },
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
                 hint = "새 패스워드 재입력",
                 trailingIcon = {
                     Icon(
@@ -94,6 +109,16 @@ fun FindPasswordForm(
                 }
             )
 
+            state.resetErrorMessage?.let { err ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = err,
+                    color = Color(0xFFD32F2F),
+                    fontSize = 13.sp,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
             Spacer(Modifier.height(150.dp))
 
             Row(
@@ -101,24 +126,43 @@ fun FindPasswordForm(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Surface(
+                    modifier = Modifier
+                        .size(65.dp)
+                        .clickable(onClick = onBackToCodeStep),
+                    shape = RoundedCornerShape(50.dp),
+                    color = colorResource(R.color.white),
+                    shadowElevation = 2.dp
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.arrow_back),
+                        contentDescription = "이전 단계",
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .size(30.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.padding(16.dp))
+
+                val canSubmit = viewModel.isPasswordValid(password) &&
+                    password == confirmPassword &&
+                    password.isNotBlank()
                 CustomButton(
                     text = "",
-                    onClick = { /* TODO: 비밀번호 수정 로직 */ },
+                    onClick = {
+                        viewModel.resetPassword(state.email, password)
+                    },
                     image = painterResource(R.drawable.arrow),
                     containerColor = colorResource(R.color.primaryBlue),
                     modifier = Modifier.size(80.dp),
                     shape = RoundedCornerShape(50.dp),
                     imageSize = 40.dp,
                     contentDescription = null,
-                    contentColor = colorResource(R.color.white)
+                    contentColor = colorResource(R.color.white),
+                    enabled = canSubmit,
                 )
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun FindPasswordFormnPreview() {
-    FindPasswordForm()
 }
