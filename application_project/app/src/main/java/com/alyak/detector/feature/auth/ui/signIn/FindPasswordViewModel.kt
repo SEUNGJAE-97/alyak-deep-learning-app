@@ -7,8 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.alyak.detector.core.network.ApiResult
 import com.alyak.detector.core.network.safeCall
 import com.alyak.detector.feature.auth.data.api.AuthApi
-import com.alyak.detector.feature.auth.data.model.CodeValidateRequest
 import com.alyak.detector.feature.auth.data.model.PasswordResetRequest
+import com.alyak.detector.feature.auth.domain.EmailVerificationConstants
+import com.alyak.detector.feature.auth.domain.EmailVerificationMode
+import com.alyak.detector.feature.auth.domain.RequestEmailCodeUseCase
+import com.alyak.detector.feature.auth.domain.VerifyEmailCodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,9 +23,11 @@ import javax.inject.Inject
 @HiltViewModel
 class FindPasswordViewModel @Inject constructor(
     private val authApi: AuthApi,
+    private val requestEmailCodeUseCase: RequestEmailCodeUseCase,
+    private val verifyEmailCodeUseCase: VerifyEmailCodeUseCase,
 ) : ViewModel() {
 
-    private val _timeLeft = MutableStateFlow(300)
+    private val _timeLeft = MutableStateFlow(EmailVerificationConstants.TIMER_SECONDS)
     val timeLeft: StateFlow<Int> = _timeLeft
 
     private val _isTimerRunning = MutableStateFlow(false)
@@ -34,7 +39,7 @@ class FindPasswordViewModel @Inject constructor(
     val passwordResetSuccess: StateFlow<Boolean> = _passwordResetSuccess
 
     fun startTimer() {
-        _timeLeft.value = 300
+        _timeLeft.value = EmailVerificationConstants.TIMER_SECONDS
         _isTimerRunning.value = true
         viewModelScope.launch {
             while (_isTimerRunning.value && _timeLeft.value > 0) {
@@ -71,7 +76,7 @@ class FindPasswordViewModel @Inject constructor(
     fun requestResetCode(email: String) {
         _state.value = _state.value.copy(requestCodeErrorMessage = null)
         viewModelScope.launch {
-            when (val result = safeCall { authApi.requestResetCode(email) }) {
+            when (val result = requestEmailCodeUseCase(email, EmailVerificationMode.FIND_PASSWORD)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         verificationMailSent = true,
@@ -102,7 +107,7 @@ class FindPasswordViewModel @Inject constructor(
     fun verifyCode(email: String, code: String) {
         _state.value = _state.value.copy(verifyCodeErrorMessage = null)
         viewModelScope.launch {
-            when (val result = safeCall { authApi.verifyCode(CodeValidateRequest(email, code)) }) {
+            when (val result = verifyEmailCodeUseCase(email, code)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         emailVerified = true,
