@@ -318,7 +318,9 @@ fun MainScreen(
                                     medicine = "예정된 일정이 없습니다",
                                     detail = "모든 약을 복용하셨나요?",
                                     timeLeft = "0",
-                                    onAlarmClick = { }
+                                    onAlarmClick = {
+                                        navController.navigate("medicine_statistics")
+                                    }
                                 )
                             }
 

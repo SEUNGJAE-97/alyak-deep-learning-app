@@ -1,5 +1,6 @@
 package com.alyak.detector.navigation
 
+import MedicineStatisticsScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -125,6 +126,8 @@ fun Navigator(permissionManager: PermissionManager, tokenManager: TokenManager) 
         composable("UserScreen") {
             UserScreen(navController)
         }
-
+        composable("medicine_statistics") {
+            MedicineStatisticsScreen(navController)
+        }
     }
 }

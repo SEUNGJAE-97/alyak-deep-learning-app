@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RemoveCircle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -37,6 +38,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,18 +48,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
-import com.alyak.detector.core.model.MealTime
+import com.alyak.detector.feature.notification.data.model.MealTime
+import com.alyak.detector.feature.notification.data.model.MedicationTimeEntry
+import com.alyak.detector.feature.notification.ui.MedicineStatisticsViewModel
 
 // 이미지 기반 커스텀 색상
 val SoftBlue = Color(0xFF6371C2) // "건강한 습관의 시작" 타이틀 색상
@@ -68,11 +75,14 @@ val TextMain = Color(0xFF333D79) // "약 이름", "복약 시간" 등 메인 텍
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddMedicationDetailScreen(
-    navController: NavController
+fun MedicineStatisticsScreen(
+    navController: NavController,
+    viewModel: MedicineStatisticsViewModel = viewModel()
 ) {
     var medicineName by remember { mutableStateOf("") }
     var isAlarmEnabled by remember { mutableStateOf(true) }
+    val timeEntries by viewModel.timeEntries.collectAsState()
+    var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -91,9 +101,9 @@ fun AddMedicationDetailScreen(
             )
         },
         bottomBar = {
-            // 저장하기 버튼
             Button(
                 onClick = { /* 저장 로직 */ },
+                enabled = timeEntries.isNotEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp)
@@ -145,13 +155,19 @@ fun AddMedicationDetailScreen(
                 ) {
                     Text(
                         text = "건강한 습관의 시작",
+                        fontFamily = FontFamily(
+                            Font(
+                                R.font.pretendard_extrabold,
+                                FontWeight.ExtraBold
+                            )
+                        ),
                         fontSize = 26.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = colorResource(R.color.notification_title_text)
+                        color = colorResource(R.color.main_blue)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "새로운 복약 일정을 추가해 주세요.",
+                        fontFamily = FontFamily(Font(R.font.pretendard_semibold, FontWeight.Thin)),
                         fontSize = 14.sp,
                         color = Color.White,
                         fontWeight = FontWeight.Thin
@@ -167,7 +183,16 @@ fun AddMedicationDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp),
-                placeholder = { Text("어떤 약을 드시나요?", color = Color.LightGray) },
+                placeholder = {
+                    Text(
+                        text = "어떤 약을 드시나요?",
+                        color = Color.LightGray,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 10.dp),
+                        textAlign = TextAlign.Start
+                    )
+                },
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = colorResource(R.color.primaryBlue),
@@ -201,42 +226,45 @@ fun AddMedicationDetailScreen(
                     color = colorResource(R.color.primaryBlue)
                 )
 
-                // + 버튼
                 Surface(
                     modifier = Modifier
                         .size(34.dp)
-                        .clickable { /* 시간 추가 */ },
+                        .clickable(enabled = timeEntries.size < MealTime.entries.size) {
+                            showAddDialog = true
+                        },
                     shape = CircleShape,
-                    color = Color(0xFFE8EAF6)
+                    color = if (timeEntries.size < MealTime.entries.size)
+                        Color(0xFFE8EAF6) else Color(0xFFEEEEEE)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = null,
                         modifier = Modifier.padding(6.dp),
-                        tint = SoftBlue
+                        tint = if (timeEntries.size < MealTime.entries.size) SoftBlue else Color.Gray
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 시간 리스트 아이템 1 (아침)
-            MedicationTimeItem(
-                label = "MORNING",
-                time = "아침 08:00",
-                iconRes = MealTime.LUNCH.icon, // 해 아이콘 등으로 교체
-                iconBg = Color(0xFFFFE0B2)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 시간 리스트 아이템 2 (점심)
-            MedicationTimeItem(
-                label = "LUNCH",
-                time = "점심 13:00",
-                iconRes = MealTime.MORNING.icon, // 해 아이콘 등으로 교체
-                iconBg = Color(0xFFE1BEE7)
-            )
+            if (timeEntries.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("복약 시간을 추가해주세요.", color = Color.Gray, fontSize = 14.sp)
+                }
+            } else {
+                timeEntries.forEach { entry ->
+                    MedicationTimeItem(
+                        entry = entry,
+                        onRemove = { viewModel.removeTimeEntry(entry.id) }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
 
             Spacer(modifier = Modifier.height(30.dp))
 
@@ -279,12 +307,55 @@ fun AddMedicationDetailScreen(
             }
 
             Spacer(modifier = Modifier.height(100.dp)) // 버튼 여유 공간
+            if (showAddDialog) {
+                val availableMealTimes = MealTime.entries.filter { mealTime ->
+                    timeEntries.none { it.mealTime == mealTime }
+                }
+
+                AlertDialog(
+                    onDismissRequest = { showAddDialog = false },
+                    title = { Text("시간대 추가") },
+                    text = {
+                        Column {
+                            availableMealTimes.forEach { mealTime ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            val (hour, minute) = when (mealTime) {
+                                                MealTime.MORNING -> 8 to 0
+                                                MealTime.LUNCH -> 13 to 0
+                                                MealTime.DINNER -> 19 to 0
+                                            }
+                                            viewModel.addTimeEntry(mealTime, hour, minute)
+                                            showAddDialog = false
+                                        }
+                                        .padding(vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = mealTime.icon,
+                                        contentDescription = null,
+                                        tint = colorResource(mealTime.tint)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(mealTime.name)
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {}
+                )
+            }
         }
     }
 }
 
 @Composable
-fun MedicationTimeItem(label: String, time: String, iconRes: ImageVector, iconBg: Color) {
+fun MedicationTimeItem(
+    entry: MedicationTimeEntry,
+    onRemove: () -> Unit,
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -298,21 +369,31 @@ fun MedicationTimeItem(label: String, time: String, iconRes: ImageVector, iconBg
             Surface(
                 modifier = Modifier.size(48.dp),
                 shape = CircleShape,
-                color = iconBg
+                color = colorResource(entry.mealTime.backgroundColor)
             ) {
                 Icon(
-                    imageVector = iconRes,
+                    imageVector = entry.mealTime.icon,
                     contentDescription = null,
                     modifier = Modifier.padding(12.dp),
-                    tint = Color.White
+                    tint = colorResource(entry.mealTime.tint)
                 )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column {
-                Text(label, fontSize = 11.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-                Text(time, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                Text(
+                    entry.mealTime.name,
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    entry.displayTime,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMain
+                )
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -323,7 +404,7 @@ fun MedicationTimeItem(label: String, time: String, iconRes: ImageVector, iconBg
                 tint = Color(0xFFD1D1D1),
                 modifier = Modifier
                     .size(24.dp)
-                    .clickable { /* 삭제 */ }
+                    .clickable { onRemove() }
             )
         }
     }
@@ -332,5 +413,5 @@ fun MedicationTimeItem(label: String, time: String, iconRes: ImageVector, iconBg
 @Preview(showBackground = true)
 @Composable
 fun PreviewAddMedication() {
-    AddMedicationDetailScreen(navController = rememberNavController())
+    MedicineStatisticsScreen(navController = rememberNavController())
 }

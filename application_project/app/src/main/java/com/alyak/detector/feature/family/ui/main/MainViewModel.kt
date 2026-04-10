@@ -190,7 +190,6 @@ class MainViewModel @Inject constructor(
     fun setAlarmForMedicine(timeLeftString: String) {
         val minutes = timeLeftString.toIntOrNull() ?: return
         alarmScheduler.scheduleAlarm(minutes)
-
     }
 
     fun onFamilyInviteAccept(item: NotificationItem) {
