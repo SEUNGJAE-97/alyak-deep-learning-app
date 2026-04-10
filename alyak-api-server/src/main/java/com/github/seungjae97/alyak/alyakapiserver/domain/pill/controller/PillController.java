@@ -48,4 +48,14 @@ public class PillController {
     ) {
         return ResponseEntity.ok(pillService.recognizeAndFindDetails(images));
     }
+
+    @GetMapping("/autocomplete")
+    public ResponseEntity<List<String>> getAutocomplete(@RequestParam String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        List<String> results = pillService.autocomplete(keyword);
+
+        return ResponseEntity.ok(results);
+    }
 }

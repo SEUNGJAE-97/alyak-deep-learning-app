@@ -31,4 +31,6 @@ public interface PillService {
     PillDetailResponse detailPill(Long pillId);
 
     List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images);
+
+    List<String> autocomplete(String keyword);
 }

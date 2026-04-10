@@ -14,11 +14,13 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository.PillSha
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import com.github.seungjae97.alyak.alyakapiserver.global.http.service.RestTemplateService;
+import com.github.seungjae97.alyak.alyakapiserver.global.util.HangulUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -30,6 +32,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.data.domain.Range;
+import org.springframework.data.redis.connection.Limit;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -56,6 +60,8 @@ public class PillServiceImpl implements PillService {
     @Qualifier("pillIdentifyTaskScheduler")
     private final TaskScheduler pillIdentifyTaskScheduler;
 
+    private final StringRedisTemplate redisTemplate;
+    private static final String AUTOCOMPLETE_KEY = "autocomplete";
     private static final Duration IDENTIFY_API_DELAY = Duration.ofSeconds(5);
     private static final Pattern ALERT_SPLIT_PATTERN = Pattern.compile("[.!?]\\s*\\n*");
     private static final WebClient webClient = WebClient.builder().baseUrl("").build();
@@ -388,6 +394,38 @@ public class PillServiceImpl implements PillService {
         }
         log.info("[OCR] 최종 결과: {}건", results.size());
         return results.isEmpty() ? List.of() : results;
+    }
+
+    @Override
+    public List<String> autocomplete(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        // 2. 유틸리티 클래스를 사용하여 검색어 자소 분리
+        String decomposedKeyword = HangulUtils.decompose(keyword);
+
+        // 3. Redis 검색 범위 설정 (시작단어 ~ 시작단어 + 유니코드 마지막 문자)
+        Range<String> range = Range.closed(decomposedKeyword, decomposedKeyword + "\uFFFF");
+
+        // 4. 최대 10개까지만 반환하도록 제한
+        Limit limit = Limit.limit().count(10);
+
+        // 5. Redis 범위 검색 실행
+        Set<String> matchedResults = redisTemplate.opsForZSet().rangeByLex(AUTOCOMPLETE_KEY, range, limit);
+
+        if (matchedResults == null || matchedResults.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 6. 결과 가공 ("ㅌㅏㅇㅣㄹㅔㄴㅗㄹ:타이레놀정500mg" -> "타이레놀정500mg")
+        return matchedResults.stream()
+                .map(result -> {
+                    String[] parts = result.split(":");
+                    return parts.length > 1 ? parts[1] : result;
+                })
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     private OcrResponse callFastApi(MultipartFile image) {
