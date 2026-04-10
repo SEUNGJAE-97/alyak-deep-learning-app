@@ -89,7 +89,7 @@ fun MedicineStatisticsScreen(
             CenterAlignedTopAppBar(
                 title = { Text("복약 일정 추가", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = {
-                    IconButton(onClick = { /* 뒤로가기 */ }) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = null,
@@ -195,7 +195,7 @@ fun MedicineStatisticsScreen(
                 },
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorResource(R.color.primaryBlue),
+                    focusedBorderColor = colorResource(R.color.black),
                     unfocusedBorderColor = colorResource(R.color.black),
                     disabledBorderColor = Color(0xFFDEE2E6),
                 ),
