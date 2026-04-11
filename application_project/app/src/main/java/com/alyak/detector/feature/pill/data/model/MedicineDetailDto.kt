@@ -98,14 +98,14 @@ data class ServerResponsePillDetail(
     val pillId: Long,
     val pillName: String,
     val pillImg: String?,
-    val pillDescription: String,
-    val userMethod: String,
-    val pillEfficacy: String,
-    val pillWarn: String,
-    val pillCaution: String,
-    val pillInteractive: String,
-    val pillAdverseReaction: String,
-    val manufacturer: String,
+    val pillDescription: String?,
+    val userMethod: String?,
+    val pillEfficacy: String?,
+    val pillWarn: String?,
+    val pillCaution: String?,
+    val pillInteractive: String?,
+    val pillAdverseReaction: String?,
+    val manufacturer: String?,
     val pillClassification: String?,
     val pillType: String?,
     val efficacyTags: List<String>?,
@@ -118,17 +118,17 @@ fun ServerResponsePillDetail.toDomain(): MedicineDetailDto {
         medicineInfo = MedicineInfoDto(
             name = this.pillName,
             classification = this.pillClassification ?: "",
-            manufacturer = this.manufacturer,
+            manufacturer = this.manufacturer ?: "",
             pillId = this.pillId,
             category = this.pillType ?: "",
             img = this.pillImg
         ),
         dosageInfo = DosageInfoDto(
-            dosageText = this.userMethod,
+            dosageText = this.userMethod ?: "",
         ),
         effectsInfo = EffectsInfoDto(
             tags = this.efficacyTags ?: emptyList(),
-            description = this.pillDescription
+            description = this.pillDescription ?: ""
         ),
         alertInfo = AlertInfoDto(
             title = "주의사항",
@@ -146,7 +146,7 @@ fun ServerResponsePillDetail.toDomain(): MedicineDetailDto {
         ),
         sideEffects = SideEffectsDto(
             title = "주요 부작용",
-            description = this.pillAdverseReaction
+            description = this.pillAdverseReaction ?: ""
         )
     )
 

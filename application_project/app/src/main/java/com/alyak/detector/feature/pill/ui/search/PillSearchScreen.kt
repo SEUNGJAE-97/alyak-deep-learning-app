@@ -3,6 +3,7 @@ package com.alyak.detector.feature.pill.ui.search
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
@@ -64,13 +67,14 @@ fun PillSearchScreen(
     navController: NavController,
     viewModel: PillSearchViewModel = hiltViewModel()
 ) {
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val suggestions by viewModel.suggestions.collectAsState()
     var selectedShape by remember { mutableStateOf(PillShapeType.entries.first()) }
     var selectedColor by remember { mutableStateOf(PillColor.entries.first()) }
     var selectedLine by remember { mutableStateOf(PillLineType.ALL) }
     val uiState by viewModel.recentSearchState.collectAsState()
     val scaffoldState = rememberBottomSheetScaffoldState()
     val searchUiState by viewModel.searchUiState.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     var selectedIndex by remember { mutableStateOf(0) }
     val name by viewModel.userName.collectAsState()
@@ -202,10 +206,10 @@ fun PillSearchScreen(
             Spacer(Modifier.height(20.dp))
             PillSearchBar(
                 query = searchQuery,
-                onQueryChange = { searchQuery = it },
+                onQueryChange = { viewModel.onQueryChange(it) },
                 onSearch = { text ->
                     if (text.isNotBlank()) {
-                        viewModel.findPillsByName(text.trim())
+                        viewModel.onSearch(text.trim())
                         scope.launch {
                             scaffoldState.bottomSheetState.expand()
                         }
@@ -213,6 +217,31 @@ fun PillSearchScreen(
                 },
                 onCameraClick = { navController.navigate("CameraScreen") },
             )
+            if (suggestions.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 4.dp,
+                    shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 200.dp) // 최대 높이 제한
+                    ) {
+                        items(suggestions) { suggestion ->
+                            Text(
+                                text = suggestion,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.onSuggestionSelected(suggestion)
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                fontSize = 14.sp
+                            )
+                            HorizontalDivider()
+                        }
+                    }
+                }
+            }
             Spacer(Modifier.height(20.dp))
             FilterBar(
                 entries = PillLineType.entries,

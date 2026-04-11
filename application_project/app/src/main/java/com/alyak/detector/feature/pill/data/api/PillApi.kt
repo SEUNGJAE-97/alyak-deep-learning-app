@@ -22,4 +22,7 @@ interface PillApi {
     suspend fun getPillDetail(
         @Query("pillId") pid: Long
     ): ServerResponsePillDetail
+
+    @GET("api/pill/autocomplete")
+    suspend fun getAutocomplete(@Query("keyword") keyword: String): List<String>
 }
