@@ -26,8 +26,10 @@ import com.alyak.detector.feature.camera.ui.ResultScreen
 import com.alyak.detector.feature.family.ui.invitation.FamilyInvitationViewModel
 import com.alyak.detector.feature.family.ui.main.MainScreen
 import com.alyak.detector.feature.map.ui.MapScreen
+import com.alyak.detector.feature.notification.ui.MedicineStatisticsViewModel
 import com.alyak.detector.feature.pill.ui.PillDetail.PillDetailScreen
 import com.alyak.detector.feature.pill.ui.search.PillSearchScreen
+import com.alyak.detector.feature.pill.ui.search.PillSearchViewModel
 import com.alyak.detector.feature.splash.ui.SplashScreen
 import com.alyak.detector.feature.user.ui.UserScreen
 
@@ -127,7 +129,13 @@ fun Navigator(permissionManager: PermissionManager, tokenManager: TokenManager) 
             UserScreen(navController)
         }
         composable("medicine_statistics") {
-            MedicineStatisticsScreen(navController)
+            val pillSearchViewModel: PillSearchViewModel = hiltViewModel()
+            val medicineStatisticsViewModel: MedicineStatisticsViewModel = hiltViewModel()
+            MedicineStatisticsScreen(
+                navController,
+                viewModel = medicineStatisticsViewModel,
+                pillSearchViewModel = pillSearchViewModel
+            )
         }
     }
 }

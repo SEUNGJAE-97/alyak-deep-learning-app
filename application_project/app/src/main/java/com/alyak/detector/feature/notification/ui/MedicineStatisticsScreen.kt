@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -27,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -49,22 +52,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.alyak.detector.R
 import com.alyak.detector.feature.notification.data.model.MealTime
 import com.alyak.detector.feature.notification.data.model.MedicationTimeEntry
 import com.alyak.detector.feature.notification.ui.MedicineStatisticsViewModel
+import com.alyak.detector.feature.pill.ui.search.PillSearchViewModel
 
 // 이미지 기반 커스텀 색상
 val SoftBlue = Color(0xFF6371C2) // "건강한 습관의 시작" 타이틀 색상
@@ -77,12 +81,15 @@ val TextMain = Color(0xFF333D79) // "약 이름", "복약 시간" 등 메인 텍
 @Composable
 fun MedicineStatisticsScreen(
     navController: NavController,
-    viewModel: MedicineStatisticsViewModel = viewModel()
+    viewModel: MedicineStatisticsViewModel = viewModel(),
+    pillSearchViewModel: PillSearchViewModel
 ) {
-    var medicineName by remember { mutableStateOf("") }
+    val medicineName by pillSearchViewModel.searchQuery.collectAsState()
+    val suggestions by pillSearchViewModel.suggestions.collectAsState()
     var isAlarmEnabled by remember { mutableStateOf(true) }
     val timeEntries by viewModel.timeEntries.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     Scaffold(
         topBar = {
@@ -179,7 +186,7 @@ fun MedicineStatisticsScreen(
 
             OutlinedTextField(
                 value = medicineName,
-                onValueChange = { medicineName = it },
+                onValueChange = { pillSearchViewModel.onQueryChange(it) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp),
@@ -193,6 +200,17 @@ fun MedicineStatisticsScreen(
                         textAlign = TextAlign.Start
                     )
                 },
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Search
+                ),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        if (medicineName.isNotBlank()) {
+                            pillSearchViewModel.onSearch(medicineName)
+                            focusManager.clearFocus()
+                        }
+                    }
+                ),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = colorResource(R.color.black),
@@ -210,6 +228,35 @@ fun MedicineStatisticsScreen(
                     )
                 }
             )
+            // 자동완성
+            if (suggestions.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    shadowElevation = 8.dp,
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White
+                ) {
+                    Column {
+                        suggestions.forEach { suggestion ->
+                            Text(
+                                text = suggestion,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        pillSearchViewModel.onSuggestionSelected(suggestion)
+                                    }
+                                    .padding(16.dp),
+                                fontSize = 14.sp
+                            )
+                            HorizontalDivider(
+                                color = Color.LightGray.copy(alpha = 0.3f)
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(30.dp))
 
@@ -410,8 +457,12 @@ fun MedicationTimeItem(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewAddMedication() {
-    MedicineStatisticsScreen(navController = rememberNavController())
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewAddMedication() {
+//    MedicineStatisticsScreen(
+//        navController = rememberNavController(),
+//        viewModel = TODO(),
+//        pillSearchViewModel = TODO()
+//    )
+//}

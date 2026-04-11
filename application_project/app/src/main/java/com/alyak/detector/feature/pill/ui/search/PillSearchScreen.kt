@@ -219,12 +219,15 @@ fun PillSearchScreen(
             )
             if (suggestions.isNotEmpty()) {
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 2.dp),
+                    shadowElevation = 8.dp,
+                    shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                    color = Color.White
                 ) {
                     LazyColumn(
-                        modifier = Modifier.heightIn(max = 200.dp) // 최대 높이 제한
+                        modifier = Modifier.heightIn(max = 200.dp)
                     ) {
                         items(suggestions) { suggestion ->
                             Text(
@@ -233,11 +236,20 @@ fun PillSearchScreen(
                                     .fillMaxWidth()
                                     .clickable {
                                         viewModel.onSuggestionSelected(suggestion)
+                                        viewModel.onSearch(suggestion)
+                                        scope.launch {
+                                            scaffoldState.bottomSheetState.expand()
+                                        }
                                     }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                fontSize = 14.sp
+                                    .padding(horizontal = 20.dp, vertical = 15.dp),
+                                fontSize = 14.sp,
+                                color = Color.Black
                             )
-                            HorizontalDivider()
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = Color.LightGray.copy(alpha = 0.5f)
+                            )
                         }
                     }
                 }
