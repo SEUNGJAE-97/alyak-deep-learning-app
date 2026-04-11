@@ -58,153 +58,146 @@ fun PillDetailContent(
             .fillMaxWidth()
             .padding(16.dp)
     ) {
+        medicineDetail.medicineInfo.let { info ->
+            CardBox {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(60.dp)
+                            .background(colorResource(R.color.white))
+                            .border(2.dp, colorResource(R.color.white), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = info.img,
+                            contentDescription = info.name,
+                            modifier = Modifier.fillMaxWidth(),
+                            contentScale = ContentScale.Fit,
+                            error = painterResource(R.drawable.pill),
+                            placeholder = painterResource(R.drawable.pill),
+                        )
+                    }
 
-        //  약 정보 카드
-        CardBox {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier
-                        .size(60.dp)
-                        .background(colorResource(R.color.white))
-                        .border(2.dp, colorResource(R.color.white), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AsyncImage(
-                        model = medicineDetail.medicineInfo.img,
-                        contentDescription = medicineDetail.medicineInfo.name,
-                        modifier = Modifier.fillMaxWidth(),
-                        contentScale = ContentScale.Fit,
-                        error = painterResource(R.drawable.pill),
-                        placeholder = painterResource(R.drawable.pill),
+                    Spacer(Modifier.width(20.dp))
+
+                    Column {
+                        Text(info.name, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text("(${info.classification})", fontSize = 14.sp, color = Color.DarkGray)
+                        Spacer(Modifier.height(2.dp))
+                        Text("제조사: ${info.manufacturer}", fontSize = 13.sp, color = Color.Gray)
+                        Text("식별코드: ${info.pillId}", fontSize = 13.sp, color = Color.Gray)
+                        Text("분류: ${info.category}", fontSize = 13.sp, color = Color.Gray)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Icon(
+                        Icons.Default.FavoriteBorder,
+                        contentDescription = null,
+                        tint = Color(0xFF7262FD),
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-
-                Spacer(Modifier.width(20.dp))
-
-                Column {
-                    Text(
-                        medicineDetail.medicineInfo.name,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-                    Text(
-                        "(${medicineDetail.medicineInfo.classification})",
-                        fontSize = 14.sp,
-                        color = Color.DarkGray
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        "제조사: ${medicineDetail.medicineInfo.manufacturer}",
-                        fontSize = 13.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        "식별코드: ${medicineDetail.medicineInfo.pillId}",
-                        fontSize = 13.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        "분류: ${medicineDetail.medicineInfo.category}",
-                        fontSize = 13.sp,
-                        color = Color.Gray
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                Icon(
-                    Icons.Default.FavoriteBorder,
-                    contentDescription = null,
-                    tint = Color(0xFF7262FD),
-                    modifier = Modifier.size(24.dp)
-                )
             }
         }
 
-        //  용법 및 용량
-        CardBox {
-            TitledSection(
-                icon = Icons.Default.Info,
-                title = "용법 및 용량"
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier.padding(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(medicineDetail.dosageInfo.dosageText, fontSize = 15.sp)
-                        Spacer(Modifier.height(10.dp))
+        medicineDetail.dosageInfo.dosageText.takeIf { it.isNotBlank() }?.let { dosageText ->
+            CardBox {
+                TitledSection(
+                    icon = Icons.Default.Info,
+                    title = "용법 및 용량"
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.padding(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(dosageText, fontSize = 15.sp)
+                            Spacer(Modifier.height(10.dp))
+                        }
                     }
                 }
             }
         }
 
-        //  효능 및 효과
-        CardBox {
-            TitledSection(
-                icon = Icons.Default.Favorite,
-                title = "효능 및 효과"
-            ) {
-                TagList(
-                    medicineDetail.effectsInfo.tags,
-                    { tag -> Pair(tag, null) }
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    medicineDetail.effectsInfo.description,
-                    fontSize = 14.sp,
-                    color = Color(0xFF4A4A4A)
-                )
-            }
-        }
-
-        //  주의사항 경고 박스
-        CardBox {
-            AlertBox(
-                title = medicineDetail.alertInfo.title,
-                items = medicineDetail.alertInfo.items
-            )
-        }
-
-        //  특별 주의 대상
-        CardBox {
-            TitledSection(Icons.Default.Person, medicineDetail.specialCaution.title) {
-                TagList(
-                    medicineDetail.specialCaution.tags,
-                    { tag -> Pair(stringResource(tag.labelResId), painterResource(tag.iconResId)) })
-                Spacer(Modifier.height(8.dp))
-            }
-        }
-
-        //  주요 부작용
-        CardBox {
-            TitledSection(Icons.Default.ReportProblem, medicineDetail.sideEffects.title) {
-                Column(
-                    modifier = Modifier.animateContentSize()
+        val effects = medicineDetail.effectsInfo
+        if (effects.tags.isNotEmpty() || effects.description.isNotBlank()) {
+            CardBox {
+                TitledSection(
+                    icon = Icons.Default.Favorite,
+                    title = "효능 및 효과"
                 ) {
-                    Text(
-                        medicineDetail.sideEffects.description,
-                        fontSize = 14.sp,
-                        maxLines = if (isSideEffectExpanded) Int.MAX_VALUE else 3,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Button(
-                        onClick = { isSideEffectExpanded = !isSideEffectExpanded },
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(24),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F5F9))
-                    ) {
+                    if (effects.tags.isNotEmpty()) {
+                        TagList(effects.tags) { tag -> Pair(tag, null) }
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    if (effects.description.isNotBlank()) {
                         Text(
-                            if (isSideEffectExpanded) "접기" else "더 많은 주의사항 보기",
-                            color = Color(0xFF7262FD),
-                            fontSize = 13.sp
+                            effects.description,
+                            fontSize = 14.sp,
+                            color = Color(0xFF4A4A4A)
                         )
                     }
                 }
             }
         }
+        medicineDetail.alertInfo.takeIf { it.items.isNotEmpty() }?.let { alert ->
+            CardBox {
+                AlertBox(
+                    title = alert.title,
+                    items = alert.items
+                )
+            }
+        }
 
-        //  맞춤 기능(알림 등록/이력)
+        medicineDetail.specialCaution.takeIf { it.tags.isNotEmpty() }?.let { caution ->
+            CardBox {
+                TitledSection(Icons.Default.Person, caution.title) {
+                    TagList(
+                        caution.tags,
+                        { tag ->
+                            Pair(
+                                stringResource(tag.labelResId),
+                                painterResource(tag.iconResId)
+                            )
+                        }
+                    )
+                    if (!caution.extraText.isNullOrBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(caution.extraText, fontSize = 14.sp)
+                    }
+                }
+            }
+        }
+
+        medicineDetail.sideEffects.description.takeIf { it.isNotBlank() }?.let { description ->
+            CardBox {
+                TitledSection(Icons.Default.ReportProblem, medicineDetail.sideEffects.title) {
+                    Column(
+                        modifier = Modifier.animateContentSize()
+                    ) {
+                        Text(
+                            description,
+                            fontSize = 14.sp,
+                            maxLines = if (isSideEffectExpanded) Int.MAX_VALUE else 3,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Button(
+                            onClick = { isSideEffectExpanded = !isSideEffectExpanded },
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .fillMaxWidth(),
+                            shape = RoundedCornerShape(24),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F5F9))
+                        ) {
+                            Text(
+                                if (isSideEffectExpanded) "접기" else "부작용 정보 더보기",
+                                color = Color(0xFF7262FD),
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
         CardBox { FunctionButtonRow() }
     }
 }
