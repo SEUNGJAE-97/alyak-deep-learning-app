@@ -1,3 +1,5 @@
+package com.alyak.detector.feature.notification.ui
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,16 +39,19 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,7 +74,6 @@ import androidx.navigation.NavController
 import com.alyak.detector.R
 import com.alyak.detector.feature.notification.data.model.MealTime
 import com.alyak.detector.feature.notification.data.model.MedicationTimeEntry
-import com.alyak.detector.feature.notification.ui.MedicineStatisticsViewModel
 import com.alyak.detector.feature.pill.ui.search.PillSearchViewModel
 
 // 이미지 기반 커스텀 색상
@@ -89,13 +93,33 @@ fun MedicineStatisticsScreen(
     val medicineName by pillSearchViewModel.searchQuery.collectAsState()
     val suggestions by pillSearchViewModel.suggestions.collectAsState()
     val selectedPills by viewModel.selectedPills.collectAsState()
+    val saveState by viewModel.saveUiState.collectAsState()
 
     var isAlarmEnabled by remember { mutableStateOf(true) }
     val timeEntries by viewModel.timeEntries.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(saveState) {
+        when (val s = saveState) {
+            SaveScheduleUiState.Success -> {
+                snackbarHostState.showSnackbar("서버에 저장되었습니다")
+                viewModel.resetSaveUiState()
+            }
+
+            is SaveScheduleUiState.Error -> {
+                snackbarHostState.showSnackbar(s.message)
+                viewModel.resetSaveUiState()
+            }
+
+            else -> Unit
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("복약 일정 추가", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
@@ -113,8 +137,10 @@ fun MedicineStatisticsScreen(
         },
         bottomBar = {
             Button(
-                onClick = { /* 저장 로직 */ },
-                enabled = timeEntries.isNotEmpty(),
+                onClick = { viewModel.saveScheduleToServer() },
+                enabled = timeEntries.isNotEmpty() &&
+                    selectedPills.isNotEmpty() &&
+                    saveState !is SaveScheduleUiState.Loading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp)
@@ -123,7 +149,7 @@ fun MedicineStatisticsScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.primaryBlue))
             ) {
                 Text(
-                    "저장하기",
+                    if (saveState is SaveScheduleUiState.Loading) "저장 중…" else "저장하기",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White

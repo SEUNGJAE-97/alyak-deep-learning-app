@@ -19,6 +19,8 @@ import com.alyak.detector.feature.pill.data.repository.PillRepository
 import com.alyak.detector.feature.pill.data.repository.PillRepositoryImpl
 import com.alyak.detector.feature.user.data.api.UserService
 import com.alyak.detector.feature.user.repository.UserRepository
+import com.alyak.detector.feature.notification.data.api.ScheduleApi
+import com.alyak.detector.feature.notification.data.repository.ScheduleRepository
 import com.alyak.detector.push.dao.NotificationDao
 import dagger.Module
 import dagger.Provides
@@ -104,6 +106,16 @@ object AppModule {
             .crossfade(true)
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun provideScheduleApi(@AppServerRetrofit retrofit: Retrofit): ScheduleApi =
+        retrofit.create(ScheduleApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideScheduleRepository(scheduleApi: ScheduleApi): ScheduleRepository =
+        ScheduleRepository(scheduleApi)
 
     @Provides
     @Singleton

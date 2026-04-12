@@ -1,6 +1,6 @@
 package com.alyak.detector.navigation
 
-import MedicineStatisticsScreen
+import com.alyak.detector.feature.notification.ui.MedicineStatisticsScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
