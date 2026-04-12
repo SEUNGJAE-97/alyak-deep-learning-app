@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.alyak.detector.core.network.ApiResult
 import com.alyak.detector.feature.notification.data.model.MealTime
 import com.alyak.detector.feature.notification.data.model.MedicationTimeEntry
+import com.alyak.detector.feature.notification.alarm.MedicationAlarmScheduler
+import com.alyak.detector.feature.notification.data.local.ScheduleBackupLocalRepository
 import com.alyak.detector.feature.notification.data.model.ScheduleBackupRequest
 import com.alyak.detector.feature.notification.data.repository.ScheduleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,7 +14,9 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -27,6 +31,8 @@ sealed interface SaveScheduleUiState {
 @HiltViewModel
 class MedicineStatisticsViewModel @Inject constructor(
     private val scheduleRepository: ScheduleRepository,
+    private val scheduleBackupLocalRepository: ScheduleBackupLocalRepository,
+    private val medicationAlarmScheduler: MedicationAlarmScheduler,
 ) : ViewModel() {
 
     private val _timeEntries = MutableStateFlow(
@@ -122,6 +128,14 @@ class MedicineStatisticsViewModel @Inject constructor(
             _saveUiState.value = SaveScheduleUiState.Loading
             when (val result = scheduleRepository.backupSchedules(requests)) {
                 is ApiResult.Success -> {
+                    val body = result.data
+                    if (body.isNotEmpty()) {
+                        withContext(Dispatchers.IO) {
+                            scheduleBackupLocalRepository.insertOrReplaceFromServer(body)
+                            val all = scheduleBackupLocalRepository.getAllForAlarms()
+                            medicationAlarmScheduler.rescheduleAllFromLocal(all)
+                        }
+                    }
                     _saveUiState.value = SaveScheduleUiState.Success
                 }
 

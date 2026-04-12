@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:name=".App"
@@ -38,6 +39,10 @@
 
         <receiver
             android:name=".push.PushActionReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".feature.notification.alarm.MedicationAlarmReceiver"
             android:exported="false" />
 
         <activity

@@ -1,6 +1,7 @@
 package com.alyak.detector
 
 import android.app.Application
+import com.alyak.detector.feature.notification.alarm.MedicationReminderNotificationHelper
 import com.alyak.detector.push.AlyakFirebaseMessagingService
 import com.kakao.vectormap.KakaoMapSdk
 import dagger.hilt.android.HiltAndroidApp
@@ -11,5 +12,6 @@ class App : Application() {
         super.onCreate()
         KakaoMapSdk.init(this, BuildConfig.KAKAO_MAP_KEY);
         AlyakFirebaseMessagingService.createNotificationChannel(this)
+        MedicationReminderNotificationHelper.ensureChannel(this)
     }
 }
