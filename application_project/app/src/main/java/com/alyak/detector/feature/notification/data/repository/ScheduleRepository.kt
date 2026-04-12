@@ -15,4 +15,7 @@ class ScheduleRepository @Inject constructor(
 
     suspend fun backupSchedules(requests: List<ScheduleBackupRequest>): ApiResult<List<ScheduleBackupResponse>> =
         safeCall { scheduleApi.postScheduleBackups(requests) }
+
+    suspend fun restoreSchedules(): ApiResult<List<ScheduleBackupResponse>> =
+        safeCall { scheduleApi.getRestoreSchedules() }
 }

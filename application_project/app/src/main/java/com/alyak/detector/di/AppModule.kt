@@ -19,6 +19,7 @@ import com.alyak.detector.feature.pill.data.repository.PillRepository
 import com.alyak.detector.feature.pill.data.repository.PillRepositoryImpl
 import com.alyak.detector.feature.user.data.api.UserService
 import com.alyak.detector.feature.user.repository.UserRepository
+import com.alyak.detector.feature.notification.data.api.MedicationLogApi
 import com.alyak.detector.feature.notification.data.api.ScheduleApi
 import com.alyak.detector.feature.notification.data.local.dao.ScheduleBackupDao
 import com.alyak.detector.feature.notification.data.repository.ScheduleRepository
@@ -112,6 +113,11 @@ object AppModule {
     @Singleton
     fun provideScheduleApi(@AppServerRetrofit retrofit: Retrofit): ScheduleApi =
         retrofit.create(ScheduleApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideMedicationLogApi(@AppServerRetrofit retrofit: Retrofit): MedicationLogApi =
+        retrofit.create(MedicationLogApi::class.java)
 
     @Provides
     @Singleton

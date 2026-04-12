@@ -23,6 +23,18 @@ class ScheduleBackupLocalRepository @Inject constructor(
         }
     }
 
+    /**
+     * 서버 스냅샷과 로컬을 일치시킵니다(재설치 복구용).
+     * 서버에 없는 로컬 행은 제거됩니다.
+     */
+    suspend fun replaceAllFromServerRestore(responses: List<ScheduleBackupResponse>) {
+        scheduleBackupDao.deleteAll()
+        val entities = responses.mapNotNull { it.toEntityOrNull() }
+        if (entities.isNotEmpty()) {
+            scheduleBackupDao.insertAll(entities)
+        }
+    }
+
     suspend fun getAllForAlarms(): List<ScheduleBackupEntity> = scheduleBackupDao.getAll()
 }
 

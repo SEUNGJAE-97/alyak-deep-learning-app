@@ -1,11 +1,11 @@
 package com.alyak.detector.feature.family.ui.main
 
+import android.os.Build
 import android.util.Log
-import androidx.compose.runtime.State
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
@@ -21,21 +21,39 @@ import com.alyak.detector.feature.family.data.model.DailyMedicationStat
 import com.alyak.detector.feature.family.data.model.FamilyMember
 import com.alyak.detector.feature.family.data.model.MedicineSchedule
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
+import com.alyak.detector.feature.notification.alarm.MedicationAlarmScheduler
+import com.alyak.detector.feature.notification.data.api.MedicationLogApi
+import com.alyak.detector.feature.notification.data.local.ScheduleBackupLocalRepository
+import com.alyak.detector.feature.notification.data.local.dao.ScheduleBackupDao
+import com.alyak.detector.feature.notification.data.local.entity.ScheduleBackupEntity
+import com.alyak.detector.feature.notification.data.model.MedicationLogRequest
+import com.alyak.detector.feature.notification.data.repository.ScheduleRepository
+import com.alyak.detector.feature.notification.schedule.NextMedicationUi
+import com.alyak.detector.feature.notification.schedule.OccurrencePriority
+import com.alyak.detector.feature.notification.schedule.ScheduleOccurrenceHelper
 import com.alyak.detector.push.dao.NotificationDao
 import com.alyak.detector.push.ui.model.NotificationItem
 import com.alyak.detector.push.ui.model.toNotificationItemUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @HiltViewModel
@@ -45,7 +63,12 @@ class MainViewModel @Inject constructor(
     private val tokenManager: TokenManager,
     private val alarmScheduler: AlarmScheduler,
     private val sessionManager: SessionManager,
-    private val notificationDao: NotificationDao
+    private val notificationDao: NotificationDao,
+    private val scheduleBackupDao: ScheduleBackupDao,
+    private val scheduleRepository: ScheduleRepository,
+    private val scheduleBackupLocalRepository: ScheduleBackupLocalRepository,
+    private val medicationAlarmScheduler: MedicationAlarmScheduler,
+    private val medicationLogApi: MedicationLogApi,
 ) : ViewModel() {
 
     private val _toastMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
@@ -58,6 +81,7 @@ class MainViewModel @Inject constructor(
         notificationDao.getAllNotificationsFlow()
             .map { list -> list.map { it.toNotificationItemUi() } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private var _selectedIndex by mutableIntStateOf(0)
     val selectedIndex: Int get() = _selectedIndex
     private var successRate by mutableIntStateOf(0)
@@ -70,8 +94,10 @@ class MainViewModel @Inject constructor(
     val dateFormatter = SimpleDateFormat("M/d", Locale.getDefault())
     val familySchedule: List<MedicineSchedule> get() = _familySchedules
     private val _familySchedules: SnapshotStateList<MedicineSchedule> = mutableStateListOf()
-    private val _nearestSchedule = mutableStateOf<MedicineSchedule?>(null)
-    val nearestSchedule: State<MedicineSchedule?> = _nearestSchedule
+
+    private val _nextMedicationUi = MutableStateFlow<NextMedicationUi?>(null)
+    val nextMedicationUi: StateFlow<NextMedicationUi?> = _nextMedicationUi.asStateFlow()
+
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
     private val _errorMessage = MutableStateFlow<String?>(null)
@@ -101,6 +127,146 @@ class MainViewModel @Inject constructor(
     init {
         fetchFamilyMembers()
         fetchSchedules()
+        viewModelScope.launch { restoreScheduleBackupsFromServer() }
+        viewModelScope.launch {
+            combine(
+                scheduleBackupDao.observeAll(),
+                secondTickerFlow(),
+            ) { entities, _ -> entities }
+                .collect { entities ->
+                    reconcile(entities)
+                }
+        }
+    }
+
+    /**
+     * 앱 재설치 시 Room이 비어 있으므로, 서버에 남아 있는 [POST /api/schedule/backup] 데이터를
+     * [GET /api/schedule/restore]로 받아 로컬에 맞춥니다.
+     *
+     * 이미 로컬에 일정이 있으면 건너뜁니다(복약 처리로 지운 행만 남은 경우 서버와 불일치할 수 있어
+     * 매 화면 진입마다 전체 덮어쓰기는 하지 않음).
+     */
+    private suspend fun restoreScheduleBackupsFromServer() {
+        val existing = withContext(Dispatchers.IO) { scheduleBackupDao.getAll() }
+        if (existing.isNotEmpty()) return
+
+        when (val result = scheduleRepository.restoreSchedules()) {
+            is ApiResult.Success -> {
+                val body = result.data ?: emptyList()
+                withContext(Dispatchers.IO) {
+                    scheduleBackupLocalRepository.replaceAllFromServerRestore(body)
+                    medicationAlarmScheduler.rescheduleAllFromLocal(
+                        scheduleBackupLocalRepository.getAllForAlarms(),
+                    )
+                }
+            }
+
+            is ApiResult.Error -> {
+                Log.d(
+                    "MainViewModel",
+                    "schedule restore skipped: ${result.code} ${result.message}",
+                )
+            }
+
+            is ApiResult.Exception -> {
+                Log.d(
+                    "MainViewModel",
+                    "schedule restore failed: ${result.throwable.message}",
+                )
+            }
+        }
+    }
+
+    private fun secondTickerFlow() = flow {
+        while (true) {
+            emit(Unit)
+            delay(1000L)
+        }
+    }
+
+    private suspend fun reconcile(entities: List<ScheduleBackupEntity>) {
+        var list = entities
+        while (true) {
+            val now = System.currentTimeMillis()
+            when (val p = ScheduleOccurrenceHelper.resolve(list, now)) {
+                null -> {
+                    _nextMedicationUi.value = null
+                    return
+                }
+
+                is OccurrencePriority.Missed -> {
+                    postSkippedAndDelete(p.entity, p.scheduledMillis)
+                    list = scheduleBackupDao.getAll()
+                    continue
+                }
+
+                is OccurrencePriority.Show -> {
+                    _nextMedicationUi.value = p.ui
+                    return
+                }
+            }
+        }
+    }
+
+    private suspend fun postSkippedAndDelete(
+        entity: ScheduleBackupEntity,
+        scheduledMillis: Long,
+    ) {
+        val req = MedicationLogRequest(
+            pillName = entity.pillName,
+            dosage = entity.dosage,
+            scheduledTime = millisToIsoLocal(scheduledMillis),
+            takenTime = null,
+        )
+        try {
+            val resp = medicationLogApi.postMedicationLog(req)
+            if (!resp.isSuccessful) {
+                _toastMessage.tryEmit("미복용 기록 전송에 실패했습니다.")
+                return
+            }
+        } catch (_: Exception) {
+            _toastMessage.tryEmit("네트워크 오류로 기록을 남기지 못했습니다.")
+            return
+        }
+        scheduleBackupDao.deleteByScheduleId(entity.scheduleId)
+        medicationAlarmScheduler.rescheduleAllFromLocal(scheduleBackupDao.getAll())
+    }
+
+    fun onMedicationCheckClick() {
+        val ui = _nextMedicationUi.value ?: return
+        if (!ui.canTapCheck) return
+        viewModelScope.launch {
+            postTakenAndDelete(ui)
+        }
+    }
+
+    private suspend fun postTakenAndDelete(ui: NextMedicationUi) {
+        val now = System.currentTimeMillis()
+        val req = MedicationLogRequest(
+            pillName = ui.entity.pillName,
+            dosage = ui.entity.dosage,
+            scheduledTime = millisToIsoLocal(ui.scheduledMillis),
+            takenTime = millisToIsoLocal(now),
+        )
+        try {
+            val resp = medicationLogApi.postMedicationLog(req)
+            if (!resp.isSuccessful) {
+                _toastMessage.tryEmit("복용 기록 전송에 실패했습니다.")
+                return
+            }
+        } catch (_: Exception) {
+            _toastMessage.tryEmit("네트워크 오류로 기록을 남기지 못했습니다.")
+            return
+        }
+        scheduleBackupDao.deleteByScheduleId(ui.entity.scheduleId)
+        medicationAlarmScheduler.rescheduleAllFromLocal(scheduleBackupDao.getAll())
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun millisToIsoLocal(ms: Long): String {
+        val zone = ZoneId.systemDefault()
+        return Instant.ofEpochMilli(ms).atZone(zone).toLocalDateTime()
+            .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
     }
 
     fun onItemSelected(index: Int) {
@@ -120,7 +286,6 @@ class MainViewModel @Inject constructor(
             val apiResult = familyRepo.fetchMembers()
 
             when (apiResult) {
-                // 1. API 호출이 성공한 경우
                 is ApiResult.Success -> {
                     _familyMembers.clear()
                     _familyMembers.addAll(apiResult.data)
@@ -130,13 +295,11 @@ class MainViewModel @Inject constructor(
                     _isLoading.value = false
                 }
 
-                // 2. API 호출이 실패한 경우
                 is ApiResult.Error -> {
                     _errorMessage.value = apiResult.message
                     _isLoading.value = false
                 }
 
-                // 5. 예외 처리
                 is ApiResult.Exception -> {
                     _errorMessage.value = "네트워크 연결을 확인해주세요."
                     _isLoading.value = false
@@ -163,7 +326,6 @@ class MainViewModel @Inject constructor(
                     val fetchSchedule = apiResult.data
                     _familySchedules.clear()
                     _familySchedules.addAll(fetchSchedule)
-                    _nearestSchedule.value = getNearestSchedule(fetchSchedule)
                 }
 
                 is ApiResult.Error -> {
@@ -176,16 +338,6 @@ class MainViewModel @Inject constructor(
             }
         }
     }
-
-    private fun getNearestSchedule(
-        schedules: List<MedicineSchedule>,
-        now: Date = Date()
-    ): MedicineSchedule? {
-        return schedules
-            .filter { it.scheduledTime.after(now) }
-            .minByOrNull { it.scheduledTime.time - now.time }
-    }
-
 
     fun setAlarmForMedicine(timeLeftString: String) {
         val minutes = timeLeftString.toIntOrNull() ?: return
@@ -239,5 +391,4 @@ class MainViewModel @Inject constructor(
             _toastMessage.tryEmit("읽은 알림을 모두 삭제했습니다.")
         }
     }
-
 }

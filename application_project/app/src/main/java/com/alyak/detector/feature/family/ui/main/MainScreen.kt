@@ -79,13 +79,11 @@ fun MainScreen(
     val familyMembers = viewModel.familyMembers
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-    val schedules = viewModel.familySchedule
     val selectedIndex = viewModel.selectedIndex
     val selectedMemberStats = viewModel.selectedMemberStats
     val dateFormatter = viewModel.dateFormatter
     val totalRatio = viewModel._totalCount
-    val nearestSchedule by viewModel.nearestSchedule
-    val schedule = viewModel.nearestSchedule.value
+    val nextMedicationUi by viewModel.nextMedicationUi.collectAsState()
     val name by viewModel.userName.collectAsState()
     val notifications by viewModel.notificationItems.collectAsState()
     val context = LocalContext.current
@@ -302,14 +300,18 @@ fun MainScreen(
                                 }
                             }
 
-                            if (schedule != null) {
+                            val nearestUi = nextMedicationUi
+                            if (nearestUi != null) {
                                 ScheduleCard(
-                                    doseTime = "${schedule.scheduledTime}",
-                                    medicine = schedule.pillName,
-                                    detail = schedule.detail,
-                                    timeLeft = schedule.pillDosage.toString(),
+                                    doseTime = nearestUi.doseTimeLabel,
+                                    medicine = nearestUi.entity.pillName,
+                                    detail = nearestUi.detail,
+                                    timeLeft = "${nearestUi.minutesLeft}분",
+                                    isCheckWindowActive = nearestUi.isCheckWindowActive,
+                                    canTapCheck = nearestUi.canTapCheck,
+                                    onCheckClick = { viewModel.onMedicationCheckClick() },
                                     onAlarmClick = {
-                                        viewModel.setAlarmForMedicine(schedule.pillDosage.toString())
+                                        navController.navigate("medicine_statistics")
                                     }
                                 )
                             } else {
