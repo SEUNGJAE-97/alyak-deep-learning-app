@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 @HiltViewModel
 class MedicineStatisticsViewModel @Inject constructor(
@@ -19,6 +20,8 @@ class MedicineStatisticsViewModel @Inject constructor(
         )
     )
     val timeEntries: StateFlow<List<MedicationTimeEntry>> = _timeEntries
+    private val _selectedPills = MutableStateFlow<List<String>>(emptyList())
+    val selectedPills: StateFlow<List<String>> = _selectedPills.asStateFlow()
 
     fun addTimeEntry(mealTime: MealTime, hour: Int, minute: Int) {
         val current = _timeEntries.value
@@ -35,5 +38,24 @@ class MedicineStatisticsViewModel @Inject constructor(
 
     fun removeTimeEntry(id: Int) {
         _timeEntries.value = _timeEntries.value.filter { it.id != id }
+    }
+
+    /**
+     * 약 이름을 리스트에 추
+     */
+    fun addPill(pillName: String) {
+        if (pillName.isBlank()) return
+
+        val current = _selectedPills.value
+        if (!current.contains(pillName)) {
+            _selectedPills.value = current + pillName
+        }
+    }
+
+    /**
+     * 리스트에서 특정 약 제거
+     */
+    fun removePill(pillName: String) {
+        _selectedPills.value = _selectedPills.value.filter { it != pillName }
     }
 }

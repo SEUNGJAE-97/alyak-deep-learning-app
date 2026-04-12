@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.material3.AlertDialog
@@ -86,6 +88,8 @@ fun MedicineStatisticsScreen(
 ) {
     val medicineName by pillSearchViewModel.searchQuery.collectAsState()
     val suggestions by pillSearchViewModel.suggestions.collectAsState()
+    val selectedPills by viewModel.selectedPills.collectAsState()
+
     var isAlarmEnabled by remember { mutableStateOf(true) }
     val timeEntries by viewModel.timeEntries.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -206,6 +210,7 @@ fun MedicineStatisticsScreen(
                 keyboardActions = KeyboardActions(
                     onSearch = {
                         if (medicineName.isNotBlank()) {
+                            viewModel.addPill(medicineName)
                             pillSearchViewModel.onSearch(medicineName)
                             focusManager.clearFocus()
                         }
@@ -245,7 +250,8 @@ fun MedicineStatisticsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        pillSearchViewModel.onSuggestionSelected(suggestion)
+                                        viewModel.addPill(suggestion)
+                                        pillSearchViewModel.onQueryChange("")
                                     }
                                     .padding(16.dp),
                                 fontSize = 14.sp
@@ -255,6 +261,19 @@ fun MedicineStatisticsScreen(
                             )
                         }
                     }
+                }
+            }
+
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                selectedPills.forEach { pill ->
+                    SelectedPillTag(
+                        name = pill,
+                        onRemove = { viewModel.removePill(pill) }
+                    )
                 }
             }
 
@@ -453,6 +472,54 @@ fun MedicationTimeItem(
                     .size(24.dp)
                     .clickable { onRemove() }
             )
+        }
+    }
+}
+
+/**
+ * 선택된 알약을 보여주는 태그 컴포넌트
+ * @param name 알약 이름
+ * @param onRemove 삭제 아이콘 클릭 시 동작
+ */
+@Composable
+fun SelectedPillTag(
+    name: String,
+    onRemove: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .padding(vertical = 4.dp),
+        shape = CircleShape,
+        color = Color.White,
+        shadowElevation = 4.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = name,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF333D79)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(18.dp)
+                    .background(Color(0xFFEEEEEE), CircleShape)
+                    .clickable { onRemove() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "삭제",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
         }
     }
 }
