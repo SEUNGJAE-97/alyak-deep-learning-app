@@ -22,11 +22,11 @@ import com.alyak.detector.feature.family.data.model.FamilyMember
 import com.alyak.detector.feature.family.data.model.MedicineSchedule
 import com.alyak.detector.feature.family.data.repository.FamilyRepo
 import com.alyak.detector.feature.notification.alarm.MedicationAlarmScheduler
-import com.alyak.detector.feature.notification.data.api.MedicationLogApi
 import com.alyak.detector.feature.notification.data.local.ScheduleBackupLocalRepository
 import com.alyak.detector.feature.notification.data.local.dao.ScheduleBackupDao
 import com.alyak.detector.feature.notification.data.local.entity.ScheduleBackupEntity
 import com.alyak.detector.feature.notification.data.model.MedicationLogRequest
+import com.alyak.detector.feature.notification.data.repository.MedicationLogRepository
 import com.alyak.detector.feature.notification.data.repository.ScheduleRepository
 import com.alyak.detector.feature.notification.schedule.NextMedicationUi
 import com.alyak.detector.feature.notification.schedule.OccurrencePriority
@@ -38,7 +38,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -50,6 +49,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -68,7 +68,7 @@ class MainViewModel @Inject constructor(
     private val scheduleRepository: ScheduleRepository,
     private val scheduleBackupLocalRepository: ScheduleBackupLocalRepository,
     private val medicationAlarmScheduler: MedicationAlarmScheduler,
-    private val medicationLogApi: MedicationLogApi,
+    private val medicationLogRepository: MedicationLogRepository,
 ) : ViewModel() {
 
     private val _toastMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
@@ -218,16 +218,16 @@ class MainViewModel @Inject constructor(
             scheduledTime = millisToIsoLocal(scheduledMillis),
             takenTime = null,
         )
-        try {
-            val resp = medicationLogApi.postMedicationLog(req)
-            if (!resp.isSuccessful) {
-                _toastMessage.tryEmit("미복용 기록 전송에 실패했습니다.")
+        medicationLogRepository.postLog(req).fold(
+            onSuccess = { },
+            onFailure = {
+                _toastMessage.tryEmit(
+                    if (it is IllegalStateException) "미복용 기록 전송에 실패했습니다."
+                    else "네트워크 오류로 기록을 남기지 못했습니다.",
+                )
                 return
-            }
-        } catch (_: Exception) {
-            _toastMessage.tryEmit("네트워크 오류로 기록을 남기지 못했습니다.")
-            return
-        }
+            },
+        )
         scheduleBackupDao.deleteByScheduleId(entity.scheduleId)
         medicationAlarmScheduler.rescheduleAllFromLocal(scheduleBackupDao.getAll())
     }
@@ -248,16 +248,16 @@ class MainViewModel @Inject constructor(
             scheduledTime = millisToIsoLocal(ui.scheduledMillis),
             takenTime = millisToIsoLocal(now),
         )
-        try {
-            val resp = medicationLogApi.postMedicationLog(req)
-            if (!resp.isSuccessful) {
-                _toastMessage.tryEmit("복용 기록 전송에 실패했습니다.")
+        medicationLogRepository.postLog(req).fold(
+            onSuccess = { },
+            onFailure = {
+                _toastMessage.tryEmit(
+                    if (it is IllegalStateException) "복용 기록 전송에 실패했습니다."
+                    else "네트워크 오류로 기록을 남기지 못했습니다.",
+                )
                 return
-            }
-        } catch (_: Exception) {
-            _toastMessage.tryEmit("네트워크 오류로 기록을 남기지 못했습니다.")
-            return
-        }
+            },
+        )
         scheduleBackupDao.deleteByScheduleId(ui.entity.scheduleId)
         medicationAlarmScheduler.rescheduleAllFromLocal(scheduleBackupDao.getAll())
     }

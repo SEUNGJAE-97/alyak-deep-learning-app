@@ -16,4 +16,16 @@ public class NoopPushNotificationService implements PushNotificationService {
         log.info("Push invite noop: inviterUserId={}, inviterName={}, targetDeviceCount={}",
                 inviterUserId, inviterName, deviceTokens.size());
     }
+
+    @Override
+    public void sendMedicationLogNotification(
+            List<DeviceToken> deviceTokens,
+            Long actorUserId,
+            String actorName,
+            String pillName,
+            String medicationStatus
+    ) {
+        log.info("Push medication log noop: actorUserId={}, pillName={}, status={}, targetDeviceCount={}",
+                actorUserId, pillName, medicationStatus, deviceTokens.size());
+    }
 }

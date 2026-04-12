@@ -1,26 +1,40 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.medication.service;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Family;
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.dto.request.MedicationLogRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.entity.MedicationLog;
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.enums.MedicationStatus;
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.repository.MedicationLogRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.notification.entity.DeviceToken;
+import com.github.seungjae97.alyak.alyakapiserver.domain.notification.repository.DeviceTokenRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.notification.service.PushNotificationService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MedicationLogService {
 
     private final MedicationLogRepository medicationLogRepository;
     private final UserRepository userRepository;
+    private final DeviceTokenRepository deviceTokenRepository;
+    private final PushNotificationService pushNotificationService;
 
     @Transactional
     public void log(Long userId, MedicationLogRequest request) {
@@ -31,7 +45,7 @@ public class MedicationLogService {
 
         MedicationStatus status = resolveStatus(request);
 
-        MedicationLog log = MedicationLog.builder()
+        MedicationLog medicationLog = MedicationLog.builder()
                 .user(user)
                 .pillName(request.getPillName().trim())
                 .dosage(request.getDosage())
@@ -40,7 +54,51 @@ public class MedicationLogService {
                 .status(status)
                 .build();
 
-        medicationLogRepository.save(log);
+        medicationLogRepository.save(medicationLog);
+
+        try {
+            notifyFamilyMedicationPush(user, request, status);
+        } catch (Exception e) {
+            log.warn("가족 복약 FCM 전송 실패 (medication_log는 저장됨): {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 같은 가족에 속한 모든 사용자(본인 포함)의 활성 기기로 알림을 보냅니다. 가족이 없으면 본인 기기만 대상입니다.
+     * FCM 토큰은 중복 제거합니다.
+     */
+    private void notifyFamilyMedicationPush(User actor, MedicationLogRequest request, MedicationStatus status) {
+        List<DeviceToken> tokens = collectFamilyDeviceTokens(actor);
+        if (tokens.isEmpty()) {
+            return;
+        }
+        pushNotificationService.sendMedicationLogNotification(
+                tokens,
+                actor.getUserId(),
+                actor.getName(),
+                request.getPillName().trim(),
+                status.name()
+        );
+    }
+
+    private List<DeviceToken> collectFamilyDeviceTokens(User actor) {
+        Set<Long> userIds = new LinkedHashSet<>();
+        Family family = actor.getFamily();
+        if (family != null && family.getUsers() != null) {
+            for (User u : family.getUsers()) {
+                userIds.add(u.getUserId());
+            }
+        } else {
+            userIds.add(actor.getUserId());
+        }
+
+        Map<String, DeviceToken> byFcmToken = new LinkedHashMap<>();
+        for (Long uid : userIds) {
+            for (DeviceToken dt : deviceTokenRepository.findAllByUser_UserIdAndEnabledTrue(uid)) {
+                byFcmToken.putIfAbsent(dt.getFcmToken(), dt);
+            }
+        }
+        return new ArrayList<>(byFcmToken.values());
     }
 
     /**
