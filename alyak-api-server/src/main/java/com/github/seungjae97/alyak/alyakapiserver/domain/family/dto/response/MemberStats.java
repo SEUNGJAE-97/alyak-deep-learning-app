@@ -9,16 +9,13 @@ public class MemberStats {
     /** 성공률 (0-100) */
     private Integer successRate;
     
-    /** 완료 횟수 (TAKEN 상태) */
+    /** 복용 완료 횟수 (TAKEN + 지연 복용 DELAYED 포함, 성공률 분모에 사용) */
     private Integer completeCount;
     
     /** 놓친 횟수 (SKIPPED 상태) */
     private Integer missedCount;
     
-    /** 지연 횟수 (TAKEN이지만 scheduleTime보다 늦게 복용) */
+    /** 지연 횟수 (DELAYED 상태) */
     private Integer delayedCount;
-    
-    /** 예정된 횟수 (SCHEDULED 상태) */
-    private Integer scheduledCount;
 }
 

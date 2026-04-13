@@ -41,4 +41,19 @@
     <color name="lightPink">#F8E8F2</color>
     <!--lightPurple-->
     <color name="lightPurple">#E8E8F9</color>
+
+    <!-- Notification panel & cards -->
+    <color name="notification_screen_background">#F8F9FA</color>
+    <color name="notification_icon_read_background">#ECEFF1</color>
+    <color name="notification_icon_read_tint">#9E9E9E</color>
+    <color name="notification_family_icon_tint">#1976D2</color>
+    <color name="notification_family_icon_circle">#E3F2FD</color>
+    <color name="notification_icon_circle_neutral">#F5F5F5</color>
+    <color name="notification_title_text">#212529</color>
+    <color name="notification_body_text">#495057</color>
+    <color name="notification_divider">#EEEEEE</color>
+    <color name="notification_divider_vertical">#E0E0E0</color>
+    <color name="notification_text_muted">#808080</color>
+    <!-- Main chart / UI (기존 하드코딩 대체) -->
+    <color name="chart_segment_gray">#D6D9DE</color>
 </resources>

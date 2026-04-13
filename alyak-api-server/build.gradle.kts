@@ -51,6 +51,9 @@ dependencies {
     //OpenFeign 외부 API 호출용
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign:4.3.0")
 
+    // Firebase Admin (FCM)
+    implementation("com.google.firebase:firebase-admin:9.4.3")
+
 }
 
 tasks.withType<JavaCompile> {

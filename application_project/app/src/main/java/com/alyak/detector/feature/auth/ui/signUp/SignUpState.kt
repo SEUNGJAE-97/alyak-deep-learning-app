@@ -1,17 +1,20 @@
 package com.alyak.detector.feature.auth.ui.signUp
 
 /**
- * @constructor : 회원가입시 입력한 데이터의 유효성 체크
- * @Param : validEmail email 규칙을 지켰는지 확인
- * @Param : validPassword password 규칙( 영문, 숫자, 특수문자 중 2가지 글자수는 8~20자 사이)을 지켰는지 확인
- * @Param : duplicatedEmail 동일한 이메일이 존재하는지 확인
- * @Param : duplicatedPassword 비밀번호를 정확하게 입력했는지 확인
- * */
-
+ * @param email 입력·인증·가입 API에 쓰는 동일한 이메일 주소
+ * @param verificationMailSent 인증번호 받기(requestCode) API 성공 여부(다음 단계 진입 조건)
+ * @param emailVerified 인증번호 검증 성공 여부
+ * @param verifyCodeErrorMessage 검증 API 실패 시 서버 ProblemDetail `detail` 등
+ * @param requestCodeErrorMessage 인증번호 발송 API 실패 시(예: 이미 가입된 이메일)
+ * @param validPassword 비밀번호 규칙 충족 여부
+ * @param duplicatedPassword 비밀번호 재입력 일치 여부(필요 시 사용)
+ */
 data class SignUpState(
-    val validEmail: Boolean = false,
+    val email: String = "",
+    val verificationMailSent: Boolean = false,
+    val emailVerified: Boolean = false,
+    val verifyCodeErrorMessage: String? = null,
+    val requestCodeErrorMessage: String? = null,
     val validPassword: Boolean = false,
-    val duplicatedEmail: Boolean = false,
     val duplicatedPassword: Boolean = false,
-    val isVerified: Boolean = false,
 )

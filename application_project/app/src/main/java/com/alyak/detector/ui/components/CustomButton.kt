@@ -34,10 +34,12 @@ fun CustomButton(
     contentColor: Color? = null,
     shape: Shape = RoundedCornerShape(24.dp),
     textColor: Color = Color.Gray,
-    imageSize: Dp = 32.dp
+    imageSize: Dp = 32.dp,
+    enabled: Boolean = true,
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.padding(8.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor ?: MaterialTheme.colorScheme.primary,

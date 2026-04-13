@@ -3,6 +3,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.auth.controller;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.LoginRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.TokenRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.LoginResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.PasswordResetRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.SignupRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.service.AuthService;
@@ -32,6 +33,15 @@ public class AuthController {
     public ResponseEntity<TokenResponse> signup(@RequestBody SignupRequest signupRequest) {
         TokenResponse response = authService.signup(signupRequest);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/password/reset")
+    @Operation(
+            summary = "비밀번호 찾기(재설정)",
+            description = "가입된 이메일로 인증번호를 받고(/api/email/send/reset → /api/email/verify) 인증 완료 후, JWT 없이 새 비밀번호를 설정합니다.")
+    public ResponseEntity<Void> resetPassword(@RequestBody PasswordResetRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/logout")

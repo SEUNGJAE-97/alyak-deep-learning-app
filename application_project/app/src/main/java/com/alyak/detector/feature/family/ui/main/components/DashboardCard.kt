@@ -1,6 +1,5 @@
 package com.alyak.detector.feature.family.ui.main.components
 
-import android.graphics.drawable.Icon
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -71,7 +70,6 @@ fun DashboardCard(
         }
     }
 }
-
 
 
 @Composable

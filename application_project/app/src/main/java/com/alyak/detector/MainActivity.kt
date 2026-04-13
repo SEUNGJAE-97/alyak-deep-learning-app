@@ -1,30 +1,42 @@
 package com.alyak.detector
 
-import android.content.ContentValues.TAG
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.core.util.PermissionManager
+import com.alyak.detector.feature.notification.InAppPushNotifier
+import com.alyak.detector.feature.notification.ui.InAppPushBannerHost
+import com.alyak.detector.feature.notification.data.DeviceTokenRegistrar
 import com.alyak.detector.feature.auth.data.model.TempLoginResponse
 import com.alyak.detector.navigation.Navigator
 import com.alyak.detector.ui.theme.AlyakTheme
 import com.google.firebase.messaging.FirebaseMessaging
-import com.kakao.sdk.common.util.Utility
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private lateinit var permissionManager: PermissionManager
+
     @Inject
     lateinit var tokenManager: TokenManager
+
+    @Inject
+    lateinit var deviceTokenRegistrar: DeviceTokenRegistrar
+
+    @Inject
+    lateinit var inAppPushNotifier: InAppPushNotifier
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,24 +44,51 @@ class MainActivity : ComponentActivity() {
         handleAuthIntent(intent)
         // 권한 요청
         permissionManager = PermissionManager(this)
-        // hash key 확인
-        var keyHash = Utility.getKeyHash(this)
-        // fcm token
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w(TAG, "Fetching FCM registration token failed", task.exception)
-                return@addOnCompleteListener
-            }
-
-            val token = task.result
-
-            Log.d(TAG, "FCM token: $token")
-            Toast.makeText(this, "FCM token: $token", Toast.LENGTH_SHORT).show()
-        }
-        Log.d("Mykey", keyHash)
         setContent {
             AlyakTheme {
-                Navigator(permissionManager = permissionManager, tokenManager = tokenManager)
+                InAppPushBannerHost(notifier = inAppPushNotifier) {
+                    Navigator(
+                        permissionManager = permissionManager,
+                        tokenManager = tokenManager,
+                    )
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    tokenManager.accessTokenFlow
+                        .distinctUntilChanged()
+                        .collect { access ->
+                            if (!access.isNullOrBlank()) {
+                                registerFcmTokenIfLoggedIn()
+                            }
+                        }
+                }
+                launch {
+                    tokenManager.authEvent.collect { event ->
+                        if (event == TokenManager.AuthEvent.LOGOUT) {
+                            withContext(Dispatchers.IO) {
+                                runCatching { deviceTokenRegistrar.unregister() }
+                            }
+                            tokenManager.clearToken()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun registerFcmTokenIfLoggedIn() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                return@addOnCompleteListener
+            }
+            val token = task.result ?: return@addOnCompleteListener
+            lifecycleScope.launch(Dispatchers.IO) {
+                if (tokenManager.getAccessToken().isNullOrBlank()) return@launch
+                deviceTokenRegistrar.register(token)
             }
         }
     }
@@ -60,8 +99,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleAuthIntent(intent: Intent?) {
-        Log.d("Auth", "DeepLink Received: ${intent?.data}")
-
         intent?.data?.let { uri ->
             if (uri.scheme == "alyak" && uri.host == "auth") {
                 val accessToken = uri.getQueryParameter("accessToken")

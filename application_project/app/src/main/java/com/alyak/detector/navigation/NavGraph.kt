@@ -1,5 +1,6 @@
 package com.alyak.detector.navigation
 
+import com.alyak.detector.feature.notification.ui.MedicineStatisticsScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -12,19 +13,28 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alyak.detector.core.auth.TokenManager
 import com.alyak.detector.core.util.PermissionManager
+import com.alyak.detector.feature.auth.ui.signIn.FindPasswordScreen
 import com.alyak.detector.feature.auth.ui.signIn.SignInScreen
 import com.alyak.detector.feature.auth.ui.signIn.SignInViewModel
+import com.alyak.detector.feature.auth.ui.signUp.SignUpScreen
 import com.alyak.detector.feature.auth.ui.signUp.SignUpViewModel
+import com.alyak.detector.feature.camera.ui.CAMERA_MODE_PILL
+import com.alyak.detector.feature.camera.ui.CAMERA_MODE_QR
 import com.alyak.detector.feature.camera.ui.CameraScreen
+import com.alyak.detector.feature.camera.ui.CameraViewModel
+import com.alyak.detector.feature.camera.ui.ResultScreen
+import com.alyak.detector.feature.family.ui.invitation.FamilyInvitationViewModel
 import com.alyak.detector.feature.family.ui.main.MainScreen
 import com.alyak.detector.feature.map.ui.MapScreen
+import com.alyak.detector.feature.notification.ui.MedicineStatisticsViewModel
 import com.alyak.detector.feature.pill.ui.PillDetail.PillDetailScreen
 import com.alyak.detector.feature.pill.ui.search.PillSearchScreen
+import com.alyak.detector.feature.pill.ui.search.PillSearchViewModel
 import com.alyak.detector.feature.splash.ui.SplashScreen
 import com.alyak.detector.feature.user.ui.UserScreen
 
 @Composable
-fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager) {
+fun Navigator(permissionManager: PermissionManager, tokenManager: TokenManager) {
     LaunchedEffect(Unit) {
         permissionManager.setOnGrantedListener {
             // 권한 허용 후 실행할 작업
@@ -38,7 +48,7 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
     //NavHost
     NavHost(
         navController = navController,
-        startDestination = if(accessToken == null) "SignInScreen" else "MainScreen"
+        startDestination = if (accessToken == null) "SignInScreen" else "MainScreen"
     ) {
         composable("SplashScreen") {
             SplashScreen(navController)
@@ -46,20 +56,59 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
 
         composable("SignInScreen") {
             val signInViewModel: SignInViewModel = hiltViewModel()
+            SignInScreen(
+                navController = navController,
+                signInViewModel = signInViewModel
+            )
+        }
+
+        composable("SignUpScreen") {
             val signUpViewModel: SignUpViewModel = hiltViewModel()
-            SignInScreen(navController, signInViewModel, signUpViewModel)
+            SignUpScreen(
+                navController = navController,
+                signUpViewModel = signUpViewModel
+            )
+        }
+
+        composable("FindPasswordScreen") {
+            FindPasswordScreen(navController = navController)
         }
 
         composable("MainScreen") {
             MainScreen(navController)
         }
         composable("CameraScreen") {
-            CameraScreen(navController)
+            val cameraViewModel: CameraViewModel = hiltViewModel()
+            CameraScreen(navController, cameraViewModel, mode = CAMERA_MODE_PILL)
+        }
+        composable("CameraScreenQr") {
+            val cameraViewModel: CameraViewModel = hiltViewModel()
+            val mainEntry = runCatching {
+                navController.getBackStackEntry("MainScreen")
+            }.getOrNull()
+            val invitationViewModel: FamilyInvitationViewModel? =
+                mainEntry?.let { hiltViewModel(it) }
+
+            CameraScreen(
+                navController = navController,
+                viewModel = cameraViewModel,
+                mode = CAMERA_MODE_QR,
+                onQrScanned = { token -> invitationViewModel?.onQrScanned(token) }
+            )
+        }
+        composable("ResultScreen") {
+            val cameraEntry = runCatching {
+                navController.getBackStackEntry("CameraScreen")
+            }.getOrNull()
+            if (cameraEntry != null) {
+                val cameraViewModel: CameraViewModel = hiltViewModel(cameraEntry)
+                ResultScreen(navController, cameraViewModel)
+            }
         }
         composable("MapScreen") {
             MapScreen(navController)
         }
-        composable("PillSearchScreen"){
+        composable("PillSearchScreen") {
             PillSearchScreen(navController)
         }
         composable(
@@ -79,6 +128,14 @@ fun Navigator(permissionManager : PermissionManager, tokenManager: TokenManager)
         composable("UserScreen") {
             UserScreen(navController)
         }
-
+        composable("medicine_statistics") {
+            val pillSearchViewModel: PillSearchViewModel = hiltViewModel()
+            val medicineStatisticsViewModel: MedicineStatisticsViewModel = hiltViewModel()
+            MedicineStatisticsScreen(
+                navController,
+                viewModel = medicineStatisticsViewModel,
+                pillSearchViewModel = pillSearchViewModel
+            )
+        }
     }
 }

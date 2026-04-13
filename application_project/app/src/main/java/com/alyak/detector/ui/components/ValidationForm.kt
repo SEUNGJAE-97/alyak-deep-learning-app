@@ -34,9 +34,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alyak.detector.R
-import com.alyak.detector.ui.components.ContentBox
-import com.alyak.detector.ui.components.CustomButton
-import com.alyak.detector.ui.components.CustomUnderlineTextField
 
 @Composable
 fun ValidationForm() {

@@ -1,10 +1,8 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.OcrResult;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillAppearanceResponse;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillDetailResponse;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillInfoResponse;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.SimplePillInfo;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.*;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillAppearance;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillColor;
@@ -16,14 +14,26 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository.PillSha
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import com.github.seungjae97.alyak.alyakapiserver.global.http.service.RestTemplateService;
+import com.github.seungjae97.alyak.alyakapiserver.global.util.HangulUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.data.domain.Range;
+import org.springframework.data.redis.connection.Limit;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -44,11 +54,17 @@ public class PillServiceImpl implements PillService {
     private final PillShapeRepository pillShapeRepository;
     private final RestTemplateService restTemplateService;
 
+    @Value("${ocr.server.url:http://localhost:8000}")
+    private String ocrServerUrl;
+
     @Qualifier("pillIdentifyTaskScheduler")
     private final TaskScheduler pillIdentifyTaskScheduler;
 
+    private final StringRedisTemplate redisTemplate;
+    private static final String AUTOCOMPLETE_KEY = "autocomplete";
     private static final Duration IDENTIFY_API_DELAY = Duration.ofSeconds(5);
     private static final Pattern ALERT_SPLIT_PATTERN = Pattern.compile("[.!?]\\s*\\n*");
+    private static final WebClient webClient = WebClient.builder().baseUrl("").build();
     private static final Map<String, String> CAUTION_KEYWORD_MAP;
     static {
         Map<String, String> map = new HashMap<>();
@@ -333,5 +349,99 @@ public class PillServiceImpl implements PillService {
                 .map(String::trim)
                 .filter(s -> !s.isBlank()) // 빈 문자열 제거
                 .collect(Collectors.toList());
+    }
+
+
+    public List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images){
+        List<SimplePillInfo> results = new ArrayList<>();
+        log.info("[OCR] 이미지 {}장 처리 시작", images.size());
+        for(MultipartFile image : images){
+            try{
+                // 1. FastAPI 호출
+                OcrResponse ocrResponse = callFastApi(image);
+                log.info("[OCR] FastAPI 응답: filename={}, results 개수={}", 
+                        ocrResponse != null ? ocrResponse.filename() : null,
+                        ocrResponse != null && ocrResponse.results() != null ? ocrResponse.results().size() : 0);
+                if(ocrResponse != null && ocrResponse.results() != null){
+                    // 2. 결과(알약명)로 DB 조회
+                    for(OcrResult ocrResult : ocrResponse.results()){
+                        log.debug("[OCR] text={}, confidence={}", ocrResult.text(), ocrResult.confidence());
+                        if (ocrResult.confidence() > 0.5f) {
+                            List<SimplePillInfo> found = pillRepository.findByPillNameWithType(ocrResult.text());
+                            log.info("[OCR] DB 조회: text='{}', confidence={}, 매칭 수={}", 
+                                    ocrResult.text(), ocrResult.confidence(), found.size());
+                            found.stream()
+                                    .map(pill -> SimplePillInfo.builder()
+                                            .pillId(pill.getPillId())
+                                            .pillName(pill.getPillName())
+                                            .manufacturer(pill.getManufacturer())
+                                            .classification(pill.getClassification())
+                                            .pillType(pill.getPillType())
+                                            .pillImg(pill.getPillImg())
+                                            .build()
+                                    )
+                                    .forEach(results::add);
+                        } else {
+                            log.info("[OCR] confidence 낮음 제외: text='{}', confidence={} (임계값 0.5)", 
+                                    ocrResult.text(), ocrResult.confidence());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("[OCR] 이미지 처리 중 오류: {}", e.getMessage(), e);
+                throw new RuntimeException(e);
+            }
+        }
+        log.info("[OCR] 최종 결과: {}건", results.size());
+        return results.isEmpty() ? List.of() : results;
+    }
+
+    @Override
+    public List<String> autocomplete(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        // 2. 유틸리티 클래스를 사용하여 검색어 자소 분리
+        String decomposedKeyword = HangulUtils.decompose(keyword);
+
+        // 3. Redis 검색 범위 설정 (시작단어 ~ 시작단어 + 유니코드 마지막 문자)
+        Range<String> range = Range.closed(decomposedKeyword, decomposedKeyword + "\uFFFF");
+
+        // 4. 최대 10개까지만 반환하도록 제한
+        Limit limit = Limit.limit().count(10);
+
+        // 5. Redis 범위 검색 실행
+        Set<String> matchedResults = redisTemplate.opsForZSet().rangeByLex(AUTOCOMPLETE_KEY, range, limit);
+
+        if (matchedResults == null || matchedResults.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 6. 결과 가공 ("ㅌㅏㅇㅣㄹㅔㄴㅗㄹ:타이레놀정500mg" -> "타이레놀정500mg")
+        return matchedResults.stream()
+                .map(result -> {
+                    String[] parts = result.split(":");
+                    return parts.length > 1 ? parts[1] : result;
+                })
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private OcrResponse callFastApi(MultipartFile image) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("images", image.getResource());
+
+        HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<OcrResponse> response = restTemplateService.postForEntity(
+                ocrServerUrl + "/api/v1/process",
+                request,
+                OcrResponse.class
+        );
+        return response.getBody();
     }
 }

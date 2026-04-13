@@ -1,5 +1,19 @@
 package com.alyak.detector.core.network
 
+import org.json.JSONObject
+
+/**
+ * Spring [ProblemDetail] 등 JSON 오류 본문에서 사용자용 메시지(`detail`)를 꺼냅니다.
+ */
+fun parseApiErrorMessage(raw: String?): String? {
+    if (raw.isNullOrBlank()) return null
+    return try {
+        val o = JSONObject(raw)
+        o.optString("detail", "").takeIf { it.isNotEmpty() }
+    } catch (_: Exception) {
+        null
+    }
+}
 
 /**
  * 네트워크 API 호출을 안전하게 실행하고 그 결과를 ApiResult로 래핑하는 고차 함수.
@@ -9,22 +23,26 @@ package com.alyak.detector.core.network
  * @param apiCall 실행할 suspend 함수 (Retrofit 서비스의 API 호출 메서드).
  * @return ApiResult<T>로 래핑된 호출 결과.
  */
-suspend fun <T> safeCall(apiCall: suspend () -> retrofit2.Response<T>): ApiResult<T> {
-        return try {
-            val response = apiCall()
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) {
-                    ApiResult.Success(body)
-                }else if(response.code() == 204 || response.code() == 205){
-                    ApiResult.Success(null as T)
-                } else {
-                    ApiResult.Error(response.code(), "Empty body")
-                }
-            } else {
-                ApiResult.Error(response.code(), response.errorBody()?.string())
+@Suppress("UNCHECKED_CAST")
+suspend inline fun <reified T> safeCall(
+    crossinline apiCall: suspend () -> retrofit2.Response<T>,
+): ApiResult<T> {
+    return try {
+        val response = apiCall()
+        if (response.isSuccessful) {
+            val body = response.body()
+            when {
+                body != null -> ApiResult.Success(body)
+                response.code() == 204 || response.code() == 205 -> ApiResult.Success(null as T)
+                response.code() == 200 && T::class == Unit::class -> ApiResult.Success(Unit as T)
+                else -> ApiResult.Error(response.code(), "Empty body")
             }
-        } catch (t: Throwable) {
-            ApiResult.Exception(t)
+        } else {
+            val raw = response.errorBody()?.string()
+            val message = parseApiErrorMessage(raw) ?: raw
+            ApiResult.Error(response.code(), message)
         }
+    } catch (t: Throwable) {
+        ApiResult.Exception(t)
+    }
 }

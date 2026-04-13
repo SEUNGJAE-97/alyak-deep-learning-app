@@ -1,10 +1,13 @@
 package com.alyak.detector.data.api
 
 import com.alyak.detector.core.network.AuthInterceptor
+import com.alyak.detector.core.network.TokenAuthenticator
 import com.alyak.detector.di.AppServerRetrofit
 import com.alyak.detector.di.KakaoRetrofit
 import com.alyak.detector.feature.auth.data.api.AuthApi
+import com.alyak.detector.feature.family.data.api.FamilyApi
 import com.alyak.detector.feature.map.data.api.KakaoLocalApi
+import com.alyak.detector.feature.notification.data.api.NotificationApi
 import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
@@ -14,6 +17,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -23,8 +27,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     private const val BASE_URL = "https://dapi.kakao.com/"
-    private const val SERVER_URL = "http://10.0.2.2:8080/"
-
+//    private const val SERVER_URL = "http://10.0.2.2:8080/"
+    private const val SERVER_URL ="http://192.168.45.242:8080"
     @Provides
     @Singleton
     @KakaoRetrofit
@@ -38,13 +42,15 @@ object NetworkModule {
     @Singleton
     @AppServerRetrofit
     fun provideServerRetrofit(
-        authInterceptor: AuthInterceptor
+        authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator
     ): Retrofit {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
         val client = OkHttpClient.Builder()
             .addInterceptor(authInterceptor)  // 토큰 추가 (먼저 실행)
+            .authenticator(tokenAuthenticator) // 토큰 재발급
             .addInterceptor(logging)          // 로깅 (나중에 실행)
             .build()
 
@@ -60,6 +66,7 @@ object NetworkModule {
         return Retrofit.Builder()
             .baseUrl(SERVER_URL)
             .client(client)
+            .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
@@ -68,6 +75,16 @@ object NetworkModule {
     @Singleton
     fun provideAuthApi(@AppServerRetrofit retrofit: Retrofit): AuthApi =
         retrofit.create(AuthApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationApi(@AppServerRetrofit retrofit: Retrofit): NotificationApi =
+        retrofit.create(NotificationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideFamilyApi(@AppServerRetrofit retrofit: Retrofit): FamilyApi =
+        retrofit.create(FamilyApi::class.java)
 
     @Provides
     @Singleton

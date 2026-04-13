@@ -1,7 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">application_project</string>
+    <string name="app_name">ALYAK</string>
     <string name="caution_pregnant">임산부</string>
     <string name="caution_child">어린이</string>
     <string name="caution_elderly">고령자</string>
     <string name="caution_driver">운전자</string>
+    <string name="notification_action_accept">수락</string>
+    <string name="notification_action_reject">거절</string>
 </resources>

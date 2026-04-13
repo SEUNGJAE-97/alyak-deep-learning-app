@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
     // kakao map
     implementation(libs.v2.all)
     implementation(libs.android)
@@ -96,6 +97,7 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -115,8 +117,8 @@ dependencies {
     // Preferences DataStore (SharedPreferences like APIs)
     implementation("androidx.datastore:datastore-preferences:1.2.0")
 
-    implementation ("io.coil-kt:coil-compose:2.4.0")
-    implementation ("io.coil-kt:coil-svg:2.4.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-svg:2.4.0")
 
     //Room
     implementation("androidx.room:room-runtime:2.8.4")
@@ -131,8 +133,18 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.2.0")
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
     implementation("com.google.firebase:firebase-messaging")
-
+    implementation("io.coil-kt:coil-gif:2.6.0")
     //chrome custom tabs
     implementation("androidx.browser:browser:1.5.0")
+
+    // tf
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+
+    //ZXing
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    // 로띠
+    implementation("com.airbnb.android:lottie-compose:6.0.0")
 
 }

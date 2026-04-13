@@ -36,6 +36,11 @@ class PillRepositoryImpl @Inject constructor(
         val serverResponse = api.getPillDetail(pid)
         return serverResponse.toDomain()
     }
+
+    override suspend fun getAutocomplete(keyword: String): List<String> {
+        return api.getAutocomplete(keyword)
+    }
+
     /**
      * Entity -> Pill 변환
      * */

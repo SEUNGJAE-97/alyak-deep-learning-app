@@ -1,21 +1,30 @@
 package com.alyak.detector.viewModel
 
 import androidx.lifecycle.ViewModel
-import com.alyak.detector.feature.auth.ui.signIn.state.UserInfo
+import androidx.lifecycle.viewModelScope
+import com.alyak.detector.core.auth.SessionManager
+import com.alyak.detector.feature.auth.data.model.TempLoginResponse
+import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
+@HiltViewModel
+class UserViewModel @Inject constructor(
+    private val sessionManager : SessionManager
+) : ViewModel(){
+    val userSession = sessionManager.userSession
 
-class UserViewModel @Inject constructor() : ViewModel() {
-    private val _userInfo = MutableStateFlow<UserInfo?>(null)
-    val userInfo: StateFlow<UserInfo?> = _userInfo
-
-    fun setUserInfo(id: String, password: String, name: String) {
-        _userInfo.value = UserInfo(id = id, password = password, name = name)
+    // 로그인
+    fun Login(response: TempLoginResponse, email: String, name: String){
+        viewModelScope.launch {
+            sessionManager.login(response, email, name)
+        }
     }
 
-    fun clearUserInfo() {
-        _userInfo.value = null
+    // 로그아웃
+    fun logout(){
+        viewModelScope.launch {
+            sessionManager.logout()
+        }
     }
 }

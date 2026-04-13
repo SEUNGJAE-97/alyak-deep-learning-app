@@ -10,6 +10,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.alyak.detector.feature.auth.data.model.TempLoginResponse
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -32,6 +34,16 @@ class TokenManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val dataStore = context.dataStore
+    private val _authEvent = MutableSharedFlow<AuthEvent>()
+    val authEvent = _authEvent.asSharedFlow()
+
+    enum class AuthEvent { LOGOUT }
+
+    // 로그아웃 이벤트를 발생시키는 함수
+    suspend fun emitLogout() {
+        _authEvent.emit(AuthEvent.LOGOUT)
+    }
+
 
     /**
      * 토큰 저장
@@ -168,5 +180,12 @@ class TokenManager @Inject constructor(
             preferences.remove(PreferencesKeys.USER_EMAIL)
             preferences.remove(PreferencesKeys.USER_NAME)
         }
+    }
+
+    /**
+     * refreshToken을 반환한다.
+     * */
+    suspend fun getRefreshToken(): String? {
+        return dataStore.data.first()[PreferencesKeys.REFRESH_TOKEN]
     }
 }

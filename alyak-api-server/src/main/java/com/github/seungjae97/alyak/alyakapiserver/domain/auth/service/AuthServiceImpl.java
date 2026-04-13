@@ -3,6 +3,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.auth.service;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.JwtProperties;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.JwtTokenProvider;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.LoginRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.PasswordResetRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.SignupRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.LoginResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Role;
@@ -13,7 +14,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRep
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.TokenResponse;
-import com.github.seungjae97.alyak.alyakapiserver.global.Redis.Util.RedisUtil;
+import com.github.seungjae97.alyak.alyakapiserver.global.redis.util.RedisUtil;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -132,6 +133,35 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(newRefresh)
                 .email(user.getEmail())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(PasswordResetRequest request) {
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new BusinessException(BusinessError.INVALID_EMAIL);
+        }
+        if (request.getNewPassword() == null || request.getNewPassword().isBlank()) {
+            throw new BusinessException(BusinessError.NEW_PASSWORD_REQUIRED);
+        }
+
+        String email = request.getEmail().trim();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(BusinessError.USER_NOT_EXIST));
+
+        if (!redisUtil.existData("verified:" + email)) {
+            throw new BusinessException(BusinessError.EMAIL_NOT_VERIFIED);
+        }
+
+        User updated = user.toBuilder()
+                .password(passwordEncoder.encode(request.getNewPassword().trim()))
+                .build();
+        userRepository.save(updated);
+
+        redisUtil.deleteData("verified:" + email);
+        redisUtil.deleteData("auth_request:" + email);
+        redisUtil.deleteData(email);
     }
 
     @Override

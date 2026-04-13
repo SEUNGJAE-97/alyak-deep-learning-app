@@ -15,9 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -29,20 +26,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.alyak.detector.R
-import com.alyak.detector.feature.auth.ui.signIn.components.FindPasswordForm
 import com.alyak.detector.feature.auth.ui.signIn.components.SignInForm
-import com.alyak.detector.feature.auth.ui.signIn.state.ContentState
-import com.alyak.detector.feature.auth.ui.signUp.SignUpViewModel
-import com.alyak.detector.feature.auth.ui.signUp.components.SignUpForm
 
 @Composable
 fun SignInScreen(
     navController: NavController,
-    signInViewModel: SignInViewModel,
-    signUpViewModel: SignUpViewModel
+    signInViewModel: SignInViewModel
 ) {
     val state by signInViewModel.state.collectAsState()
-    var screenState by remember { mutableStateOf<ContentState>(ContentState.Login) }
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -67,51 +58,29 @@ fun SignInScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = when (screenState) {
-                is ContentState.Login -> "어서오세요!\n로그인을 진행해주세요"
-                is ContentState.SignUp -> "회원가입\n정보를 입력해주세요"
-                is ContentState.FindPassword -> "비밀번호 찾기\n이메일을 입력해주세요"
-            },
+            text = "어서오세요!\n로그인을 진행해주세요",
             style = MaterialTheme.typography.headlineMedium,
             color = Color.White,
             fontWeight = FontWeight.Bold,
             lineHeight = 80.sp,
             modifier = Modifier
                 .padding(
-                    start = 0.dp,
+                    start = 30.dp,
                     top = 50.dp,
                     end = 80.dp
                 )
+                .align(Alignment.Start)
         )
 
         Spacer(modifier = Modifier.height(70.dp))
-
-        when (screenState) {
-            is ContentState.Login -> {
-                SignInForm(
-                    onNavigateToSignUp = { screenState = ContentState.SignUp },
-                    onNavigateToFindPassword = { screenState = ContentState.FindPassword },
-                    state = state,
-                    navController = navController,
-                    viewModel = signInViewModel,
-                    onKakaoLoginClick = { signInViewModel.startKakaoLogin() },
-                    onGoogleLoginClick = { signInViewModel.startGoogleLogin() }
-                )
-            }
-
-            is ContentState.SignUp -> {
-                SignUpForm(
-                    onNavigateToLogin = { screenState = ContentState.Login },
-                    navController = navController,
-                    viewModel = signUpViewModel
-                )
-            }
-
-            is ContentState.FindPassword -> {
-                FindPasswordForm(
-                    //onNavigateToLogin = { screenState = ContentState.Login }
-                )
-            }
-        }
+        SignInForm(
+            onNavigateToSignUp = { navController.navigate("SignUpScreen") },
+            onNavigateToFindPassword = { navController.navigate("FindPasswordScreen") },
+            state = state,
+            navController = navController,
+            viewModel = signInViewModel,
+            onKakaoLoginClick = { signInViewModel.startKakaoLogin() },
+            onGoogleLoginClick = { signInViewModel.startGoogleLogin() }
+        )
     }
 }

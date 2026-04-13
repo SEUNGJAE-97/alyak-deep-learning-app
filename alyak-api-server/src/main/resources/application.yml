@@ -40,8 +40,13 @@ spring:
     show-sql: ${SPRING_JPA_SHOW_SQL:true}
     properties:
       hibernate:
+        jdbc:
+          batch_size: 1000
         format_sql: ${SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL:true}
         dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.MySQL8Dialect}
+        order_updates: true
+        order_inserts: true
+
     # Ensure data.sql runs AFTER Hibernate creates tables
     defer-datasource-initialization: true
 
@@ -75,6 +80,14 @@ jwt:
 valhalla:
   host: ${VALHALLA_HOST:http://localhost:8002}
 
+fast-api:
+  server:
+    url: ${OCR_SERVER_URL:http://fast-api:8000}
+
+# Firebase (FCM) — docker-compose 운영에서는 credentials-path 단일 사용
+firebase:
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+  project-id: ${FIREBASE_PROJECT_ID:uplifted-studio-457001-h1}
 
 logging:
   level:

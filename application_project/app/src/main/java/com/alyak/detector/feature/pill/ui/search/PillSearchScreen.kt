@@ -3,6 +3,7 @@ package com.alyak.detector.feature.pill.ui.search
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
@@ -51,9 +54,9 @@ import com.alyak.detector.feature.pill.data.model.PillShapeType
 import com.alyak.detector.feature.pill.ui.search.components.FilterBar
 import com.alyak.detector.feature.pill.ui.search.components.MarkingIcon
 import com.alyak.detector.feature.pill.ui.search.components.PillInfoBox
+import com.alyak.detector.feature.pill.ui.search.components.PillSearchBar
 import com.alyak.detector.feature.pill.ui.search.components.RecentSearch
 import com.alyak.detector.feature.pill.ui.search.components.SearchActionButtons
-import com.alyak.detector.feature.pill.ui.search.components.SearchBar
 import com.alyak.detector.feature.pill.ui.search.components.ShapeIcon
 import com.alyak.detector.ui.components.HeaderForm
 import kotlinx.coroutines.launch
@@ -64,20 +67,22 @@ fun PillSearchScreen(
     navController: NavController,
     viewModel: PillSearchViewModel = hiltViewModel()
 ) {
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val suggestions by viewModel.suggestions.collectAsState()
     var selectedShape by remember { mutableStateOf(PillShapeType.entries.first()) }
     var selectedColor by remember { mutableStateOf(PillColor.entries.first()) }
     var selectedLine by remember { mutableStateOf(PillLineType.ALL) }
     val uiState by viewModel.recentSearchState.collectAsState()
     val scaffoldState = rememberBottomSheetScaffoldState()
     val searchUiState by viewModel.searchUiState.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     var selectedIndex by remember { mutableStateOf(0) }
+    val name by viewModel.userName.collectAsState()
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         topBar = {
-            HeaderForm("No name")
+            HeaderForm(name)
         },
         sheetPeekHeight = 100.dp,
         sheetContainerColor = Color.White,
@@ -199,21 +204,56 @@ fun PillSearchScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(Modifier.height(20.dp))
-            SearchBar(
+            PillSearchBar(
                 query = searchQuery,
-                onQueryChange = { searchQuery = it },
+                onQueryChange = { viewModel.onQueryChange(it) },
                 onSearch = { text ->
                     if (text.isNotBlank()) {
-                        viewModel.findPillsByName(text.trim())
+                        viewModel.onSearch(text.trim())
                         scope.launch {
                             scaffoldState.bottomSheetState.expand()
                         }
                     }
                 },
                 onCameraClick = { navController.navigate("CameraScreen") },
-                onMicClick = {/*음성 인식 추후 추가..*/ }
-
             )
+            if (suggestions.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 2.dp),
+                    shadowElevation = 8.dp,
+                    shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                    color = Color.White
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 200.dp)
+                    ) {
+                        items(suggestions) { suggestion ->
+                            Text(
+                                text = suggestion,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.onSuggestionSelected(suggestion)
+                                        viewModel.onSearch(suggestion)
+                                        scope.launch {
+                                            scaffoldState.bottomSheetState.expand()
+                                        }
+                                    }
+                                    .padding(horizontal = 20.dp, vertical = 15.dp),
+                                fontSize = 14.sp,
+                                color = Color.Black
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = Color.LightGray.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
+            }
             Spacer(Modifier.height(20.dp))
             FilterBar(
                 entries = PillLineType.entries,
