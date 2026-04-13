@@ -2,6 +2,8 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.family.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.dto.response.FamilyMemberInfoResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Family;
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.FamilyMember;
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.repository.FamilyMemberRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.repository.FamilyRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.notification.entity.DeviceToken;
 import com.github.seungjae97.alyak.alyakapiserver.domain.notification.repository.DeviceTokenRepository;
@@ -17,12 +19,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class FamilyService {
 
+    private final FamilyMemberRepository familyMemberRepository;
     private final FamilyRepository familyRepository;
     private final UserRepository userRepository;
     private final MedicationStatsService medicationStatsService;
@@ -38,36 +43,34 @@ public class FamilyService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(BusinessError.USER_NOT_EXIST));
 
-        Family family = user.getFamily();
+        List<FamilyMember> familyMemberList = user.getFamilyMembers();
 
-        if (family == null) {
+        // 가족에 소속되지 않고 혼자인 경우
+        if (familyMemberList.isEmpty()) {
             FamilyMemberInfoResponse selfResponse = FamilyMemberInfoResponse.from(user);
             selfResponse.setRole("본인");
-
             selfResponse.setStats(medicationStatsService.calculateMemberStats(userId));
             selfResponse.setWeeklyMedicationStats(medicationStatsService.calculateWeeklyStats(userId));
-
-            return List.of(selfResponse); // 본인만 포함된 리스트 반환
+            return List.of(selfResponse);
         }
 
-        return family.getUsers().stream()
+        Map<Long, User> memberMap = new LinkedHashMap<>();
+        for (FamilyMember fm : familyMemberList) {
+            List<FamilyMember> familyMembers = familyMemberRepository
+                    .findByFamily_Id(fm.getFamily().getId());
+            for (FamilyMember member : familyMembers) {
+                memberMap.putIfAbsent(member.getUser().getUserId(), member.getUser());
+            }
+        }
+
+        return memberMap.values().stream()
                 .map(member -> {
-                    // 기본 정보 생성
                     FamilyMemberInfoResponse response = FamilyMemberInfoResponse.from(member);
-                    
-                    // 본인 여부에 따라 role 설정
-                    if (member.getUserId().equals(user.getUserId())) {
-                        response.setRole("본인");
-                    } else {
-                        response.setRole("가족 구성원");  // 추후 관계 테이블 추가 시 수정
-                    }
-                    
-                    // 통계 정보 계산 및 설정
+                    response.setRole(member.getUserId().equals(userId) ? "본인" : "가족 구성원");
                     response.setStats(medicationStatsService.calculateMemberStats(member.getUserId()));
                     response.setWeeklyMedicationStats(
-                        medicationStatsService.calculateWeeklyStats(member.getUserId())
+                            medicationStatsService.calculateWeeklyStats(member.getUserId())
                     );
-                    
                     return response;
                 })
                 .toList();
@@ -127,13 +130,16 @@ public class FamilyService {
         User inviter = userRepository.findById(inviterUserId)
                 .orElseThrow(() -> new BusinessException(BusinessError.USER_NOT_EXIST));
 
-        if (invitee.getFamily() != null && inviter.getFamily() != null
-                && invitee.getFamily().getId().equals(inviter.getFamily().getId())) {
+        boolean alreadySameFamily = invitee.getFamilyMembers().stream()
+                .anyMatch(fm -> inviter.getFamilyMembers().stream()
+                        .anyMatch(ifm -> ifm.getFamily().getId().equals(fm.getFamily().getId())));
+
+        if (alreadySameFamily) {
             redisService.verifyAndConsumeFamilyInvitePending(inviteeUserId, inviterUserId);
             return;
         }
 
-        if (invitee.getFamily() != null) {
+        if (!invitee.getFamilyMembers().isEmpty()) {
             throw new BusinessException(BusinessError.ALREADY_IN_OTHER_FAMILY);
         }
 
@@ -141,7 +147,8 @@ public class FamilyService {
             throw new BusinessException(BusinessError.FAMILY_INVITE_EXPIRED_OR_INVALID);
         }
 
-        mergeInviteeIntoInvitersFamily(invitee, inviter);
+
+        mergeInviteeIntoInvitersFamily(invitee, inviter, null);
     }
 
     /**
@@ -170,29 +177,46 @@ public class FamilyService {
             throw new BusinessException(BusinessError.INVITE_SELF_NOT_ALLOWED);
         }
 
-        if (invitee.getFamily() != null && inviter.getFamily() != null
-                && invitee.getFamily().getId().equals(inviter.getFamily().getId())) {
-            redisService.deleteFamilyQrMappings(code, inviterEmailNorm);
+        boolean alreadySameFamily = invitee.getFamilyMembers().stream()
+                .anyMatch(fm -> inviter.getFamilyMembers().stream()
+                        .anyMatch(ifm -> ifm.getFamily().getId().equals(fm.getFamily().getId())));
+
+        if (alreadySameFamily) {
+            redisService.deleteFamilyQrMappings(code, inviterEmail.trim());
             return;
         }
 
-        if (invitee.getFamily() != null) {
+        if (!invitee.getFamilyMembers().isEmpty()) {
             throw new BusinessException(BusinessError.ALREADY_IN_OTHER_FAMILY);
         }
 
-        mergeInviteeIntoInvitersFamily(invitee, inviter);
+        mergeInviteeIntoInvitersFamily(invitee, inviter, null);
         redisService.deleteFamilyQrMappings(code, inviterEmailNorm);
     }
 
-    private void mergeInviteeIntoInvitersFamily(User invitee, User inviter) {
-        Family targetFamily = inviter.getFamily();
-        if (targetFamily == null) {
+    private void mergeInviteeIntoInvitersFamily(User invitee, User inviter, Long familyId) {
+        Family targetFamily;
+
+        if (inviter.getFamilyMembers().isEmpty()) {
             targetFamily = familyRepository.save(Family.builder().build());
-            inviter.assignFamily(targetFamily);
-            userRepository.save(inviter);
+            familyMemberRepository.save(FamilyMember.builder()
+                    .user(inviter)
+                    .family(targetFamily)
+                    .build());
+        } else if (familyId != null) {
+            targetFamily = familyRepository.findById(familyId)
+                    .orElseThrow(() -> new BusinessException(BusinessError.ALREADY_IN_OTHER_FAMILY));
+        } else {
+            targetFamily = inviter.getFamilyMembers().get(0).getFamily();
         }
 
-        invitee.assignFamily(targetFamily);
-        userRepository.save(invitee);
+        boolean alreadyJoined = familyMemberRepository
+                .existsByUser_UserIdAndFamily_Id(invitee.getUserId(), targetFamily.getId());
+        if (alreadyJoined) return;
+
+        familyMemberRepository.save(FamilyMember.builder()
+                .user(invitee)
+                .family(targetFamily)
+                .build());
     }
 }

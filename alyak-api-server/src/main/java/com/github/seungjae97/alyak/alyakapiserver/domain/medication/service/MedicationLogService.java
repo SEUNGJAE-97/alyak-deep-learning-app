@@ -1,6 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.medication.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Family;
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.FamilyMember;
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.dto.request.MedicationLogRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.entity.MedicationLog;
 import com.github.seungjae97.alyak.alyakapiserver.domain.medication.enums.MedicationStatus;
@@ -83,11 +83,13 @@ public class MedicationLogService {
 
     private List<DeviceToken> collectFamilyDeviceTokens(User actor) {
         Set<Long> userIds = new LinkedHashSet<>();
-        Family family = actor.getFamily();
-        if (family != null && family.getUsers() != null) {
-            for (User u : family.getUsers()) {
-                userIds.add(u.getUserId());
-            }
+        List<FamilyMember> familyMembers = actor.getFamilyMembers();
+
+        if (!familyMembers.isEmpty()) {
+            familyMembers.forEach(member ->
+                    member.getFamily().getMembers()
+                            .forEach(fm -> userIds.add(fm.getUser().getUserId()))
+            );
         } else {
             userIds.add(actor.getUserId());
         }
@@ -113,8 +115,11 @@ public class MedicationLogService {
         User subject = userRepository.findById(subjectUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "대상 사용자를 찾을 수 없습니다."));
 
-        if (viewer.getFamily() == null || subject.getFamily() == null
-                || !Objects.equals(viewer.getFamily().getId(), subject.getFamily().getId())) {
+        boolean sameFamilly = viewer.getFamilyMembers().stream()
+                .anyMatch(vfm -> subject.getFamilyMembers().stream()
+                        .anyMatch(sfm -> sfm.getFamily().getId().equals(vfm.getFamily().getId())));
+
+        if (!sameFamilly) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "같은 가족 구성원만 조회할 수 있습니다.");
         }
     }

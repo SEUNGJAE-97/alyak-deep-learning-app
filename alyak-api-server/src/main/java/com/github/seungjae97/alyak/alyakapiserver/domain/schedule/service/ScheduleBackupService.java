@@ -68,10 +68,17 @@ public class ScheduleBackupService {
     public List<ScheduleBackupResponse> findAllForFamily(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
-        if (user.getFamily() == null) {
+
+        List<Long> familyIds = user.getFamilyMembers().stream()
+                .map(fm -> fm.getFamily().getId())
+                .toList();
+
+        if (familyIds.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "가족 그룹에 속해 있지 않습니다.");
         }
-        return scheduleBackupRepository.findBackupsByFamilyId(user.getFamily().getId()).stream()
+
+        return familyIds.stream()
+                        .flatMap(familyId -> scheduleBackupRepository.findBackupsByFamilyId(familyId).stream())
                 .map(this::toResponse)
                 .toList();
     }
@@ -85,13 +92,13 @@ public class ScheduleBackupService {
 
     private void validateRequest(ScheduleBackupRequest req) {
         if (!StringUtils.hasText(req.getPillName())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "pillName은 필수입니다.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "알약명은 필수입니다.");
         }
         if (req.getDosage() == null || req.getDosage() < 1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "dosage는 1 이상이어야 합니다.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "복용량은 1 이상이어야 합니다.");
         }
         if (req.getScheduledTime() == null || req.getStartDate() == null || req.getEndDate() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "scheduledTime, startDate, endDate는 필수입니다.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "복용일자는 필수입니다.");
         }
         if (req.getEndDate().isBefore(req.getStartDate())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endDate는 startDate 이후여야 합니다.");

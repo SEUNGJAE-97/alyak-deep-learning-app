@@ -1,5 +1,6 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.schedule.repository;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.QFamilyMember;
 import com.github.seungjae97.alyak.alyakapiserver.domain.schedule.entity.QScheduleBackup;
 import com.github.seungjae97.alyak.alyakapiserver.domain.schedule.entity.ScheduleBackup;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.QUser;
@@ -21,9 +22,11 @@ public class ScheduleBackupRepositoryCustomImpl implements ScheduleBackupReposit
     public List<ScheduleBackup> findBackupsByFamilyId(Long familyId) {
         QScheduleBackup backup = QScheduleBackup.scheduleBackup;
         QUser user = QUser.user;
+        QFamilyMember familyMember = QFamilyMember.familyMember;
         return queryFactory.selectFrom(backup)
                 .join(backup.user, user)
-                .where(user.family.id.eq(familyId))
+                .join(familyMember).on(familyMember.user.eq(user))
+                .where(familyMember.family.id.eq(familyId))
                 .orderBy(backup.createdAt.desc())
                 .fetch();
     }

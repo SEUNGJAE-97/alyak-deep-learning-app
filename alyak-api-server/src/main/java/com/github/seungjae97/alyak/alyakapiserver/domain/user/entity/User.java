@@ -1,6 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.user.entity;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.Family;
+import com.github.seungjae97.alyak.alyakapiserver.domain.family.entity.FamilyMember;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -37,12 +38,12 @@ public class User {
     @Builder.Default
     private List<Provider> providers = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "family_id")
-    private Family family;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Builder.Default
+    private List<FamilyMember> familyMembers = new ArrayList<>();
 
     /** 가족 초대 수락 시 소속 가족을 설정합니다. */
-    public void assignFamily(Family family) {
-        this.family = family;
+    public void assignFamily(FamilyMember familyMember) {
+        this.familyMembers.add(familyMember);
     }
 }

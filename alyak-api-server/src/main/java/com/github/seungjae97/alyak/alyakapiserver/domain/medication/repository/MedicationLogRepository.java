@@ -20,6 +20,6 @@ public interface MedicationLogRepository extends JpaRepository<MedicationLog, Lo
             LocalDateTime endInclusive
     );
 
-    @Query("SELECT m FROM MedicationLog m JOIN m.user u WHERE u.family.id = :familyId")
+    @Query("SELECT m FROM MedicationLog m JOIN m.user u JOIN u.familyMembers fm WHERE fm.family.id = :familyId")
     List<MedicationLog> findByFamilyId(@Param("familyId") Long familyId);
 }

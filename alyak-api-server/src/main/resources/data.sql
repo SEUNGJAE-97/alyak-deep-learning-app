@@ -5,10 +5,6 @@ INSERT INTO role (role_id, role_name) VALUES
 ON DUPLICATE KEY UPDATE role_name = VALUES(role_name);
 
 -- User 데이터
--- 주의: 비밀번호는 BCrypt로 암호화된 값입니다.
--- 모든 사용자의 비밀번호는 'password123'입니다.
--- 실제 운영 환경에서는 더 강력한 비밀번호를 사용해야 합니다.
--- BCrypt 해시는 Spring Security의 BCryptPasswordEncoder로 생성되었습니다.
 INSERT INTO users (email, password, name) VALUES
 ('admin@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '관리자'),
 ('user1@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '김철수'),
@@ -18,7 +14,6 @@ INSERT INTO users (email, password, name) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- UserRole 데이터 (복합키: user_id + role_id)
--- 관리자는 ADMIN 역할, 나머지는 USER 역할
 INSERT INTO user_role (user_id, role_id) VALUES
 (1, 1),  -- admin@example.com -> ADMIN
 (2, 2),  -- user1@example.com -> USER
@@ -44,9 +39,13 @@ INSERT INTO family (family_id) VALUES
 (3)
 ON DUPLICATE KEY UPDATE family_id = VALUES(family_id);
 
-UPDATE users SET family_id = 1 WHERE user_id IN (1, 2);
-UPDATE users SET family_id = 2 WHERE user_id IN (3, 4);
-UPDATE users SET family_id = 3 WHERE user_id = 5;
+INSERT INTO family_member (user_id, family_id) VALUES
+                                                   (1, 1),  -- 관리자 → 가족 1
+                                                   (2, 1),  -- 김철수 → 가족 1
+                                                   (3, 2),  -- 이영희 → 가족 2
+                                                   (4, 2),  -- 박민수 → 가족 2
+                                                   (5, 3)   -- 정수진 → 가족 3 (혼자)
+ON DUPLICATE KEY UPDATE family_id = VALUES(family_id);
 
 -- Schedule Status 데이터
 INSERT INTO status (status_id, status_name) VALUES
