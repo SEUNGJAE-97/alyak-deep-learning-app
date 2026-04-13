@@ -1,100 +1,90 @@
-# 📱 application_project
+# application_project (Android)
 
-## 📝 개요
-  이 프로젝트는 알약 관리 및 판별을 위한 안드로이드 어플리케이션입니다. 
-  
-### ✅ 주요 기능
-  1. 약물 복용 시간 알림.
-  2. 약물 기록 관리
-  3. 약물 판별 및 정보조회 
+가족 단위 **복약 관리**, **약 검색·상세**, **촬영·QR 기반 인식**, **지도(약국 등)** 를 제공하는 **Kotlin / Jetpack Compose** 기반 안드로이드 앱 모듈입니다.  
+백엔드는 모노레포의 [`alyak-api-server`](../alyak-api-server/) **Spring Boot API**와 통신하며, 알약 OCR은 앱이 FastAPI를 직접 호출하지 않고 **Spring의 `/api/pill/recognize`** 를 통해 처리합니다.
 
-### 🛠️ 기술 스택
-- 📖 **프로그래밍 언어**<br>
-  <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=Kotlin&logoColor=white">
--  🚀 **배포 플랫폼**: Docker, AWS
+## 주요 기능
 
-- ⚙️ 개발 환경
-  - #### **IDE**<br>    
-    - <img src="https://img.shields.io/badge/Android Studio-3DDC84?style=for-the-badge&logo=Android Studio&logoColor=white">
-    - **IDE 버전**: **2024.2.1.11-LadyBug**
-    - **Gradle 버전**: 8.0
-    - **빌드 시스템** : Gradle
-  - #### **Android SDK**
-    - **minSdkVersion**: 21(Android 5.0 Lollipop)
-    - **targetSdkVersion**: 34 (Android 14)
-    - **compileSdkVersion**: 34
-  - #### **dependencies**
-    - **kotlin 버전**: 1.9.x
-    - **Jetpack Compose**: 1.x.x
-    - **Library**:
-      - **Retrofit**: 네트워크 통신
-      - **Room**: 로컬 데이터베이스 관리
-      - **Hilt**: 의존성 주입
-- **🖥 서버 (API)**
-    - **프레임워크**: Spring Boot
-    - **ORM 및 데이터 접근 계층**: MyBatis
-    - **데이터베이스**: MySQL
-    - **API 명세 도구**: Swagger
+- 인증·회원 (로그인, 회원가입, 비밀번호 찾기 등)
+- 가족 구성·초대·QR 연동
+- 메인 대시보드·복약 스케줄·복용 이력
+- 약 검색·상세, 최근 검색(Room)
+- CameraX 촬영·알약 인식(Spring 경유), QR 스캔
+- 복약 로그·통계, 로컬 알람·**FCM** 푸시·인앱 알림 배너
+- 스케줄 백업/복구 API 연동
+- 카카오 지도·로컬 API 기반 지도 화면
 
----
+## 기술 스택
 
-## 🌐 서버 구성 정보
+| 구분 | 내용 |
+|------|------|
+| 언어 | Kotlin (`gradle/libs.versions.toml` 기준 2.2.x) |
+| UI | Jetpack Compose, Material 3, Navigation Compose |
+| DI | Hilt |
+| 네트워크 | Retrofit 2, OkHttp, Gson |
+| 로컬 DB | Room |
+| 기타 저장소 | DataStore Preferences |
+| 푸시 | Firebase Cloud Messaging |
+| 지도 | Kakao Map SDK, Kakao 로컬 API |
+| 이미지 | Coil 2/3 |
+| 기타 | CameraX, TensorFlow Lite, ZXing, Lottie, Chrome Custom Tabs |
 
-### 1. API 개요
-이 어플리케이션은 RESTful API를 통해 데이터를 주고받습니다. API는 Spring Boot와 MyBatis를 사용하여 설계되었으며, 다음과 같은 주요 기능을 제공합니다:
-- 약물 정보 CRUD (생성, 조회, 수정, 삭제)
-- 사용자 인증 및 권한 관리
-- 약물 판별 요청 처리
+빌드 도구: **Android Gradle Plugin** 9.x, **Gradle** 9.3.x(Wrapper), JVM 11 타겟.
 
-### 2. 데이터베이스 설정
-- 데이터베이스: MySQL
-- 주요 테이블:
-  - `users`: 사용자 정보 저장.
-  - `medications`: 약물 정보 저장.
-  - `reminders`: 복용 알림 데이터 저장.
+## Android 버전
 
-### 3. API 명세
-API 명세는 Swagger UI를 통해 확인할 수 있습니다
+| 항목 | 값 |
+|------|-----|
+| `applicationId` | `com.alyak.detector` |
+| `minSdk` | 23 |
+| `targetSdk` | 34 |
+| `compileSdk` | 35 |
 
----
+## 백엔드·API와의 관계
 
-## 📂 프로젝트 구성
-```plaintext
-application_project/
-|
-├── data/ # 데이터 관련 코드 (Model 계층)
-│ ├── local/ # 로컬 데이터베이스 (Room 등)
-│ │ ├── dao/ # Data Access Object 인터페이스
-│ │ └── entities/ # 데이터 엔티티 클래스
-│ ├── remote/ # 네트워크 관련 코드 (Retrofit 등)
-│ │ ├── api/ # API 인터페이스 정의
-│ │ └── models/ # 네트워크 응답 모델
-│ └── repository/ # 데이터 소스 관리 (로컬 + 원격 통합)
-|
-├── domain/ # 비즈니스 로직 계층 (선택적)
-│ └── usecases/ # 유스케이스 클래스 (비즈니스 로직 처리)
-|
-├── ui/ # 사용자 인터페이스 관련 코드 (View 계층)
-│ ├── activities/ # 액티비티 클래스
-│ ├── fragments/ # 프래그먼트 클래스
-│ └── adapters/ # RecyclerView 어댑터 등 UI 관련 어댑터
-|
-├── viewmodel/ # ViewModel 계층
-│ └── MainViewModel.kt # ViewModel 클래스 정의
-|
-├── utils/ # 유틸리티 클래스 및 헬퍼 함수
-│ ├── extensions/ # Kotlin 확장 함수
-│ └── constants/ # 상수 값 정의
-|
-├── di/ # 의존성 주입 설정 (Hilt)
-│ └── AppModule.kt # Hilt 모듈 설정 파일
-|
-├── navigation/ # Jetpack Navigation 구성 파일
-│ └── NavGraph.kt # 네비게이션 그래프 정의
-|
-└── README.md # 어플리케이션 프로젝트 설명
+- REST 클라이언트는 **`@AppServerRetrofit`** 으로 주입되는 Retrofit 인스턴스를 사용합니다. 구현은 `app/src/main/java/com/alyak/detector/data/api/NetworkModule.kt` 에 있습니다.
+- 서버 측 스택은 **Spring Boot 3.x, Spring Data JPA, MySQL** 등이며, API 개요·Swagger·Docker 실행 방법은 [**alyak-api-server/README.md**](../alyak-api-server/README.md) 를 참고하세요.
+- **개발 시** API 베이스 URL은 `NetworkModule` 의 `SERVER_URL` 을 환경에 맞게 조정합니다(에뮬레이터에서 호스트 PC는 `10.0.2.2` 등). 저장소에 올라간 값은 로컬 개발용일 수 있으므로 배포·팀 규칙에 맞게 관리하세요.
+- `google-services.json` 및 카카오·지도 키 등은 Firebase / Kakao 콘솔에서 발급한 값을 **`secrets` 플러그인·`local.properties`·BuildConfig** 등 프로젝트 설정에 맞춰 넣어야 합니다.
+
+## 소스 구조 (요약)
+
+패키지 루트: `com.alyak.detector`. 기능 단위로 **`feature/`** 가 나뉘어 있습니다.
+
+```text
+app/src/main/java/com/alyak/detector/
+├── feature/
+│   ├── auth/          # 로그인·회원가입
+│   ├── family/        # 가족·초대
+│   ├── camera/        # 촬영·OCR API·QR
+│   ├── pill/          # 약 검색·상세·Room(최근 검색)
+│   ├── notification/  # 복약 로그·스케줄 API·알람·로컬 백업 엔티티
+│   ├── map/           # 지도·카카오 API
+│   ├── user/          # 사용자 설정
+│   └── splash/        # 스플래시
+├── push/              # FCM 서비스·알림 DAO·수신 처리
+├── navigation/        # NavGraph
+├── data/api/          # Retrofit 모듈(NetworkModule 등)
+├── core/network/      # 인증 인터셉터·토큰 갱신
+├── di/                # Hilt 모듈
+└── ui/                # 공통 테마·컴포넌트
 ```
 
+## 실행 방법
 
-## 사용 방법
-1. 레포지토리를 클론합니다:
+1. 상위 저장소를 클론한 뒤 Android Studio에서 **`application_project`** 디렉터리를 엽니다.
+2. 필요한 경우 `alyak-api-server` 를 기동하고, `NetworkModule` 의 서버 URL을 맞춥니다.
+3. Firebase·Kakao 등 키 설정을 완료합니다.
+4. Gradle 동기화 후 **`app`** 구성으로 실행합니다.
+
+명령줄 예시:
+
+```bash
+cd application_project
+./gradlew :app:assembleDebug
+```
+
+## 관련 문서
+
+- [모노레포 개요](../README.md)
+- [Spring Boot API](../alyak-api-server/README.md)
