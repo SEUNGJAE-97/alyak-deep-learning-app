@@ -58,4 +58,9 @@ public class PillController {
 
         return ResponseEntity.ok(results);
     }
+
+    @GetMapping("/autocomplete/rdb")
+    public ResponseEntity<List<String>> getAutocompleteRdb(@RequestParam String keyword) {
+        return ResponseEntity.ok(pillService.autocompleteFromRdb(keyword));
+    }
 }

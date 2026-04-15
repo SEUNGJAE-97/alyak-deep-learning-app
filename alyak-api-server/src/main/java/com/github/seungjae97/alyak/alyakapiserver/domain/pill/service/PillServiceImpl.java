@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -428,6 +429,16 @@ public class PillServiceImpl implements PillService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<String> autocompleteFromRdb(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return Collections.emptyList();
+        }
+        return pillRepository.findByPillNameContaining(keyword, PageRequest.of(0, 10))
+                .stream()
+                .map(Pill::getPillName)
+                .collect(Collectors.toList());
+    }
     private OcrResponse callFastApi(MultipartFile image) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);

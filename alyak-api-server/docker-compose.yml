@@ -43,7 +43,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./uplifted-studio-457001-h1-firebase-adminsdk-fbsvc-06cdb7fc02.json:/run/secrets/firebase-adminsdk.json:ro
+      - ./firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
     environment:
       SPRING_PROFILES_ACTIVE: prod
       # Database Configuration
