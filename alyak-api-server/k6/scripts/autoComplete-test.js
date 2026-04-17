@@ -1,20 +1,20 @@
 import http from 'k6/http';
-import { check, sleep } from 'k6';
 
 export const options = {
     scenarios: {
         // 첫 번째 API 테스트 (예: 캐시/기타 최적화 적용)
         autocomplete: {
             executor: 'constant-vus',
-            exec: 'testAutocomplete', // 실행할 함수 이름
-            vus: 10,
+            exec: 'testAutocomplete',
+            vus: 50,
             duration: '30s',
         },
         // 두 번째 API 테스트 (RDB 직접 조회)
         autocomplete_rdb: {
             executor: 'constant-vus',
-            exec: 'testAutocompleteRdb', // 실행할 함수 이름
-            vus: 10,
+            exec: 'testAutocompleteRdb',
+            vus: 50,
+            startTime: '30s',
             duration: '30s',
         },
     },
@@ -26,7 +26,7 @@ export const options = {
 
 const params = {
     headers: {
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpZCI6MSwiaWF0IjoxNzc2MTUxNTAwLCJleHAiOjE3NzYxNTUxMDB9.2PEDqQYfCrayUdzaGXiYi__b8EHdBg1PBBWOZ4FSMS0',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJpZCI6MSwiaWF0IjoxNzc2NDA5MTA5LCJleHAiOjE3NzY0MTI3MDl9.qpCNF9ao4KANMlTR5nUlDj6wpWcm5AfM_KlisS2Kbf8',
     },
 };
 
