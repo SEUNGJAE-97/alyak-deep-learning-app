@@ -402,7 +402,7 @@ public class PillServiceImpl implements PillService {
     }
 
     @Override
-    public List<PillDto> autocomplete(String keyword) {
+    public List<String> autocomplete(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return Collections.emptyList();
         }
@@ -422,7 +422,6 @@ public class PillServiceImpl implements PillService {
                     return parts.length > 1 ? parts[1] : result;
                 })
                 .distinct()
-                .map(name -> PillDto.builder().name(name).ingredient("").nameEn("").build())
                 .collect(Collectors.toList());
         */
 
@@ -439,11 +438,9 @@ public class PillServiceImpl implements PillService {
         );
 
         return result.getDocuments().stream()
-                .map(doc -> PillDto.builder()
-                        .name(doc.getString("name"))
-                        .ingredient(doc.getString("ingredient"))
-                        .nameEn(doc.getString("name_en"))
-                        .build())
+                .map(doc -> doc.getString("name"))
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
                 .collect(Collectors.toList());
     }
 

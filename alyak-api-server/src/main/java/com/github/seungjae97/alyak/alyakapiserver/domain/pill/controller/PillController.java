@@ -1,6 +1,5 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.controller;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillDto;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.service.PillService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,13 +50,12 @@ public class PillController {
     }
 
     @GetMapping("/autocomplete")
-    public ResponseEntity<List<PillDto>> getAutocomplete(@RequestParam String keyword) {
+    @Operation(summary = "자동완성", description = "검색어에 맞는 알약명 문자열 목록만 반환합니다.")
+    public ResponseEntity<List<String>> getAutocomplete(@RequestParam String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return ResponseEntity.ok(List.of());
         }
-        List<PillDto> results = pillService.autocomplete(keyword);
-
-        return ResponseEntity.ok(results);
+        return ResponseEntity.ok(pillService.autocomplete(keyword));
     }
 
     @GetMapping("/autocomplete/rdb")
