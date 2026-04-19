@@ -2,6 +2,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillDetailResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillDto;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.SimplePillInfo;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillAppearance;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,7 +33,7 @@ public interface PillService {
 
     List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images);
 
-    List<String> autocomplete(String keyword);
+    List<PillDto> autocomplete(String keyword);
 
     List<String> autocompleteFromRdb(String keyword);
 }

@@ -35,6 +35,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.data.domain.Range;
 import org.springframework.data.redis.connection.Limit;
+import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.search.FTSearchParams;
+import redis.clients.jedis.search.SearchResult;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -62,6 +65,7 @@ public class PillServiceImpl implements PillService {
     private final TaskScheduler pillIdentifyTaskScheduler;
 
     private final StringRedisTemplate redisTemplate;
+    private final JedisPooled jedis;
     private static final String AUTOCOMPLETE_KEY = "autocomplete";
     private static final Duration IDENTIFY_API_DELAY = Duration.ofSeconds(5);
     private static final Pattern ALERT_SPLIT_PATTERN = Pattern.compile("[.!?]\\s*\\n*");
@@ -398,34 +402,48 @@ public class PillServiceImpl implements PillService {
     }
 
     @Override
-    public List<String> autocomplete(String keyword) {
+    public List<PillDto> autocomplete(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return Collections.emptyList();
         }
 
-        // 2. 유틸리티 클래스를 사용하여 검색어 자소 분리
+        /*
+        // 기존 ZSET 기반 autocomplete 로직
         String decomposedKeyword = HangulUtils.decompose(keyword);
-
-        // 3. Redis 검색 범위 설정 (시작단어 ~ 시작단어 + 유니코드 마지막 문자)
         Range<String> range = Range.closed(decomposedKeyword, decomposedKeyword + "\uFFFF");
-
-        // 4. 최대 10개까지만 반환하도록 제한
         Limit limit = Limit.limit().count(10);
-
-        // 5. Redis 범위 검색 실행
         Set<String> matchedResults = redisTemplate.opsForZSet().rangeByLex(AUTOCOMPLETE_KEY, range, limit);
-
         if (matchedResults == null || matchedResults.isEmpty()) {
             return Collections.emptyList();
         }
-
-        // 6. 결과 가공 ("ㅌㅏㅇㅣㄹㅔㄴㅗㄹ:타이레놀정500mg" -> "타이레놀정500mg")
         return matchedResults.stream()
                 .map(result -> {
                     String[] parts = result.split(":");
                     return parts.length > 1 ? parts[1] : result;
                 })
                 .distinct()
+                .map(name -> PillDto.builder().name(name).ingredient("").nameEn("").build())
+                .collect(Collectors.toList());
+        */
+
+        String trimmed = keyword.replaceAll("\\s+", "").toLowerCase();
+        String cho = HangulUtils.decompose(trimmed);
+        String query = String.format(
+                "(@name_cho:{*%s*} | @ingredient_cho:{*%s*} | @name_en:{*%s*})",
+                escape(cho), escape(cho), escape(trimmed)
+        );
+        SearchResult result = jedis.ftSearch(
+                "pill_idx",
+                query,
+                FTSearchParams.searchParams().limit(0, 20)
+        );
+
+        return result.getDocuments().stream()
+                .map(doc -> PillDto.builder()
+                        .name(doc.getString("name"))
+                        .ingredient(doc.getString("ingredient"))
+                        .nameEn(doc.getString("name_en"))
+                        .build())
                 .collect(Collectors.toList());
     }
 
@@ -439,6 +457,11 @@ public class PillServiceImpl implements PillService {
                 .map(Pill::getPillName)
                 .collect(Collectors.toList());
     }
+
+    private String escape(String s) {
+        return s.replaceAll("([,.<>{}\\[\\]\"':;!@#$%^&*()+~|])", "\\\\$1");
+    }
+
     private OcrResponse callFastApi(MultipartFile image) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);

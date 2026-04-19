@@ -7,6 +7,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import redis.clients.jedis.JedisPooled;
 
 @Configuration
 public class RedisConfig {
@@ -30,5 +31,10 @@ public class RedisConfig {
     @Bean
     public StringRedisTemplate stringRedisTemplate() {
         return new StringRedisTemplate(redisConnectionFactory());
+    }
+
+    @Bean
+    public JedisPooled jedisPooled() {
+        return new JedisPooled(host, port);
     }
 }
