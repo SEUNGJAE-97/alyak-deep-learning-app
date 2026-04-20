@@ -71,6 +71,7 @@ public class PillServiceImpl implements PillService {
     private static final Pattern ALERT_SPLIT_PATTERN = Pattern.compile("[.!?]\\s*\\n*");
     private static final WebClient webClient = WebClient.builder().baseUrl("").build();
     private static final Map<String, String> CAUTION_KEYWORD_MAP;
+
     static {
         Map<String, String> map = new HashMap<>();
         map.put("임부 또는 수유부", "임산부/수유부");
@@ -84,7 +85,9 @@ public class PillServiceImpl implements PillService {
         map.put("글루타치온", "글루타치온 부족");
         CAUTION_KEYWORD_MAP = Collections.unmodifiableMap(map);
     }
+
     private static final Map<String, String> EFFICACY_KEYWORD_MAP;
+
     static {
         Map<String, String> map = new HashMap<>();
         map.put("발열", "해열");
@@ -190,14 +193,14 @@ public class PillServiceImpl implements PillService {
     }
 
     private Boolean callIdentifyAPI(Long itemSeq) {
-        if(pillAppearanceRepository.findById(itemSeq).isEmpty()) {
+        if (pillAppearanceRepository.findById(itemSeq).isEmpty()) {
             String url = UriComponentsBuilder.fromUriString("https://apis.data.go.kr/1471000/MdcinGrnIdntfcInfoService03/getMdcinGrnIdntfcInfoList03")
                     .queryParam("serviceKey", serviceKey)
                     .queryParam("item_seq", itemSeq)
                     .queryParam("type", "json")
                     .build()
                     .toUriString();
-            log.info("URL: {}" , url);
+            log.info("URL: {}", url);
             PillAppearanceResponse response = restTemplateService.getForObject(url, PillAppearanceResponse.class);
 
             if (response == null || response.getBody() == null || response.getBody().getItems() == null) {
@@ -256,6 +259,7 @@ public class PillServiceImpl implements PillService {
 
     /**
      * 색상 이름(String)을 PillColor ID(Long)로 변환
+     *
      * @param colorName 색상 이름 (예: "연두")
      * @return PillColor ID, 없으면 null
      */
@@ -270,6 +274,7 @@ public class PillServiceImpl implements PillService {
 
     /**
      * 모양 이름(String)을 PillShape ID(Long)로 변환
+     *
      * @param shapeName 모양 이름
      * @return PillShape ID, 없으면 null
      */
@@ -284,6 +289,7 @@ public class PillServiceImpl implements PillService {
 
     /**
      * 약의 효능/효과 텍스트에서 주요 효능 태그를 추출합니다.
+     *
      * @param efficacyText pillEfficacy (or pillDescription)
      * @return 추출된 태그 목록
      */
@@ -303,6 +309,7 @@ public class PillServiceImpl implements PillService {
 
     /**
      * 주의사항 텍스트에서 임산부, 노인 등 특별 주의 대상 태그를 추출합니다.
+     *
      * @param cautionText pillCaution
      * @return 추출된 특별 주의 태그 목록
      */
@@ -327,7 +334,8 @@ public class PillServiceImpl implements PillService {
     /**
      * 경고 및 상호작용 텍스트를 하나의 리스트 항목으로 분리합니다.
      * 주요 구분자는 문장 종료(`.`, `!`, `?`)와 줄 바꿈입니다.
-     * @param warnText pillWarn (일반 경고)
+     *
+     * @param warnText        pillWarn (일반 경고)
      * @param interactiveText pillInteractive (약물 상호작용)
      * @return 분리된 주의사항 항목 목록
      */
@@ -357,23 +365,23 @@ public class PillServiceImpl implements PillService {
     }
 
 
-    public List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images){
+    public List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images) {
         List<SimplePillInfo> results = new ArrayList<>();
         log.info("[OCR] 이미지 {}장 처리 시작", images.size());
-        for(MultipartFile image : images){
-            try{
+        for (MultipartFile image : images) {
+            try {
                 // 1. FastAPI 호출
                 OcrResponse ocrResponse = callFastApi(image);
-                log.info("[OCR] FastAPI 응답: filename={}, results 개수={}", 
+                log.info("[OCR] FastAPI 응답: filename={}, results 개수={}",
                         ocrResponse != null ? ocrResponse.filename() : null,
                         ocrResponse != null && ocrResponse.results() != null ? ocrResponse.results().size() : 0);
-                if(ocrResponse != null && ocrResponse.results() != null){
+                if (ocrResponse != null && ocrResponse.results() != null) {
                     // 2. 결과(알약명)로 DB 조회
-                    for(OcrResult ocrResult : ocrResponse.results()){
+                    for (OcrResult ocrResult : ocrResponse.results()) {
                         log.debug("[OCR] text={}, confidence={}", ocrResult.text(), ocrResult.confidence());
                         if (ocrResult.confidence() > 0.5f) {
                             List<SimplePillInfo> found = pillRepository.findByPillNameWithType(ocrResult.text());
-                            log.info("[OCR] DB 조회: text='{}', confidence={}, 매칭 수={}", 
+                            log.info("[OCR] DB 조회: text='{}', confidence={}, 매칭 수={}",
                                     ocrResult.text(), ocrResult.confidence(), found.size());
                             found.stream()
                                     .map(pill -> SimplePillInfo.builder()
@@ -387,7 +395,7 @@ public class PillServiceImpl implements PillService {
                                     )
                                     .forEach(results::add);
                         } else {
-                            log.info("[OCR] confidence 낮음 제외: text='{}', confidence={} (임계값 0.5)", 
+                            log.info("[OCR] confidence 낮음 제외: text='{}', confidence={} (임계값 0.5)",
                                     ocrResult.text(), ocrResult.confidence());
                         }
                     }
@@ -407,40 +415,34 @@ public class PillServiceImpl implements PillService {
             return Collections.emptyList();
         }
 
-        /*
-        // 기존 ZSET 기반 autocomplete 로직
-        String decomposedKeyword = HangulUtils.decompose(keyword);
-        Range<String> range = Range.closed(decomposedKeyword, decomposedKeyword + "\uFFFF");
-        Limit limit = Limit.limit().count(10);
-        Set<String> matchedResults = redisTemplate.opsForZSet().rangeByLex(AUTOCOMPLETE_KEY, range, limit);
-        if (matchedResults == null || matchedResults.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return matchedResults.stream()
-                .map(result -> {
-                    String[] parts = result.split(":");
-                    return parts.length > 1 ? parts[1] : result;
-                })
-                .distinct()
-                .collect(Collectors.toList());
-        */
-
         String trimmed = keyword.replaceAll("\\s+", "").toLowerCase();
         String cho = HangulUtils.decompose(trimmed);
+
+        // Redis에서 한번에 다 가져오기
         String query = String.format(
                 "(@name_cho:{*%s*} | @ingredient_cho:{*%s*} | @name_en:{*%s*})",
                 escape(cho), escape(cho), escape(trimmed)
         );
         SearchResult result = jedis.ftSearch(
-                "pill_idx",
-                query,
-                FTSearchParams.searchParams().limit(0, 20)
+                "pill_idx", query,
+                FTSearchParams.searchParams().limit(0, 50)
         );
 
-        return result.getDocuments().stream()
+        List<String> names = result.getDocuments().stream()
                 .map(doc -> doc.getString("name"))
                 .filter(name -> name != null && !name.isBlank())
                 .distinct()
+                .collect(Collectors.toList());
+
+        // Java에서 원본 keyword 기준으로 재정렬
+        return names.stream()
+                .sorted(Comparator.comparingInt(name -> {
+                    String normalized = name.replaceAll("\\s+", "").toLowerCase();
+                    if (normalized.startsWith(trimmed)) return 0;       // 1순위: "타이"로 시작
+                    if (normalized.contains(trimmed)) return 1;         // 2순위: 중간에 "타이" 포함
+                    return 2;                                           // 3순위: 초성만 매칭 (타임 등)
+                }))
+                .limit(20)
                 .collect(Collectors.toList());
     }
 
