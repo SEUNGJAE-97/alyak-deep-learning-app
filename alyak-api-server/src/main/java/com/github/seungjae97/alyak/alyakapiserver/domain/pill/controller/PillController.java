@@ -50,12 +50,16 @@ public class PillController {
     }
 
     @GetMapping("/autocomplete")
+    @Operation(summary = "자동완성", description = "검색어에 맞는 알약명 문자열 목록만 반환합니다.")
     public ResponseEntity<List<String>> getAutocomplete(@RequestParam String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return ResponseEntity.ok(List.of());
         }
-        List<String> results = pillService.autocomplete(keyword);
+        return ResponseEntity.ok(pillService.autocomplete(keyword));
+    }
 
-        return ResponseEntity.ok(results);
+    @GetMapping("/autocomplete/rdb")
+    public ResponseEntity<List<String>> getAutocompleteRdb(@RequestParam String keyword) {
+        return ResponseEntity.ok(pillService.autocompleteFromRdb(keyword));
     }
 }

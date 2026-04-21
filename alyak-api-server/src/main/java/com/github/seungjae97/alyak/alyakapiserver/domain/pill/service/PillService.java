@@ -33,4 +33,6 @@ public interface PillService {
     List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images);
 
     List<String> autocomplete(String keyword);
+
+    List<String> autocompleteFromRdb(String keyword);
 }

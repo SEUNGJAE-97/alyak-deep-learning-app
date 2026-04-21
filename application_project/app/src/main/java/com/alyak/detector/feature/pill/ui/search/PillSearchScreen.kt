@@ -1,5 +1,6 @@
 package com.alyak.detector.feature.pill.ui.search
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -58,6 +59,7 @@ import com.alyak.detector.feature.pill.ui.search.components.PillSearchBar
 import com.alyak.detector.feature.pill.ui.search.components.RecentSearch
 import com.alyak.detector.feature.pill.ui.search.components.SearchActionButtons
 import com.alyak.detector.feature.pill.ui.search.components.ShapeIcon
+import com.alyak.detector.feature.pill.ui.search.components.getAnnotatedString
 import com.alyak.detector.ui.components.HeaderForm
 import kotlinx.coroutines.launch
 
@@ -230,8 +232,13 @@ fun PillSearchScreen(
                         modifier = Modifier.heightIn(max = 200.dp)
                     ) {
                         items(suggestions) { suggestion ->
+                            Log.d("com.alyak.detector", "fullText=$suggestion, query=$searchQuery")
+                            val annotatedSuggestion = getAnnotatedString(
+                                fullText = suggestion,
+                                query = searchQuery
+                            )
                             Text(
-                                text = suggestion,
+                                text = annotatedSuggestion,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
