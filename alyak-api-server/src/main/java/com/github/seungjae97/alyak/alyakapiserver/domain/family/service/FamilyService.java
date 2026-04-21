@@ -11,7 +11,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.notification.service.Pu
 import com.github.seungjae97.alyak.alyakapiserver.domain.schedule.service.MedicationStatsService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
-import com.github.seungjae97.alyak.alyakapiserver.global.redis.service.RedisService;
+import com.github.seungjae97.alyak.alyakapiserver.global.Redis.service.RedisService;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import com.github.seungjae97.alyak.alyakapiserver.global.mail.service.EmailService;
@@ -139,16 +139,12 @@ public class FamilyService {
             return;
         }
 
-        if (!invitee.getFamilyMembers().isEmpty()) {
-            throw new BusinessException(BusinessError.ALREADY_IN_OTHER_FAMILY);
-        }
-
         if (!redisService.verifyAndConsumeFamilyInvitePending(inviteeUserId, inviterUserId)) {
             throw new BusinessException(BusinessError.FAMILY_INVITE_EXPIRED_OR_INVALID);
         }
 
 
-        mergeInviteeIntoInvitersFamily(invitee, inviter, null);
+        mergeInviteeIntoInvitersFamily(invitee, inviter);
     }
 
     /**
@@ -186,37 +182,37 @@ public class FamilyService {
             return;
         }
 
-        if (!invitee.getFamilyMembers().isEmpty()) {
-            throw new BusinessException(BusinessError.ALREADY_IN_OTHER_FAMILY);
-        }
-
-        mergeInviteeIntoInvitersFamily(invitee, inviter, null);
+        mergeInviteeIntoInvitersFamily(invitee, inviter);
         redisService.deleteFamilyQrMappings(code, inviterEmailNorm);
     }
 
-    private void mergeInviteeIntoInvitersFamily(User invitee, User inviter, Long familyId) {
+    @Transactional
+    protected void mergeInviteeIntoInvitersFamily(User invitee, User inviter) {
         Family targetFamily;
+        boolean inviterHasFamily = !inviter.getFamilyMembers().isEmpty();
+        boolean inviteeHasFamily = !invitee.getFamilyMembers().isEmpty();
 
-        if (inviter.getFamilyMembers().isEmpty()) {
+        // 케이스 3, 4: 초대받은 사람이 가족이 있거나, 초대한 사람도 없는 경우 신규 생성
+        if (!inviterHasFamily || inviteeHasFamily) {
             targetFamily = familyRepository.save(Family.builder().build());
-            familyMemberRepository.save(FamilyMember.builder()
-                    .user(inviter)
-                    .family(targetFamily)
-                    .build());
-        } else if (familyId != null) {
-            targetFamily = familyRepository.findById(familyId)
-                    .orElseThrow(() -> new BusinessException(BusinessError.ALREADY_IN_OTHER_FAMILY));
+
+            // Inviter가 기존에 가족이 있었더라도 '새로운' 가족으로 추가하는 경우라면 추가 필요
+            saveFamilyMember(inviter, targetFamily);
         } else {
+            // 케이스 2: 초대한 사람만 가족이 있는 경우
             targetFamily = inviter.getFamilyMembers().get(0).getFamily();
         }
 
-        boolean alreadyJoined = familyMemberRepository
-                .existsByUser_UserIdAndFamily_Id(invitee.getUserId(), targetFamily.getId());
-        if (alreadyJoined) return;
+        // 3. 초대받은 사람 추가
+        saveFamilyMember(invitee, targetFamily);
+    }
 
-        familyMemberRepository.save(FamilyMember.builder()
-                .user(invitee)
-                .family(targetFamily)
-                .build());
+    private void saveFamilyMember(User user, Family family) {
+        if (!familyMemberRepository.existsByUser_UserIdAndFamily_Id(user.getUserId(), family.getId())) {
+            familyMemberRepository.save(FamilyMember.builder()
+                    .user(user)
+                    .family(family)
+                    .build());
+        }
     }
 }

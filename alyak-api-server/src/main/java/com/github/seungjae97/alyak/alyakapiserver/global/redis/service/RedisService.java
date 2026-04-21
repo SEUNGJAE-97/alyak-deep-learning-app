@@ -1,4 +1,4 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.redis.service;
+package com.github.seungjae97.alyak.alyakapiserver.global.Redis.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
