@@ -4,6 +4,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -19,7 +20,8 @@ public class Family {
     @Id
     private Long id;
 
-    @OneToMany(mappedBy = "family")
-    private List<User> users;
+    @OneToMany(mappedBy = "family", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Builder.Default
+    private List<FamilyMember> members = new ArrayList<>();
 
 }

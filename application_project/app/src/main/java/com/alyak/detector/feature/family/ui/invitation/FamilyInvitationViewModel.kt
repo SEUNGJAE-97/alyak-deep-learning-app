@@ -1,0 +1,201 @@
+package com.alyak.detector.feature.family.ui.invitation
+
+import android.graphics.Bitmap
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.alyak.detector.feature.family.data.api.FamilyApi
+import com.alyak.detector.feature.family.data.model.FamilyJoinByQrRequest
+import com.alyak.detector.utils.QRUtils
+import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+@HiltViewModel
+class FamilyInvitationViewModel @Inject constructor(
+    private val familyApi: FamilyApi,
+) : ViewModel() {
+    // 현재 선택된 초대 방식이나 QR 코드 상태 등을 관리
+    private val _uiState = MutableStateFlow<InvitationUiState>(InvitationUiState.Idle)
+    val uiState = _uiState.asStateFlow()
+    private val _scannedInviteToken = MutableStateFlow<String?>(null)
+    val scannedInviteToken = _scannedInviteToken.asStateFlow()
+
+    private val _inviteEmailEvent = MutableSharedFlow<InviteEmailUiEvent>(extraBufferCapacity = 1)
+    val inviteEmailEvent = _inviteEmailEvent.asSharedFlow()
+
+    private val _joinByQrEvent = MutableSharedFlow<JoinByQrUiEvent>(extraBufferCapacity = 1)
+    val joinByQrEvent = _joinByQrEvent.asSharedFlow()
+
+    private final val INVITE_TTL_SECONDS = 60
+    private var timerJob: Job? = null
+
+    // 초대 옵션 선택
+    fun onOptionSelected(option: InvitationOption) {
+        when(option){
+            InvitationOption.QR_CODE -> {
+                generateInviteCode()
+            }
+            InvitationOption.EMAIL -> {
+
+            }
+            InvitationOption.SMS -> {
+
+            }
+        }
+    }
+
+    // QR 재생성
+    fun onClickRegenerate() {
+        generateInviteCode()
+    }
+
+    fun onQrScanned(token: String) {
+        Log.d("FamilyInvitation", "QR scanned: $token")
+        viewModelScope.launch {
+            val trimmed = token.trim()
+            if (trimmed.isEmpty()) {
+                _joinByQrEvent.emit(JoinByQrUiEvent.Failure("인식된 코드가 없습니다."))
+                return@launch
+            }
+            try {
+                val response = familyApi.joinFamilyByQr(FamilyJoinByQrRequest(scannedCode = trimmed))
+                if (response.isSuccessful) {
+                    _scannedInviteToken.value = trimmed
+                    _joinByQrEvent.emit(JoinByQrUiEvent.Success)
+                } else {
+                    _joinByQrEvent.emit(
+                        JoinByQrUiEvent.Failure("가족 합류에 실패했습니다. (${response.code()})")
+                    )
+                }
+            } catch (e: Exception) {
+                _joinByQrEvent.emit(
+                    JoinByQrUiEvent.Failure(e.message ?: "네트워크 오류가 발생했습니다.")
+                )
+            }
+        }
+    }
+
+    fun inviteByEmail(email: String) {
+        viewModelScope.launch {
+            val trimmed = email.trim()
+            if (trimmed.isBlank()) {
+                _inviteEmailEvent.emit(InviteEmailUiEvent.Failure("이메일을 입력해 주세요."))
+                return@launch
+            }
+            try {
+                val response = familyApi.inviteByEmail(trimmed)
+                if (response.isSuccessful && response.body() == true) {
+                    _inviteEmailEvent.emit(InviteEmailUiEvent.Success)
+                } else {
+                    _inviteEmailEvent.emit(
+                        InviteEmailUiEvent.Failure(
+                            "초대 요청에 실패했습니다. (${response.code()})"
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                _inviteEmailEvent.emit(
+                    InviteEmailUiEvent.Failure(e.message ?: "네트워크 오류가 발생했습니다.")
+                )
+            }
+        }
+    }
+
+    // QR코드를 생성하는 함수
+    private fun generateInviteCode() {
+        timerJob?.cancel()
+
+        viewModelScope.launch {
+            _uiState.value = InvitationUiState.Loading
+            try {
+                val response = familyApi.getQrCode()
+                val token = response.body()?.trim().orEmpty()
+                if (!response.isSuccessful || token.isEmpty()) {
+                    _uiState.value = InvitationUiState.Error(
+                        "QR 발급에 실패했습니다. (${response.code()})"
+                    )
+                    return@launch
+                }
+                val qrBitmap = QRUtils.createQRCode(token)
+                _uiState.value = InvitationUiState.Success(
+                    inviteCode = qrBitmap,
+                    remainingSeconds = INVITE_TTL_SECONDS,
+                    isExpired = false
+                )
+                startCountdown()
+            } catch (e: Exception) {
+                _uiState.value = InvitationUiState.Error(
+                    e.message ?: "QR 발급 중 오류가 발생했습니다."
+                )
+            }
+        }
+    }
+
+    private fun startCountdown() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            var remaining = INVITE_TTL_SECONDS
+            while (remaining > 0) {
+                delay(1_000L)
+                remaining--
+
+                val currentState = _uiState.value
+                if (currentState is InvitationUiState.Success) {
+                    _uiState.value = currentState.copy(
+                        remainingSeconds = remaining,
+                        isExpired = false
+                    )
+                } else {
+                    // 화면이 바뀌었거나 에러면 타이머 중단
+                    break
+                }
+            }
+
+            // 0초가 되면 만료 상태로 플래그만 변경
+            val finalState = _uiState.value
+            if (finalState is InvitationUiState.Success) {
+                _uiState.value = finalState.copy(
+                    remainingSeconds = 0,
+                    isExpired = true
+                )
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        timerJob?.cancel()
+    }
+}
+
+
+sealed class InvitationUiState {
+    object Idle : InvitationUiState()
+    object Loading : InvitationUiState()
+    data class Success(
+        val inviteCode: Bitmap,
+        val remainingSeconds: Int,
+        val isExpired: Boolean
+    ) : InvitationUiState()
+    data class Error(val message: String) : InvitationUiState()
+}
+enum class InvitationOption {
+    QR_CODE, EMAIL, SMS
+}
+
+sealed interface InviteEmailUiEvent {
+    data object Success : InviteEmailUiEvent
+    data class Failure(val message: String) : InviteEmailUiEvent
+}
+
+sealed interface JoinByQrUiEvent {
+    data object Success : JoinByQrUiEvent
+    data class Failure(val message: String) : JoinByQrUiEvent
+}

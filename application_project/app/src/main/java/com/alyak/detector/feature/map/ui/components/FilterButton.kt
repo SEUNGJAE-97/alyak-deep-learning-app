@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.Composable
@@ -39,7 +38,8 @@ fun FilterButton(
     borderColor: Color = unselectedTextColor,
     icon: Painter? = null
 ) {
-    val currentBackgroundColor = if (isSelected) selectedBackgroundColor else unselectedBackgroundColor
+    val currentBackgroundColor =
+        if (isSelected) selectedBackgroundColor else unselectedBackgroundColor
     val currentTextColor = if (isSelected) selectedTextColor else unselectedTextColor
     val borderStroke = if (!isSelected) {
         BorderStroke(width = 1.dp, color = borderColor)
@@ -48,7 +48,10 @@ fun FilterButton(
     }
     Box(
         modifier = Modifier
-            .border(border = borderStroke ?: BorderStroke(0.dp, Color.Transparent), shape = CircleShape)
+            .border(
+                border = borderStroke ?: BorderStroke(0.dp, Color.Transparent),
+                shape = CircleShape
+            )
             .clip(CircleShape)
             .clickable(onClick = onClick)
     ) {

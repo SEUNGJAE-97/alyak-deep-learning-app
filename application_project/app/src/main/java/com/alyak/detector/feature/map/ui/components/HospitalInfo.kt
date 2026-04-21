@@ -68,7 +68,7 @@ fun HospitalInfo(
             }
 
             Spacer(Modifier.height(6.dp))
-            Text("${hospitalDistance}m", fontSize = 14.sp, color = Color.Gray)
+            Text(hospitalDistance, fontSize = 14.sp, color = Color.Gray)
             Spacer(Modifier.height(10.dp))
             Text(hospitalAddress, fontSize = 15.sp)
             Spacer(Modifier.height(10.dp))

@@ -32,6 +32,7 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("redis.clients:jedis")
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("com.auth0:java-jwt:4.4.0")
 
@@ -51,6 +52,12 @@ dependencies {
     //OpenFeign 외부 API 호출용
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign:4.3.0")
 
+    // Firebase Admin (FCM)
+    implementation("com.google.firebase:firebase-admin:9.4.3")
+
+    // build.gradle
+    implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation ("org.springframework.boot:spring-boot-starter-actuator")
 }
 
 tasks.withType<JavaCompile> {

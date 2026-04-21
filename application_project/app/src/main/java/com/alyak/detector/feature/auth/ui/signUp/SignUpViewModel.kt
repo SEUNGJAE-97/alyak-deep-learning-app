@@ -3,7 +3,6 @@ package com.alyak.detector.feature.auth.ui.signUp
 import android.content.Context
 import android.util.Log
 import android.util.Patterns
-import android.widget.Toast
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -12,10 +11,14 @@ import androidx.lifecycle.viewModelScope
 import com.alyak.detector.core.network.ApiResult
 import com.alyak.detector.core.network.safeCall
 import com.alyak.detector.feature.auth.data.api.AuthApi
-import com.alyak.detector.feature.auth.data.model.CodeValidateRequest
 import com.alyak.detector.feature.auth.data.model.SignUpRequest
 import com.alyak.detector.feature.auth.data.model.SignUpResponse
+import com.alyak.detector.feature.auth.domain.EmailVerificationConstants
+import com.alyak.detector.feature.auth.domain.EmailVerificationMode
+import com.alyak.detector.feature.auth.domain.RequestEmailCodeUseCase
+import com.alyak.detector.feature.auth.domain.VerifyEmailCodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -24,18 +27,56 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
-    private val authApi: AuthApi
+    private val authApi: AuthApi,
+    private val requestEmailCodeUseCase: RequestEmailCodeUseCase,
+    private val verifyEmailCodeUseCase: VerifyEmailCodeUseCase,
 ) : ViewModel() {
+    private val _timeLeft = MutableStateFlow(EmailVerificationConstants.TIMER_SECONDS)
+    val timeLeft: StateFlow<Int> = _timeLeft
+
+    private val _isTimerRunning = MutableStateFlow(false)
+    fun startTimer() {
+        _timeLeft.value = EmailVerificationConstants.TIMER_SECONDS
+        _isTimerRunning.value = true
+        viewModelScope.launch {
+            while (_isTimerRunning.value && _timeLeft.value > 0) {
+                delay(1000L)
+                _timeLeft.value--
+            }
+            _isTimerRunning.value = false
+        }
+    }
+
     private val _signUpResult = MutableStateFlow<Result<SignUpResponse>?>(null)
     val signUpResult: StateFlow<Result<SignUpResponse>?> = _signUpResult
     private val _state = MutableStateFlow(SignUpState())
     val state: StateFlow<SignUpState> = _state
+
     private val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
-    fun validateEmail(email: String) {
-        val pattern: Pattern = Patterns.EMAIL_ADDRESS
-        val isValid = pattern.matcher(email).matches()
-        _state.value = _state.value.copy(validEmail = isValid)
+    fun isEmailFormatValid(email: String): Boolean =
+        Patterns.EMAIL_ADDRESS.matcher(email).matches()
+
+    /** 이메일 입력 변경 — 주소가 바뀌면 인증 메일 발송·인증 완료 상태 초기화 */
+    fun onSignUpEmailInputChanged(newEmail: String) {
+        val prev = _state.value
+        val emailChanged = newEmail != prev.email
+        val verificationLost = prev.emailVerified && emailChanged
+        _state.value = prev.copy(
+            email = newEmail,
+            verificationMailSent = if (emailChanged) false else prev.verificationMailSent,
+            emailVerified = if (verificationLost) false else prev.emailVerified,
+            verifyCodeErrorMessage = if (emailChanged) null else prev.verifyCodeErrorMessage,
+            requestCodeErrorMessage = if (emailChanged) null else prev.requestCodeErrorMessage,
+        )
+    }
+
+    fun clearVerifyCodeError() {
+        _state.value = _state.value.copy(verifyCodeErrorMessage = null)
+    }
+
+    fun clearRequestCodeError() {
+        _state.value = _state.value.copy(requestCodeErrorMessage = null)
     }
 
     fun validatePassword(password: String) {
@@ -45,7 +86,10 @@ class SignUpViewModel @Inject constructor(
         _state.value = _state.value.copy(validPassword = isValid)
     }
 
-    fun signUpUser(email: String, password: String, name: String, context: Context) {
+    fun signUpUser(password: String, name: String, context: Context) {
+        val st = _state.value
+        if (!st.emailVerified || st.email.isBlank()) return
+        val email = st.email
         viewModelScope.launch {
             when (val result = safeCall { authApi.signUp(SignUpRequest(email, password, name)) }) {
                 is ApiResult.Success -> {
@@ -66,17 +110,33 @@ class SignUpViewModel @Inject constructor(
     }
 
     fun requestCode(email: String) {
+        _state.value = _state.value.copy(requestCodeErrorMessage = null)
         viewModelScope.launch {
-            when(val result = safeCall { authApi.requestCode(email) }){
+            when (val result = requestEmailCodeUseCase(email, EmailVerificationMode.SIGN_UP)) {
                 is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        verificationMailSent = true,
+                        requestCodeErrorMessage = null,
+                    )
+                    startTimer()
                     Log.d("code success : ", result.toString())
                 }
 
                 is ApiResult.Error -> {
-                    val errorMsg = "오류 ${result.code}: ${result.message}"
-                    Log.d("code error : ", errorMsg)
+                    val msg = result.message?.takeIf { it.isNotBlank() }
+                        ?: "인증번호를 보낼 수 없습니다. (${result.code})"
+                    _state.value = _state.value.copy(
+                        verificationMailSent = false,
+                        requestCodeErrorMessage = msg,
+                    )
+                    Log.d("code error : ", "${result.code} $msg")
                 }
+
                 is ApiResult.Exception -> {
+                    _state.value = _state.value.copy(
+                        verificationMailSent = false,
+                        requestCodeErrorMessage = "네트워크 오류가 발생했습니다.",
+                    )
                     Log.d("code error : ", result.throwable.toString())
                 }
             }
@@ -84,18 +144,28 @@ class SignUpViewModel @Inject constructor(
     }
 
     fun verifyCode(email: String, code: String) {
+        _state.value = _state.value.copy(verifyCodeErrorMessage = null)
         viewModelScope.launch {
-            when(val result = safeCall { authApi.verifyCode(CodeValidateRequest(email, code)) }){
+            when (val result = verifyEmailCodeUseCase(email, code)) {
                 is ApiResult.Success -> {
-                    _state.value = _state.value.copy(isVerified = true)
+                    _state.value = _state.value.copy(
+                        emailVerified = true,
+                        verifyCodeErrorMessage = null,
+                    )
                 }
 
                 is ApiResult.Error -> {
-                    val errorMsg = "오류 ${result.code}: ${result.message}"
-                    Log.d("code error : ", errorMsg)
+                    val msg = result.message?.takeIf { it.isNotBlank() }
+                        ?: "인증에 실패했습니다. (${result.code})"
+                    _state.value = _state.value.copy(verifyCodeErrorMessage = msg)
+                    Log.d("SignUp", "verifyCode error: ${result.code} $msg")
                 }
+
                 is ApiResult.Exception -> {
-                    Log.d("code error : ", result.throwable.toString())
+                    _state.value = _state.value.copy(
+                        verifyCodeErrorMessage = "네트워크 오류가 발생했습니다.",
+                    )
+                    Log.d("SignUp", "verifyCode exception: ${result.throwable}")
                 }
             }
         }

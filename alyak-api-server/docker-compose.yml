@@ -22,10 +22,11 @@ services:
 
   # Redis Cache
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack:latest
     container_name: alyak-redis
     ports:
       - "6379:6379"
+      - "8003:8001"
     volumes:
       - redis_data:/data
     networks:
@@ -42,7 +43,10 @@ services:
     container_name: alyak-api-server
     ports:
       - "8080:8080"
+    volumes:
+      - ./firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       # Database Configuration
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/alyak?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&useSSL=false
       SPRING_DATASOURCE_USERNAME: alyak_user
@@ -52,7 +56,10 @@ services:
       SPRING_JPA_SHOW_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
-      
+
+      # Fast api url
+      OCR_SERVER_URL: http://fast-api:8000
+
       # Redis Configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -72,11 +79,15 @@ services:
       JWT_EXPIRATION_TIME: 3600000
       JWT_HEADER: Authorization
       JWT_PREFIX: Bearer
+      FIREBASE_CREDENTIALS_PATH: /run/secrets/firebase-adminsdk.json
+      FIREBASE_PROJECT_ID: uplifted-studio-457001-h1
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
+      fast-api:
+        condition: service_started
     networks:
       - alyak-network
     restart: unless-stopped
@@ -95,6 +106,19 @@ services:
       - build_admins=True     # 행정 구역 데이터
       - build_time_zones=True
       - server_threads=2      # CPU 사용량에 따라 조절 (기본 2)
+    networks:
+      - alyak-network
+
+  fast-api:
+    build:
+      context: ../Pill-Recognition-Pipeline
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    volumes:
+      - ../Pill-Recognition-Pipeline:/app
+    environment:
+      - PYTHONPATH=/app
     networks:
       - alyak-network
 

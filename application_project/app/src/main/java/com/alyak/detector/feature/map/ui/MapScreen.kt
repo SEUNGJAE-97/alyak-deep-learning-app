@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +20,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -27,11 +32,15 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,9 +53,12 @@ import coil.compose.rememberAsyncImagePainter
 import com.alyak.detector.R
 import com.alyak.detector.feature.map.data.model.KakaoPlaceDto
 import com.alyak.detector.feature.map.data.model.LocationDto
+import com.alyak.detector.feature.map.data.model.getFormattedDistance
 import com.alyak.detector.feature.map.ui.components.FilterButton
 import com.alyak.detector.feature.map.ui.components.HospitalInfo
-import com.alyak.detector.feature.pill.ui.search.components.SearchBar
+import com.alyak.detector.feature.map.ui.components.MapSearchBar
+import com.alyak.detector.feature.map.ui.model.MapListMode
+import com.alyak.detector.feature.map.ui.model.MapPlaceFilter
 import com.alyak.detector.ui.components.CustomButton
 import com.alyak.detector.ui.components.HeaderForm
 
@@ -56,8 +68,16 @@ fun MapScreen(
     navController: NavController,
     viewModel: MapViewModel = hiltViewModel()
 ) {
-    val places by viewModel.places.collectAsState()
+    val name by viewModel.userName.collectAsState()
+    val displayedPlaces by viewModel.displayedPlaces.collectAsState()
+    val placeFilter by viewModel.placeFilter.collectAsState()
+    val showFloatingMapAction by viewModel.showFloatingMapActionButton.collectAsState()
+    val mapListMode by viewModel.mapListMode.collectAsState()
+    val activeSearchQuery by viewModel.activeSearchQuery.collectAsState()
+    var mapSearchQuery by remember { mutableStateOf("") }
     val scaffoldState = rememberBottomSheetScaffoldState()
+    val focusManager = LocalFocusManager.current
+
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetContainerColor = Color.White,
@@ -66,9 +86,15 @@ fun MapScreen(
         sheetShadowElevation = 10.dp,
         sheetPeekHeight = 200.dp,
         sheetContent = {
-            HospitalListContent(places, viewModel)
+            HospitalListContent(
+                hospitals = displayedPlaces,
+                placeFilter = placeFilter,
+                mapListMode = mapListMode,
+                activeSearchQuery = activeSearchQuery,
+                viewModel = viewModel,
+            )
         },
-        topBar = { HeaderForm("No Name") },
+        topBar = { HeaderForm(name) },
         sheetDragHandle = { DragHandler() }
     ) { paddingValues ->
         Column {
@@ -85,18 +111,40 @@ fun MapScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.Top
                 ) {
-                    SearchBar()
+                    MapSearchBar(
+                        query = mapSearchQuery,
+                        onQueryChange = { mapSearchQuery = it },
+                        onSearch = { searchQuery ->
+                            if (searchQuery.isNotBlank()) {
+                                viewModel.searchPlaces(searchQuery)
+                                focusManager.clearFocus()
+
+                            }
+                        },
+                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 16.dp, start = 16.dp, end = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        FilterButton("전체", isSelected = true, onClick = {})
-                        FilterButton("병원", isSelected = false, onClick = {})
-                        FilterButton("약국", isSelected = false, onClick = {})
-                        FilterButton("영업중", isSelected = false, onClick = {})
+                        MapPlaceFilter.entries.forEach { filter ->
+                            FilterButton(
+                                text = filter.chipLabel,
+                                isSelected = placeFilter == filter,
+                                onClick = { viewModel.setPlaceFilter(filter) },
+                            )
+                        }
                     }
+                }
+                if (showFloatingMapAction) {
+                    SearchFromCurrentLocationButton(
+                        mapListMode = mapListMode,
+                        onClick = { viewModel.onFloatingMapButtonClick() },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 20.dp),
+                    )
                 }
                 CustomButton(
                     text = "",
@@ -119,9 +167,60 @@ fun MapScreen(
 }
 
 @Composable
+private fun SearchFromCurrentLocationButton(
+    mapListMode: MapListMode,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(24.dp)
+    val label = when (mapListMode) {
+        MapListMode.SEARCH -> "주변으로 보기"
+        MapListMode.NEARBY -> "현재 위치에서 검색"
+    }
+    val icon = when (mapListMode) {
+        MapListMode.SEARCH -> Icons.Default.Place
+        MapListMode.NEARBY -> Icons.Default.Search
+    }
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .shadow(5.dp, shape)
+            .clip(shape),
+        shape = shape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = colorResource(R.color.white),
+            contentColor = Color.Black,
+        ),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 3.dp),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 0.dp,
+            hoveredElevation = 0.dp,
+        ),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = label,
+                color = Color.Black,
+            )
+        }
+    }
+}
+
+@Composable
 fun HospitalListContent(
     hospitals: List<KakaoPlaceDto>,
-    viewModel: MapViewModel
+    placeFilter: MapPlaceFilter,
+    mapListMode: MapListMode,
+    activeSearchQuery: String,
+    viewModel: MapViewModel,
 ) {
     Column(
         modifier = Modifier
@@ -136,7 +235,13 @@ fun HospitalListContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "총 ${hospitals.size}개의 의료기관",
+                text = when (mapListMode) {
+                    MapListMode.NEARBY -> "총 ${hospitals.size}개의 ${placeFilter.sheetCountNoun}"
+                    MapListMode.SEARCH -> {
+                        val q = activeSearchQuery.ifBlank { "검색" }
+                        "\"$q\" 검색 결과 ${hospitals.size}곳"
+                    }
+                },
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )
@@ -155,13 +260,14 @@ fun HospitalListContent(
             contentPadding = PaddingValues(bottom = 20.dp)
         ) {
             items(hospitals.size) { index ->
+                val place = hospitals[index]
                 HospitalInfo(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    hospitalName = hospitals[index].place_name,
-                    hospitalAddress = hospitals[index].address_name,
+                    hospitalName = place.place_name,
+                    hospitalAddress = place.address_name,
 //                    hospitalDepartment = hospitals[index].category_name.
                     hospitalDepartment = arrayListOf("안과", "정형외과"),
-                    hospitalDistance = hospitals[index].distance,
+                    hospitalDistance = place.getFormattedDistance(),
                     onClick = {
                         Log.d(
                             "HospitalInfo",

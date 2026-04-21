@@ -1,0 +1,16 @@
+package com.alyak.detector.feature.camera.data.api
+
+import com.alyak.detector.feature.pill.data.model.MedicineInfoDto
+import okhttp3.MultipartBody
+import retrofit2.Response
+import retrofit2.http.Multipart
+import retrofit2.http.POST
+import retrofit2.http.Part
+
+interface PillOCRApi {
+    @Multipart
+    @POST("api/pill/recognize")
+    suspend fun uploadPillImages(
+        @Part images: List<MultipartBody.Part>
+    ): Response<List<MedicineInfoDto>>
+}

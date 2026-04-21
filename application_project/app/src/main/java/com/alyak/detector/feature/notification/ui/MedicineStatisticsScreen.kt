@@ -1,0 +1,561 @@
+package com.alyak.detector.feature.notification.ui
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.RemoveCircle
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.alyak.detector.R
+import com.alyak.detector.feature.notification.data.model.MealTime
+import com.alyak.detector.feature.notification.data.model.MedicationTimeEntry
+import com.alyak.detector.feature.pill.ui.search.PillSearchViewModel
+
+// 이미지 기반 커스텀 색상
+val SoftBlue = Color(0xFF6371C2) // "건강한 습관의 시작" 타이틀 색상
+val BgGray = Color(0xFFF9FAFF)  // 전체 배경색
+val CardBg = Color(0xFFFFFFFF)  // 카드 배경
+val LightPurpleBg = Color(0xFFF1F3FF) // 알림 설정 배경
+val TextMain = Color(0xFF333D79) // "약 이름", "복약 시간" 등 메인 텍스트
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MedicineStatisticsScreen(
+    navController: NavController,
+    viewModel: MedicineStatisticsViewModel = viewModel(),
+    pillSearchViewModel: PillSearchViewModel
+) {
+    val medicineName by pillSearchViewModel.searchQuery.collectAsState()
+    val suggestions by pillSearchViewModel.suggestions.collectAsState()
+    val selectedPills by viewModel.selectedPills.collectAsState()
+    val saveState by viewModel.saveUiState.collectAsState()
+
+    var isAlarmEnabled by remember { mutableStateOf(true) }
+    val timeEntries by viewModel.timeEntries.collectAsState()
+    var showAddDialog by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(saveState) {
+        when (val s = saveState) {
+            SaveScheduleUiState.Success -> {
+                snackbarHostState.showSnackbar("서버에 저장되었습니다")
+                viewModel.resetSaveUiState()
+            }
+
+            is SaveScheduleUiState.Error -> {
+                snackbarHostState.showSnackbar(s.message)
+                viewModel.resetSaveUiState()
+            }
+
+            else -> Unit
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("복약 일정 추가", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = null,
+                            tint = colorResource(R.color.black)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = BgGray)
+            )
+        },
+        bottomBar = {
+            Button(
+                onClick = { viewModel.saveScheduleToServer() },
+                enabled = timeEntries.isNotEmpty() &&
+                    selectedPills.isNotEmpty() &&
+                    saveState !is SaveScheduleUiState.Loading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.primaryBlue))
+            ) {
+                Text(
+                    if (saveState is SaveScheduleUiState.Loading) "저장 중…" else "저장하기",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White
+                )
+            }
+        },
+        containerColor = BgGray
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 1. 상단 배너 카드
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .shadow(elevation = 2.dp, shape = RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.White)
+            ) {
+                // 배경 이미지 (알약 이미지)
+                Image(
+                    painter = painterResource(id = R.drawable.banner), // 실제 배너 이미지로 교체
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    alpha = 0.6f
+                )
+
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .align(Alignment.CenterStart)
+                ) {
+                    Text(
+                        text = "건강한 습관의 시작",
+                        fontFamily = FontFamily(
+                            Font(
+                                R.font.pretendard_extrabold,
+                                FontWeight.ExtraBold
+                            )
+                        ),
+                        fontSize = 26.sp,
+                        color = colorResource(R.color.main_blue)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "새로운 복약 일정을 추가해 주세요.",
+                        fontFamily = FontFamily(Font(R.font.pretendard_semibold, FontWeight.Thin)),
+                        fontSize = 14.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Thin
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            OutlinedTextField(
+                value = medicineName,
+                onValueChange = { pillSearchViewModel.onQueryChange(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp),
+                placeholder = {
+                    Text(
+                        text = "어떤 약을 드시나요?",
+                        color = Color.LightGray,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 10.dp),
+                        textAlign = TextAlign.Start
+                    )
+                },
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Search
+                ),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        if (medicineName.isNotBlank()) {
+                            viewModel.addPill(medicineName)
+                            pillSearchViewModel.onSearch(medicineName)
+                            focusManager.clearFocus()
+                        }
+                    }
+                ),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorResource(R.color.black),
+                    unfocusedBorderColor = colorResource(R.color.black),
+                    disabledBorderColor = Color(0xFFDEE2E6),
+                ),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "사진 검색",
+                        tint = Color.Gray.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable(onClick = { navController.navigate("CameraScreen") }),
+                    )
+                }
+            )
+            // 자동완성
+            if (suggestions.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    shadowElevation = 8.dp,
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White
+                ) {
+                    Column {
+                        suggestions.forEach { suggestion ->
+                            Text(
+                                text = suggestion,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.addPill(suggestion)
+                                        pillSearchViewModel.onQueryChange("")
+                                    }
+                                    .padding(16.dp),
+                                fontSize = 14.sp
+                            )
+                            HorizontalDivider(
+                                color = Color.LightGray.copy(alpha = 0.3f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                selectedPills.forEach { pill ->
+                    SelectedPillTag(
+                        name = pill,
+                        onRemove = { viewModel.removePill(pill) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // 3. 복약 시간 섹션
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "복약 시간",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = colorResource(R.color.primaryBlue)
+                )
+
+                Surface(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clickable(enabled = timeEntries.size < MealTime.entries.size) {
+                            showAddDialog = true
+                        },
+                    shape = CircleShape,
+                    color = if (timeEntries.size < MealTime.entries.size)
+                        Color(0xFFE8EAF6) else Color(0xFFEEEEEE)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.padding(6.dp),
+                        tint = if (timeEntries.size < MealTime.entries.size) SoftBlue else Color.Gray
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (timeEntries.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("복약 시간을 추가해주세요.", color = Color.Gray, fontSize = 14.sp)
+                }
+            } else {
+                timeEntries.forEach { entry ->
+                    MedicationTimeItem(
+                        entry = entry,
+                        onRemove = { viewModel.removeTimeEntry(entry.id) }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // 4. 알림 설정 섹션
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(LightPurpleBg)
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(44.dp),
+                    shape = CircleShape,
+                    color = Color.White
+                ) {
+                    Icon(
+                        Icons.Default.Notifications,
+                        contentDescription = null,
+                        modifier = Modifier.padding(10.dp),
+                        tint = SoftBlue
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("알림 설정", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextMain)
+                    Text("복약 시간을 놓치지 않게 알려드려요.", fontSize = 12.sp, color = Color.Gray)
+                }
+
+                Switch(
+                    checked = isAlarmEnabled,
+                    onCheckedChange = { isAlarmEnabled = it },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = SoftBlue
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(100.dp)) // 버튼 여유 공간
+            if (showAddDialog) {
+                val availableMealTimes = MealTime.entries.filter { mealTime ->
+                    timeEntries.none { it.mealTime == mealTime }
+                }
+
+                AlertDialog(
+                    onDismissRequest = { showAddDialog = false },
+                    title = { Text("시간대 추가") },
+                    text = {
+                        Column {
+                            availableMealTimes.forEach { mealTime ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            val (hour, minute) = when (mealTime) {
+                                                MealTime.MORNING -> 8 to 0
+                                                MealTime.LUNCH -> 13 to 0
+                                                MealTime.DINNER -> 19 to 0
+                                            }
+                                            viewModel.addTimeEntry(mealTime, hour, minute)
+                                            showAddDialog = false
+                                        }
+                                        .padding(vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = mealTime.icon,
+                                        contentDescription = null,
+                                        tint = colorResource(mealTime.tint)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(mealTime.name)
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {}
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MedicationTimeItem(
+    entry: MedicationTimeEntry,
+    onRemove: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = CardBg,
+        shadowElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = CircleShape,
+                color = colorResource(entry.mealTime.backgroundColor)
+            ) {
+                Icon(
+                    imageVector = entry.mealTime.icon,
+                    contentDescription = null,
+                    modifier = Modifier.padding(12.dp),
+                    tint = colorResource(entry.mealTime.tint)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column {
+                Text(
+                    entry.mealTime.name,
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    entry.displayTime,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMain
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Icon(
+                Icons.Default.RemoveCircle,
+                contentDescription = null,
+                tint = Color(0xFFD1D1D1),
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable { onRemove() }
+            )
+        }
+    }
+}
+
+/**
+ * 선택된 알약을 보여주는 태그 컴포넌트
+ * @param name 알약 이름
+ * @param onRemove 삭제 아이콘 클릭 시 동작
+ */
+@Composable
+fun SelectedPillTag(
+    name: String,
+    onRemove: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .padding(vertical = 4.dp),
+        shape = CircleShape,
+        color = Color.White,
+        shadowElevation = 4.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = name,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF333D79)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(18.dp)
+                    .background(Color(0xFFEEEEEE), CircleShape)
+                    .clickable { onRemove() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "삭제",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+        }
+    }
+}
+
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewAddMedication() {
+//    MedicineStatisticsScreen(
+//        navController = rememberNavController(),
+//        viewModel = TODO(),
+//        pillSearchViewModel = TODO()
+//    )
+//}

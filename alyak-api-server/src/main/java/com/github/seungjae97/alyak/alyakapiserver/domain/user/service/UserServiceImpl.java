@@ -1,18 +1,17 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.user.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.user.dto.UserUpdateRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.dto.PasswordUpdateRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.ProviderRepository;
-import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.RoleRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRoleRepository;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -22,6 +21,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ProviderRepository providerRepository;
     private final UserRoleRepository userRoleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public Optional<User> getById(Long id) {
@@ -29,19 +29,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User update(Long id, UserUpdateRequest request) {
+    @Transactional
+    public User updatePassword(Long id, PasswordUpdateRequest request) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
 
-        User.UserBuilder updatedBuilder = existingUser.toBuilder();
+        if (request.newPassword() == null || request.newPassword().isBlank()) {
+            throw new BusinessException(BusinessError.NEW_PASSWORD_REQUIRED);
+        }
 
-        if (request.email() != null) {
-            updatedBuilder.email(request.email());
-        }
-        if (request.name() != null) {
-            updatedBuilder.name(request.name());
-        }
-        return null;
+        User updated = existingUser.toBuilder()
+                .password(passwordEncoder.encode(request.newPassword().trim()))
+                .build();
+        return userRepository.save(updated);
     }
 
     @Override

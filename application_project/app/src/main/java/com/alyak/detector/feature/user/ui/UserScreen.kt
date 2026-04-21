@@ -1,7 +1,10 @@
 package com.alyak.detector.feature.user.ui
 
+import android.net.Uri
 import android.widget.Toast
-import androidx.compose.foundation.Image
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.alyak.detector.R
 import com.alyak.detector.feature.user.data.model.UserEvent
 import com.alyak.detector.feature.user.ui.components.SettingHeaderForm
@@ -57,10 +61,17 @@ fun UserScreen(
     var isLogoutDialogVisible by remember { mutableStateOf(false) }
     var isAccountDeletionDialogVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
-
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    val pickMedia = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            imageUri = uri
+        }
+    }
     LaunchedEffect(viewModel.event) {
-        viewModel.event.collect{ event ->
-            when(event){
+        viewModel.event.collect { event ->
+            when (event) {
                 is UserEvent.LogoutSuccess, is UserEvent.DeleteAccountSuccess -> {
                     isLogoutDialogVisible = false
                     isAccountDeletionDialogVisible = false
@@ -69,6 +80,7 @@ fun UserScreen(
                         launchSingleTop = true
                     }
                 }
+
                 is UserEvent.Error -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                 }
@@ -98,7 +110,13 @@ fun UserScreen(
                 ) {
 
 
-                    EditableProfileImage()
+                    EditableProfileImage(
+                        selectedImageUri = imageUri,
+                        modifier = Modifier.padding(top = 10.dp),
+                        onClickEdit = {
+                            pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        }
+                    )
 
                     Spacer(Modifier.height(20.dp))
                     Text(
@@ -168,7 +186,7 @@ fun UserScreen(
                 textColor = colorResource(R.color.RealRed)
             )
 
-            if(isAccountDeletionDialogVisible){
+            if (isAccountDeletionDialogVisible) {
                 CustomModalDialog(
                     onDismiss = {
                         isAccountDeletionDialogVisible = false
@@ -190,6 +208,7 @@ fun UserScreen(
 
 @Composable
 fun EditableProfileImage(
+    selectedImageUri: Uri?,
     modifier: Modifier = Modifier,
     onClickEdit: () -> Unit = {}
 ) {
@@ -197,8 +216,8 @@ fun EditableProfileImage(
         modifier = modifier,
         contentAlignment = Alignment.BottomEnd
     ) {
-        Image(
-            painter = painterResource(R.drawable.dummy_profile),
+        AsyncImage(
+            model = selectedImageUri ?: R.drawable.dummy_profile,
             contentDescription = "사용자 프로필",
             modifier = Modifier
                 .size(120.dp)

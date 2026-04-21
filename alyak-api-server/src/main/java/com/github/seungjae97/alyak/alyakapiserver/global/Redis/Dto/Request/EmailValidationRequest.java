@@ -1,5 +1,4 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.Redis.Dto.Request;
-
+package com.github.seungjae97.alyak.alyakapiserver.global.redis.dto.request;
 
 import lombok.Data;
 

@@ -9,5 +9,6 @@ interface PillRepository {
     suspend fun saveRecentSearch(pill: Pill)
     suspend fun searchPills(shape: String, color: String, score: String): List<Pill>
     suspend fun findPills(pillName: String): List<Pill>
-    suspend fun searchPillDetail(pid : Long): MedicineDetailDto
+    suspend fun searchPillDetail(pid: Long): MedicineDetailDto
+    suspend fun getAutocomplete(keyword: String): List<String>
 }

@@ -33,3 +33,6 @@ build/
 .vscode/
 
 **/valhalla_data/
+
+# Firebase Admin SDK service account key
+*firebase-adminsdk*.json

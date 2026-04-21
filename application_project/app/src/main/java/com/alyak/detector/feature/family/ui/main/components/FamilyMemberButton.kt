@@ -39,7 +39,7 @@ fun FamilyMemberButton(
 
     Column(
         modifier = modifier
-            .width(100.dp)
+            .width(80.dp)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

@@ -1,10 +1,8 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.OcrResult;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillAppearanceResponse;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillDetailResponse;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillInfoResponse;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.SimplePillInfo;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.*;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillAppearance;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillColor;
@@ -16,14 +14,30 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository.PillSha
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import com.github.seungjae97.alyak.alyakapiserver.global.http.service.RestTemplateService;
+import com.github.seungjae97.alyak.alyakapiserver.global.util.HangulUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.data.domain.Range;
+import org.springframework.data.redis.connection.Limit;
+import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.search.FTSearchParams;
+import redis.clients.jedis.search.SearchResult;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -44,12 +58,20 @@ public class PillServiceImpl implements PillService {
     private final PillShapeRepository pillShapeRepository;
     private final RestTemplateService restTemplateService;
 
+    @Value("${ocr.server.url:http://localhost:8000}")
+    private String ocrServerUrl;
+
     @Qualifier("pillIdentifyTaskScheduler")
     private final TaskScheduler pillIdentifyTaskScheduler;
 
+    private final StringRedisTemplate redisTemplate;
+    private final JedisPooled jedis;
+    private static final String AUTOCOMPLETE_KEY = "autocomplete";
     private static final Duration IDENTIFY_API_DELAY = Duration.ofSeconds(5);
     private static final Pattern ALERT_SPLIT_PATTERN = Pattern.compile("[.!?]\\s*\\n*");
+    private static final WebClient webClient = WebClient.builder().baseUrl("").build();
     private static final Map<String, String> CAUTION_KEYWORD_MAP;
+
     static {
         Map<String, String> map = new HashMap<>();
         map.put("임부 또는 수유부", "임산부/수유부");
@@ -63,7 +85,9 @@ public class PillServiceImpl implements PillService {
         map.put("글루타치온", "글루타치온 부족");
         CAUTION_KEYWORD_MAP = Collections.unmodifiableMap(map);
     }
+
     private static final Map<String, String> EFFICACY_KEYWORD_MAP;
+
     static {
         Map<String, String> map = new HashMap<>();
         map.put("발열", "해열");
@@ -169,14 +193,14 @@ public class PillServiceImpl implements PillService {
     }
 
     private Boolean callIdentifyAPI(Long itemSeq) {
-        if(pillAppearanceRepository.findById(itemSeq).isEmpty()) {
+        if (pillAppearanceRepository.findById(itemSeq).isEmpty()) {
             String url = UriComponentsBuilder.fromUriString("https://apis.data.go.kr/1471000/MdcinGrnIdntfcInfoService03/getMdcinGrnIdntfcInfoList03")
                     .queryParam("serviceKey", serviceKey)
                     .queryParam("item_seq", itemSeq)
                     .queryParam("type", "json")
                     .build()
                     .toUriString();
-            log.info("URL: {}" , url);
+            log.info("URL: {}", url);
             PillAppearanceResponse response = restTemplateService.getForObject(url, PillAppearanceResponse.class);
 
             if (response == null || response.getBody() == null || response.getBody().getItems() == null) {
@@ -235,6 +259,7 @@ public class PillServiceImpl implements PillService {
 
     /**
      * 색상 이름(String)을 PillColor ID(Long)로 변환
+     *
      * @param colorName 색상 이름 (예: "연두")
      * @return PillColor ID, 없으면 null
      */
@@ -249,6 +274,7 @@ public class PillServiceImpl implements PillService {
 
     /**
      * 모양 이름(String)을 PillShape ID(Long)로 변환
+     *
      * @param shapeName 모양 이름
      * @return PillShape ID, 없으면 null
      */
@@ -263,6 +289,7 @@ public class PillServiceImpl implements PillService {
 
     /**
      * 약의 효능/효과 텍스트에서 주요 효능 태그를 추출합니다.
+     *
      * @param efficacyText pillEfficacy (or pillDescription)
      * @return 추출된 태그 목록
      */
@@ -282,6 +309,7 @@ public class PillServiceImpl implements PillService {
 
     /**
      * 주의사항 텍스트에서 임산부, 노인 등 특별 주의 대상 태그를 추출합니다.
+     *
      * @param cautionText pillCaution
      * @return 추출된 특별 주의 태그 목록
      */
@@ -306,7 +334,8 @@ public class PillServiceImpl implements PillService {
     /**
      * 경고 및 상호작용 텍스트를 하나의 리스트 항목으로 분리합니다.
      * 주요 구분자는 문장 종료(`.`, `!`, `?`)와 줄 바꿈입니다.
-     * @param warnText pillWarn (일반 경고)
+     *
+     * @param warnText        pillWarn (일반 경고)
      * @param interactiveText pillInteractive (약물 상호작용)
      * @return 분리된 주의사항 항목 목록
      */
@@ -333,5 +362,119 @@ public class PillServiceImpl implements PillService {
                 .map(String::trim)
                 .filter(s -> !s.isBlank()) // 빈 문자열 제거
                 .collect(Collectors.toList());
+    }
+
+
+    public List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images) {
+        List<SimplePillInfo> results = new ArrayList<>();
+        log.info("[OCR] 이미지 {}장 처리 시작", images.size());
+        for (MultipartFile image : images) {
+            try {
+                // 1. FastAPI 호출
+                OcrResponse ocrResponse = callFastApi(image);
+                log.info("[OCR] FastAPI 응답: filename={}, results 개수={}",
+                        ocrResponse != null ? ocrResponse.filename() : null,
+                        ocrResponse != null && ocrResponse.results() != null ? ocrResponse.results().size() : 0);
+                if (ocrResponse != null && ocrResponse.results() != null) {
+                    // 2. 결과(알약명)로 DB 조회
+                    for (OcrResult ocrResult : ocrResponse.results()) {
+                        log.debug("[OCR] text={}, confidence={}", ocrResult.text(), ocrResult.confidence());
+                        if (ocrResult.confidence() > 0.5f) {
+                            List<SimplePillInfo> found = pillRepository.findByPillNameWithType(ocrResult.text());
+                            log.info("[OCR] DB 조회: text='{}', confidence={}, 매칭 수={}",
+                                    ocrResult.text(), ocrResult.confidence(), found.size());
+                            found.stream()
+                                    .map(pill -> SimplePillInfo.builder()
+                                            .pillId(pill.getPillId())
+                                            .pillName(pill.getPillName())
+                                            .manufacturer(pill.getManufacturer())
+                                            .classification(pill.getClassification())
+                                            .pillType(pill.getPillType())
+                                            .pillImg(pill.getPillImg())
+                                            .build()
+                                    )
+                                    .forEach(results::add);
+                        } else {
+                            log.info("[OCR] confidence 낮음 제외: text='{}', confidence={} (임계값 0.5)",
+                                    ocrResult.text(), ocrResult.confidence());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("[OCR] 이미지 처리 중 오류: {}", e.getMessage(), e);
+                throw new RuntimeException(e);
+            }
+        }
+        log.info("[OCR] 최종 결과: {}건", results.size());
+        return results.isEmpty() ? List.of() : results;
+    }
+
+    @Override
+    public List<String> autocomplete(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        String trimmed = keyword.replaceAll("\\s+", "").toLowerCase();
+        String cho = HangulUtils.decompose(trimmed);
+
+        // Redis에서 한번에 다 가져오기
+        String query = String.format(
+                "(@name_cho:{*%s*} | @ingredient_cho:{*%s*} | @name_en:{*%s*})",
+                escape(cho), escape(cho), escape(trimmed)
+        );
+        SearchResult result = jedis.ftSearch(
+                "pill_idx", query,
+                FTSearchParams.searchParams().limit(0, 50)
+        );
+
+        List<String> names = result.getDocuments().stream()
+                .map(doc -> doc.getString("name"))
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Java에서 원본 keyword 기준으로 재정렬
+        return names.stream()
+                .sorted(Comparator.comparingInt(name -> {
+                    String normalized = name.replaceAll("\\s+", "").toLowerCase();
+                    if (normalized.startsWith(trimmed)) return 0;       // 1순위: "타이"로 시작
+                    if (normalized.contains(trimmed)) return 1;         // 2순위: 중간에 "타이" 포함
+                    return 2;                                           // 3순위: 초성만 매칭 (타임 등)
+                }))
+                .limit(20)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> autocompleteFromRdb(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return Collections.emptyList();
+        }
+        return pillRepository.findByPillNameContaining(keyword, PageRequest.of(0, 10))
+                .stream()
+                .map(Pill::getPillName)
+                .collect(Collectors.toList());
+    }
+
+    private String escape(String s) {
+        return s.replaceAll("([,.<>{}\\[\\]\"':;!@#$%^&*()+~|])", "\\\\$1");
+    }
+
+    private OcrResponse callFastApi(MultipartFile image) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("images", image.getResource());
+
+        HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<OcrResponse> response = restTemplateService.postForEntity(
+                ocrServerUrl + "/api/v1/process",
+                request,
+                OcrResponse.class
+        );
+        return response.getBody();
     }
 }
