@@ -96,3 +96,9 @@ logging:
     org.springframework.security.web.FilterChainProxy: DEBUG
     com.github.seungjae97.alyak.alyakapiserver.domain.auth: DEBUG
     com.github.seungjae97.alyak.alyakapiserver.config: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus, health, info, metrics
