@@ -20,6 +20,7 @@ public enum BusinessError {
     USER_NOT_EXIST(HttpStatus.BAD_REQUEST, "존재하지 않는 유저입니다."),
     EXIST_USER(HttpStatus.BAD_REQUEST, "이미 가입한 유저 입니다."),
     KAKAO_LOGIN_ERROR(HttpStatus.BAD_REQUEST, "카카오 로그인에 실패했습니다."),
+    ADMIN_LOGIN_FORBIDDEN(HttpStatus.FORBIDDEN, "관리자 권한이 없어 관리자 로그인이 불가합니다."),
     EMAIL_NOT_EXIST(HttpStatus.BAD_REQUEST, "이메일이 비어있습니다."),
     NEW_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "새 비밀번호를 입력해주세요."),
     DONT_EXIST_PILL(HttpStatus.BAD_REQUEST, "존재하지 않는 이름입니다."),
