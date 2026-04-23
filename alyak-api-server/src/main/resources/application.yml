@@ -111,3 +111,5 @@ management:
 app:
   upload:
     root-path: ${APP_UPLOAD_ROOT_PATH:./uploads}
+  dummy-labeling:
+    enabled: ${APP_DUMMY_LABELING_ENABLED:true}

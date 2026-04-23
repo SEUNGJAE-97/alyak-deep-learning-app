@@ -8,4 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PillImageDataRepository extends JpaRepository<PillImageData, Long> {
     Page<PillImageData> findByStatus(DataStatus status, Pageable pageable);
+    boolean existsByImagePath(String imagePath);
 }
