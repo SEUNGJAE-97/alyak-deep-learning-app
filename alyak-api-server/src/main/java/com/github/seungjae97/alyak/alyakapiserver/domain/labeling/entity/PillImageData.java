@@ -44,6 +44,13 @@ public class PillImageData {
         box.assignImageData(this);
     }
 
+    public void replaceBoxes(List<PillImageBox> newBoxes) {
+        boxes.clear();
+        for (PillImageBox box : newBoxes) {
+            addBox(box);
+        }
+    }
+
     public void updateStatus(DataStatus status) {
         this.status = status;
     }

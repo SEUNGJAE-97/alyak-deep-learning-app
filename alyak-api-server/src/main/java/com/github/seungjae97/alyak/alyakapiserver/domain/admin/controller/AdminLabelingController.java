@@ -1,6 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.admin.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.request.CreateLabelingItemRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.request.UpdateLabelingBoxesRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.response.CreateLabelingItemResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.response.LabelingItemDetailResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.response.LabelingItemResponse;
@@ -18,8 +19,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 @AdminApiController
@@ -54,6 +57,15 @@ public class AdminLabelingController {
     @Operation(summary = "라벨링 항목 상세 조회", description = "지정한 항목의 원본 이미지와 바운딩박스 좌표를 조회합니다.")
     public ResponseEntity<LabelingItemDetailResponse> getItemDetail(@PathVariable Long id) {
         return ResponseEntity.ok(labelingService.getItemDetail(id));
+    }
+
+    @PutMapping("/items/{id}/boxes")
+    @Operation(summary = "라벨링 박스 수정", description = "지정한 항목의 바운딩박스 좌표를 전체 교체 저장합니다.")
+    public ResponseEntity<LabelingItemDetailResponse> updateBoxes(
+            @PathVariable Long id,
+            @RequestBody UpdateLabelingBoxesRequest request
+    ) {
+        return ResponseEntity.ok(labelingService.updateBoxes(id, request));
     }
 
     @PostMapping("/items/{id}/approve")

@@ -10,7 +10,7 @@ import {
   Info,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useState, useEffect, MouseEvent } from "react";
+import { useState, useEffect, MouseEvent, useRef } from "react";
 import { cn } from "@/src/lib/utils";
 
 interface PillData {
@@ -39,6 +39,15 @@ type LabelingItemDetail = {
   }>;
 };
 
+type EditableBox = {
+  id: number;
+  boxIndex: number;
+  xMin: number;
+  yMin: number;
+  xMax: number;
+  yMax: number;
+};
+
 export default function Dashboard() {
   const [data, setData] = useState<PillData[]>([]);
   const [activeTab, setActiveTab] = useState<
@@ -49,7 +58,19 @@ export default function Dashboard() {
   const [selectedDetail, setSelectedDetail] =
     useState<LabelingItemDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [interactionMode, setInteractionMode] = useState<"select" | "draw">(
+    "select",
+  );
+  const [editableBoxes, setEditableBoxes] = useState<EditableBox[]>([]);
+  const [selectedBoxId, setSelectedBoxId] = useState<number | null>(null);
+  const [hoveredBoxId, setHoveredBoxId] = useState<number | null>(null);
+  const [deleteArmed, setDeleteArmed] = useState(false);
+  const [draftBox, setDraftBox] = useState<EditableBox | null>(null);
+  const [draggingBoxId, setDraggingBoxId] = useState<number | null>(null);
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const dragStartRef = useRef<{ point: { x: number; y: number }; box: EditableBox } | null>(null);
 
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
@@ -109,7 +130,9 @@ export default function Dashboard() {
   });
 
   const selectedItem = currentItems[selectedIndex] || null;
-  const selectedBox = selectedDetail?.boxes?.[0] ?? null;
+  const selectedBox = editableBoxes.find((box) => box.id === selectedBoxId) ?? null;
+  const hoveredBox = editableBoxes.find((box) => box.id === hoveredBoxId) ?? null;
+  const previewInfoBox = hoveredBox ?? selectedBox;
 
   useEffect(() => {
     const fetchItemDetail = async () => {
@@ -142,6 +165,207 @@ export default function Dashboard() {
   useEffect(() => {
     console.log("[LabelingDetail] selectedDetail?.boxes(state)", selectedDetail?.boxes);
   }, [selectedDetail]);
+
+  useEffect(() => {
+    const boxes =
+      selectedDetail?.boxes
+        ?.slice()
+        .sort((a, b) => a.boxIndex - b.boxIndex)
+        .map((box) => ({
+          id: box.id,
+          boxIndex: box.boxIndex,
+          xMin: box.xMin,
+          yMin: box.yMin,
+          xMax: box.xMax,
+          yMax: box.yMax,
+        })) ?? [];
+    setEditableBoxes(boxes);
+    setSelectedBoxId(boxes[0]?.id ?? null);
+    setHoveredBoxId(null);
+    setDeleteArmed(false);
+    setDraftBox(null);
+    setDraggingBoxId(null);
+    dragStartRef.current = null;
+  }, [selectedDetail]);
+
+  const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+
+  const normalizeBox = (box: EditableBox): EditableBox => {
+    const xMin = clamp01(Math.min(box.xMin, box.xMax));
+    const yMin = clamp01(Math.min(box.yMin, box.yMax));
+    const xMax = clamp01(Math.max(box.xMin, box.xMax));
+    const yMax = clamp01(Math.max(box.yMin, box.yMax));
+    return { ...box, xMin, yMin, xMax, yMax };
+  };
+
+  const toNormalizedPoint = (event: MouseEvent<HTMLDivElement>) => {
+    const rect = previewRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    const x = clamp01((event.clientX - rect.left) / rect.width);
+    const y = clamp01((event.clientY - rect.top) / rect.height);
+    return { x, y };
+  };
+
+  const moveBox = (box: EditableBox, dx: number, dy: number): EditableBox => {
+    const width = box.xMax - box.xMin;
+    const height = box.yMax - box.yMin;
+    let xMin = box.xMin + dx;
+    let yMin = box.yMin + dy;
+
+    if (xMin < 0) xMin = 0;
+    if (yMin < 0) yMin = 0;
+    if (xMin + width > 1) xMin = 1 - width;
+    if (yMin + height > 1) yMin = 1 - height;
+
+    return {
+      ...box,
+      xMin: clamp01(xMin),
+      yMin: clamp01(yMin),
+      xMax: clamp01(xMin + width),
+      yMax: clamp01(yMin + height),
+    };
+  };
+
+  const handlePreviewMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    if (interactionMode !== "draw") return;
+    const point = toNormalizedPoint(event);
+    if (!point) return;
+    const tempId = -Date.now();
+    setDraftBox({
+      id: tempId,
+      boxIndex: editableBoxes.length,
+      xMin: point.x,
+      yMin: point.y,
+      xMax: point.x,
+      yMax: point.y,
+    });
+  };
+
+  const handlePreviewMouseMove = (event: MouseEvent<HTMLDivElement>) => {
+    const point = toNormalizedPoint(event);
+    if (!point) return;
+    if (interactionMode === "draw" && draftBox) {
+      setDraftBox({
+        ...draftBox,
+        xMax: point.x,
+        yMax: point.y,
+      });
+      return;
+    }
+    if (interactionMode === "select" && draggingBoxId && dragStartRef.current) {
+      const dx = point.x - dragStartRef.current.point.x;
+      const dy = point.y - dragStartRef.current.point.y;
+      const baseBox = dragStartRef.current.box;
+      setEditableBoxes((prev) =>
+        prev.map((box) => (box.id === draggingBoxId ? moveBox(baseBox, dx, dy) : box)),
+      );
+    }
+  };
+
+  const handlePreviewMouseUp = () => {
+    if (draggingBoxId) {
+      setDraggingBoxId(null);
+      dragStartRef.current = null;
+      return;
+    }
+    if (!draftBox) return;
+    const normalized = normalizeBox(draftBox);
+    const width = normalized.xMax - normalized.xMin;
+    const height = normalized.yMax - normalized.yMin;
+    setDraftBox(null);
+    if (width < 0.005 || height < 0.005) return;
+    setEditableBoxes((prev) => {
+      const next = [...prev, normalized].map((box, index) => ({
+        ...box,
+        boxIndex: index,
+      }));
+      return next;
+    });
+    setSelectedBoxId(normalized.id);
+    setDeleteArmed(false);
+  };
+
+  const handleBoxMouseDown = (event: MouseEvent<HTMLDivElement>, box: EditableBox) => {
+    event.stopPropagation();
+    setSelectedBoxId(box.id);
+    setDeleteArmed(false);
+    if (interactionMode !== "select" || event.button !== 0) return;
+    const point = toNormalizedPoint(event);
+    if (!point) return;
+    setDraggingBoxId(box.id);
+    dragStartRef.current = { point, box };
+  };
+
+  const handleBoxContextMenu = (event: MouseEvent<HTMLDivElement>, box: EditableBox) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedBoxId(box.id);
+    setDeleteArmed(true);
+  };
+
+  const handleBoxCoordChange = (
+    field: "xMin" | "yMin" | "xMax" | "yMax",
+    value: number,
+  ) => {
+    if (!selectedBoxId || Number.isNaN(value)) return;
+    setEditableBoxes((prev) =>
+      prev.map((box) =>
+        box.id === selectedBoxId
+          ? normalizeBox({
+              ...box,
+              [field]: value,
+            })
+          : box,
+      ),
+    );
+  };
+
+  const handleSaveBoxes = async () => {
+    if (!selectedItem || !token) return;
+    setIsSaving(true);
+    setErrorMessage(null);
+    try {
+      const response = await fetch(
+        `${apiBaseUrl}/api/admin/labeling/items/${selectedItem.id}/boxes`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            boxes: editableBoxes.map((box, index) => ({
+              boxIndex: index,
+              xMin: box.xMin,
+              yMin: box.yMin,
+              xMax: box.xMax,
+              yMax: box.yMax,
+            })),
+          }),
+        },
+      );
+      if (!response.ok) throw new Error("박스 저장에 실패했습니다.");
+      const detail = (await response.json()) as LabelingItemDetail;
+      setSelectedDetail(detail);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "박스 저장 중 오류가 발생했습니다.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteSelectedBox = () => {
+    if (!selectedBoxId || !deleteArmed) return;
+    setEditableBoxes((prev) =>
+      prev
+        .filter((box) => box.id !== selectedBoxId)
+        .map((box, index) => ({ ...box, boxIndex: index })),
+    );
+    setSelectedBoxId(null);
+    setDeleteArmed(false);
+  };
 
   const handleApprove = async () => {
     if (!selectedItem) return;
@@ -374,16 +598,35 @@ export default function Dashboard() {
             <>
               {/* Canvas Preview Area */}
               <section className="space-y-4">
-                <div className="relative aspect-video bg-black rounded-3xl overflow-hidden border border-outline-variant/20 group cursor-crosshair">
+                <div
+                  ref={previewRef}
+                  onMouseDown={handlePreviewMouseDown}
+                  onMouseMove={handlePreviewMouseMove}
+                  onMouseUp={handlePreviewMouseUp}
+                  onMouseLeave={handlePreviewMouseUp}
+                  onContextMenu={(event) => event.preventDefault()}
+                  className={cn(
+                    "relative aspect-video bg-black rounded-3xl overflow-hidden border border-outline-variant/20 group",
+                    interactionMode === "draw" ? "cursor-crosshair" : "cursor-default",
+                  )}
+                >
                   <img
                     src={resolveImageUrl(
                       selectedDetail?.imagePath ?? selectedItem.imagePath,
                     )}
-                    className="w-full h-full object-fill opacity-80"
+                    className="w-full h-full object-fill opacity-80 z-0"
                   />
-                  {selectedDetail?.boxes?.map((box) => (
+                  {editableBoxes.map((box) => (
                     <motion.div
                       key={box.id}
+                      style={{
+                        zIndex:
+                          selectedBoxId === box.id
+                            ? 30
+                            : hoveredBoxId === box.id
+                              ? 25
+                              : 20,
+                      }}
                       initial={false}
                       animate={{
                         left: `${box.xMin * 100}%`,
@@ -391,21 +634,71 @@ export default function Dashboard() {
                         width: `${(box.xMax - box.xMin) * 100}%`,
                         height: `${(box.yMax - box.yMin) * 100}%`,
                       }}
-                      className="absolute border-2 border-primary shadow-[0_0_15px_rgba(123,208,255,0.4)] pointer-events-none"
+                      onMouseEnter={() => setHoveredBoxId(box.id)}
+                      onMouseLeave={() =>
+                        setHoveredBoxId((prev) => (prev === box.id ? null : prev))
+                      }
+                      onMouseDown={(event) => handleBoxMouseDown(event, box)}
+                      onContextMenu={(event) => handleBoxContextMenu(event, box)}
+                      className={cn(
+                        "absolute border-2 shadow-[0_0_15px_rgba(123,208,255,0.4)]",
+                        selectedBoxId === box.id
+                          ? "border-primary"
+                          : "border-primary/50",
+                        hoveredBoxId === box.id && "bg-primary/20",
+                        interactionMode === "select"
+                          ? "cursor-move pointer-events-auto"
+                          : "pointer-events-none",
+                      )}
                     >
                       <div className="absolute -top-6 left-0 bg-primary px-1.5 py-0.5 rounded text-[8px] font-black text-black uppercase">
                         BOX {box.boxIndex}
                       </div>
                     </motion.div>
                   ))}
+                  {draftBox && (
+                    <div
+                      className="absolute border-2 border-primary/70 border-dashed pointer-events-none"
+                      style={{
+                        left: `${Math.min(draftBox.xMin, draftBox.xMax) * 100}%`,
+                        top: `${Math.min(draftBox.yMin, draftBox.yMax) * 100}%`,
+                        width: `${Math.abs(draftBox.xMax - draftBox.xMin) * 100}%`,
+                        height: `${Math.abs(draftBox.yMax - draftBox.yMin) * 100}%`,
+                      }}
+                    />
+                  )}
 
                   {/* Drawing overlays */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="absolute top-4 right-4 flex gap-2">
-                      <button className="p-2 bg-surface-container-highest/80 backdrop-blur rounded-lg text-primary">
+                  <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-40">
+                    <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
+                      <button
+                        onClick={() => {
+                          setInteractionMode("select");
+                          setDeleteArmed(false);
+                        }}
+                        className={cn(
+                          "p-2 backdrop-blur rounded-lg",
+                          interactionMode === "select"
+                            ? "bg-surface-container-highest/80 text-primary"
+                            : "bg-surface/20 text-white",
+                        )}
+                      >
                         <MousePointer2 className="w-4 h-4" />
                       </button>
-                      <button className="p-2 bg-surface/20 backdrop-blur rounded-lg text-white">
+                      <button
+                        onClick={() => {
+                          setInteractionMode("draw");
+                          setDraggingBoxId(null);
+                          setDeleteArmed(false);
+                          setHoveredBoxId(null);
+                        }}
+                        className={cn(
+                          "p-2 backdrop-blur rounded-lg",
+                          interactionMode === "draw"
+                            ? "bg-surface-container-highest/80 text-primary"
+                            : "bg-surface/20 text-white",
+                        )}
+                      >
                         <Square className="w-4 h-4" />
                       </button>
                     </div>
@@ -414,36 +707,31 @@ export default function Dashboard() {
                 <p className="text-[9px] text-center text-on-surface-variant italic">
                   마우스로 영역을 드래그하여 바운딩 박스를 수정할 수 있습니다.
                 </p>
-              </section>
-
-              {/* Manual Verification Section */}
-              <section className="space-y-6">
-                <h4 className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10 pb-2">
-                  Manual Verification
-                </h4>
-
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest pl-1">
-                      알약 종류 (Class)
-                    </label>
-                    <select className="w-full bg-surface-container-high border border-outline-variant/20 rounded-xl p-4 text-xs text-on-surface font-bold focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer">
-                      <option>Tylenol ER</option>
-                      <option>Aspirin 500mg</option>
-                      <option>Ibuprofen</option>
-                      <option>Vitamin C</option>
-                      <option>Unknown / Fragment</option>
-                    </select>
+                {interactionMode === "select" && previewInfoBox && (
+                  <div className="grid grid-cols-2 gap-2 rounded-xl border border-outline-variant/20 bg-surface-container-high p-3">
+                    <div className="text-[10px] font-bold text-on-surface-variant">
+                      X Min
+                      <p className="text-on-surface">{previewInfoBox.xMin.toFixed(6)}</p>
+                      <p className="text-[8px] opacity-60">NORM</p>
+                    </div>
+                    <div className="text-[10px] font-bold text-on-surface-variant">
+                      Y Min
+                      <p className="text-on-surface">{previewInfoBox.yMin.toFixed(6)}</p>
+                      <p className="text-[8px] opacity-60">NORM</p>
+                    </div>
+                    <div className="text-[10px] font-bold text-on-surface-variant">
+                      X Max
+                      <p className="text-on-surface">{previewInfoBox.xMax.toFixed(6)}</p>
+                      <p className="text-[8px] opacity-60">NORM</p>
+                    </div>
+                    <div className="text-[10px] font-bold text-on-surface-variant">
+                      Y Max
+                      <p className="text-on-surface">{previewInfoBox.yMax.toFixed(6)}</p>
+                      <p className="text-[8px] opacity-60">NORM</p>
+                    </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <CoordInput label="X Min" value={selectedBox?.xMin ?? 0} />
-                    <CoordInput label="Y Min" value={selectedBox?.yMin ?? 0} />
-                    <CoordInput label="X Max" value={selectedBox?.xMax ?? 0} />
-                    <CoordInput label="Y Max" value={selectedBox?.yMax ?? 0} />
-                  </div>
-                </div>
-              </section>
+                )}
+              </section>             
 
               {/* Action Section */}
               <section className="pt-8 border-t border-outline-variant/10 space-y-4">
@@ -462,6 +750,21 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
+                  <button
+                    onClick={handleDeleteSelectedBox}
+                    disabled={!selectedBoxId || !deleteArmed}
+                    className="w-full py-3 bg-error/10 text-error border border-error/20 font-black text-xs uppercase tracking-[0.15em] rounded-2xl flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-error/20 transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Selected Box (Right Click)
+                  </button>
+                  <button
+                    onClick={handleSaveBoxes}
+                    disabled={isSaving}
+                    className="w-full py-3 bg-surface-container-high border border-outline-variant/20 text-on-surface font-black text-xs uppercase tracking-[0.15em] rounded-2xl flex items-center justify-center gap-3 hover:border-primary/50 disabled:opacity-50 transition-all"
+                  >
+                    {isSaving ? "Saving..." : "Save Boxes"}
+                  </button>
                   <button
                     onClick={handleApprove}
                     className="w-full py-4 bg-primary text-on-primary font-black text-xs uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
@@ -498,9 +801,17 @@ export default function Dashboard() {
   );
 }
 
-function CoordInput({ label, value }: { label: string; value: number }) {
+function CoordInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
   return (
-    <div className="space-y-1.5">
+    <div>
       <label className="text-[9px] font-bold text-on-surface-variant/50 uppercase tracking-widest pl-1">
         {label}
       </label>
@@ -508,7 +819,10 @@ function CoordInput({ label, value }: { label: string; value: number }) {
         <input
           type="number"
           value={Number.isFinite(value) ? value : 0}
-          readOnly
+          step="0.000001"
+          min={0}
+          max={1}
+          onChange={(event) => onChange(Number(event.target.value))}
           className="w-full bg-surface-container border border-outline-variant/10 rounded-xl px-4 py-2.5 text-[10px] font-mono text-on-surface focus:outline-none focus:border-primary transition-colors"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-mono opacity-20">

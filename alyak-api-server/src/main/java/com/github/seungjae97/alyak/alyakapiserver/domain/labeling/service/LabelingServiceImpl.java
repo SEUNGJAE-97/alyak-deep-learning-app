@@ -1,6 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.labeling.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.request.CreateLabelingItemRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.request.UpdateLabelingBoxesRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.response.CreateLabelingItemResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.response.LabelingItemDetailResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.response.LabelingItemResponse;
@@ -16,6 +17,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -72,6 +77,39 @@ public class LabelingServiceImpl implements LabelingService {
         PillImageData imageData = pillImageDataRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(BusinessError.LABELING_ITEM_NOT_FOUND));
 
+        return toDetailResponse(imageData);
+    }
+
+    @Override
+    public LabelingItemDetailResponse updateBoxes(Long id, UpdateLabelingBoxesRequest request) {
+        PillImageData imageData = pillImageDataRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(BusinessError.LABELING_ITEM_NOT_FOUND));
+
+        List<PillImageBox> newBoxes = new ArrayList<>();
+        if (request != null && request.getBoxes() != null) {
+            List<UpdateLabelingBoxesRequest.Box> sorted = request.getBoxes().stream()
+                    .sorted(Comparator.comparingInt(box -> box.getBoxIndex() == null ? Integer.MAX_VALUE : box.getBoxIndex()))
+                    .toList();
+
+            for (int i = 0; i < sorted.size(); i++) {
+                UpdateLabelingBoxesRequest.Box box = sorted.get(i);
+                newBoxes.add(PillImageBox.builder()
+                        .boxIndex(box.getBoxIndex() == null ? i : box.getBoxIndex())
+                        .xMin(box.getXMin())
+                        .yMin(box.getYMin())
+                        .xMax(box.getXMax())
+                        .yMax(box.getYMax())
+                        .build());
+            }
+        }
+
+        imageData.replaceBoxes(newBoxes);
+        PillImageData saved = pillImageDataRepository.save(imageData);
+
+        return toDetailResponse(saved);
+    }
+
+    private LabelingItemDetailResponse toDetailResponse(PillImageData imageData) {
         return LabelingItemDetailResponse.builder()
                 .id(imageData.getId())
                 .imagePath(imageData.getImagePath())
