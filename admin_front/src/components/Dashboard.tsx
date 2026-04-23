@@ -1,68 +1,178 @@
-import { 
-  X, 
+import {
   CheckCircle2,
-  AlertCircle,
-  Clock,
-  History as HistoryIcon,
   MousePointer2,
   Square,
+  RotateCcw,
   Crosshair,
   Database,
   Trash2,
   Inbox as InboxIcon,
-  ChevronRight,
-  Info
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { useState, useRef, useEffect, MouseEvent } from 'react';
-import { cn } from '@/src/lib/utils';
+  Info,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { useState, useEffect, MouseEvent } from "react";
+import { cn } from "@/src/lib/utils";
 
 interface PillData {
-  id: string;
-  filename: string;
-  imageUrl: string;
-  label: string;
-  coords: { x: number; y: number; w: number; h: number };
-  status: 'pending' | 'approved' | 'rejected';
+  id: number;
+  imagePath: string;
+  status: "INBOX" | "TRAINING_SET" | "TRASH";
+  boxCount: number;
 }
 
-const initialInbox: PillData[] = [
-  { id: '1', filename: 'pill_det_421.jpg', imageUrl: 'https://picsum.photos/seed/p1/800/600', label: 'Tylenol ER', coords: { x: 120, y: 80, w: 200, h: 100 }, status: 'pending' },
-  { id: '2', filename: 'pill_det_422.jpg', imageUrl: 'https://picsum.photos/seed/p2/800/600', label: 'Aspirin', coords: { x: 150, y: 120, w: 180, h: 90 }, status: 'pending' },
-  { id: '3', filename: 'pill_det_423.jpg', imageUrl: 'https://picsum.photos/seed/p3/800/600', label: 'Ibuprofen', coords: { x: 90, y: 200, w: 220, h: 110 }, status: 'pending' },
-  { id: '4', filename: 'pill_det_424.jpg', imageUrl: 'https://picsum.photos/seed/p4/800/600', label: 'Unknown', coords: { x: 50, y: 50, w: 300, h: 200 }, status: 'pending' },
-  { id: '5', filename: 'pill_det_425.jpg', imageUrl: 'https://picsum.photos/seed/p5/800/600', label: 'Magnesium', coords: { x: 200, y: 100, w: 150, h: 100 }, status: 'pending' },
-  { id: '6', filename: 'pill_det_426.jpg', imageUrl: 'https://picsum.photos/seed/p6/800/600', label: 'Vitamin C', coords: { x: 100, y: 300, w: 180, h: 150 }, status: 'pending' },
-];
+type LabelingPageResponse = {
+  content: PillData[];
+  totalElements: number;
+};
+
+type LabelingItemDetail = {
+  id: number;
+  imagePath: string;
+  status: "INBOX" | "TRAINING_SET" | "TRASH";
+  boxes: Array<{
+    id: number;
+    boxIndex: number;
+    xMin: number;
+    yMin: number;
+    xMax: number;
+    yMax: number;
+  }>;
+};
 
 export default function Dashboard() {
-  const [data, setData] = useState<PillData[]>(initialInbox);
-  const [activeTab, setActiveTab] = useState<'Inbox' | 'Training Set' | 'Trash'>('Inbox');
+  const [data, setData] = useState<PillData[]>([]);
+  const [activeTab, setActiveTab] = useState<
+    "Inbox" | "Training Set" | "Trash"
+  >("Inbox");
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  
-  const currentItems = data.filter(item => {
-    if (activeTab === 'Inbox') return item.status === 'pending';
-    if (activeTab === 'Training Set') return item.status === 'approved';
-    return item.status === 'rejected';
-  });
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [selectedDetail, setSelectedDetail] =
+    useState<LabelingItemDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const selectedItem = currentItems[selectedIndex] || null;
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+  const token = localStorage.getItem("admin_access_token");
 
-  const handleApprove = () => {
-    if (!selectedItem) return;
-    setData(prev => prev.map(item => item.id === selectedItem.id ? { ...item, status: 'approved' } : item));
-    // Auto-select next if available
-    if (selectedIndex >= currentItems.length - 1) {
-      setSelectedIndex(Math.max(0, currentItems.length - 2));
+  const resolveImageUrl = (imagePath: string) => {
+    if (!imagePath) return "";
+    if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+      return imagePath;
+    }
+    return `${apiBaseUrl}${imagePath}`;
+  };
+
+  const statusFromTab = (
+    tab: "Inbox" | "Training Set" | "Trash",
+  ): PillData["status"] => {
+    if (tab === "Inbox") return "INBOX";
+    if (tab === "Training Set") return "TRAINING_SET";
+    return "TRASH";
+  };
+
+  const fetchItems = async (tab: "Inbox" | "Training Set" | "Trash") => {
+    if (!token) return;
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const status = statusFromTab(tab);
+      const response = await fetch(
+        `${apiBaseUrl}/api/admin/labeling/items?status=${status}&page=0&pageSize=100`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!response.ok) throw new Error("라벨링 목록을 불러오지 못했습니다.");
+      const pageData = (await response.json()) as LabelingPageResponse;
+      setData(pageData.content ?? []);
+      setSelectedIndex(0);
+      setSelectedIds([]);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "목록 조회 중 오류가 발생했습니다.",
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleReject = () => {
+  useEffect(() => {
+    fetchItems(activeTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  const currentItems = data.filter((item) => {
+    if (activeTab === "Inbox") return item.status === "INBOX";
+    if (activeTab === "Training Set") return item.status === "TRAINING_SET";
+    return item.status === "TRASH";
+  });
+
+  const selectedItem = currentItems[selectedIndex] || null;
+  const selectedBox = selectedDetail?.boxes?.[0] ?? null;
+
+  useEffect(() => {
+    const fetchItemDetail = async () => {
+      if (!selectedItem || !token) {
+        setSelectedDetail(null);
+        return;
+      }
+      try {
+        const response = await fetch(
+          `${apiBaseUrl}/api/admin/labeling/items/${selectedItem.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (!response.ok) throw new Error("라벨링 상세를 불러오지 못했습니다.");
+        const detail = (await response.json()) as LabelingItemDetail;
+        setSelectedDetail(detail);
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "상세 조회 중 오류가 발생했습니다.",
+        );
+      }
+    };
+    fetchItemDetail();
+  }, [selectedItem, token, apiBaseUrl]);
+
+  const handleApprove = async () => {
     if (!selectedItem) return;
-    setData(prev => prev.map(item => item.id === selectedItem.id ? { ...item, status: 'rejected' } : item));
-    if (selectedIndex >= currentItems.length - 1) {
-      setSelectedIndex(Math.max(0, currentItems.length - 2));
+    try {
+      const response = await fetch(
+        `${apiBaseUrl}/api/admin/labeling/items/${selectedItem.id}/approve`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (!response.ok) throw new Error("승인 처리에 실패했습니다.");
+      await fetchItems(activeTab);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "승인 중 오류가 발생했습니다.",
+      );
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedItem) return;
+    try {
+      const response = await fetch(
+        `${apiBaseUrl}/api/admin/labeling/items/${selectedItem.id}/reject`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (!response.ok) throw new Error("반려 처리에 실패했습니다.");
+      await fetchItems(activeTab);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "반려 중 오류가 발생했습니다.",
+      );
     }
   };
 
@@ -70,13 +180,15 @@ export default function Dashboard() {
     if (selectedIds.length === currentItems.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(currentItems.map(i => i.id));
+      setSelectedIds(currentItems.map((i) => i.id));
     }
   };
 
-  const toggleSelect = (id: string, e: MouseEvent) => {
+  const toggleSelect = (id: number, e: MouseEvent) => {
     e.stopPropagation();
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
   };
 
   return (
@@ -90,7 +202,7 @@ export default function Dashboard() {
           </h2>
           <div className="h-4 w-px bg-outline-variant/20" />
           <nav className="flex gap-1 bg-surface-container rounded-lg p-1">
-            {(['Inbox', 'Training Set', 'Trash'] as const).map((tab) => (
+            {(["Inbox", "Training Set", "Trash"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => {
@@ -99,9 +211,9 @@ export default function Dashboard() {
                 }}
                 className={cn(
                   "px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all",
-                  activeTab === tab 
-                    ? "bg-surface-container-highest text-primary shadow-sm" 
-                    : "text-on-surface-variant hover:text-on-surface"
+                  activeTab === tab
+                    ? "bg-surface-container-highest text-primary shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface",
                 )}
               >
                 {tab}
@@ -109,11 +221,13 @@ export default function Dashboard() {
             ))}
           </nav>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
             <div className="w-1.5 h-1.5 rounded-full bg-primary ai-pulse" />
-            <span className="text-[10px] font-black text-primary uppercase tracking-[0.15em]">Remaining Tasks: {data.filter(i => i.status === 'pending').length}</span>
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.15em]">
+              Remaining Tasks: {data.filter((i) => i.status === "INBOX").length}
+            </span>
           </div>
         </div>
       </header>
@@ -122,19 +236,34 @@ export default function Dashboard() {
       <div className="mt-16">
         <div className="mb-6 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={toggleSelectAll}
               className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-high rounded-lg text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-colors"
             >
-              <div className={cn("w-3 h-3 border rounded-sm flex items-center justify-center", selectedIds.length === currentItems.length ? "bg-primary border-primary" : "border-outline")}>
-                {selectedIds.length === currentItems.length && <CheckCircle2 className="w-2.5 h-2.5 text-black" />}
+              <div
+                className={cn(
+                  "w-3 h-3 border rounded-sm flex items-center justify-center",
+                  selectedIds.length === currentItems.length
+                    ? "bg-primary border-primary"
+                    : "border-outline",
+                )}
+              >
+                {selectedIds.length === currentItems.length && (
+                  <CheckCircle2 className="w-2.5 h-2.5 text-black" />
+                )}
               </div>
               Select All
             </button>
-            <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest opacity-50">{currentItems.length} items found</span>
+            <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest opacity-50">
+              {currentItems.length} items found
+            </span>
           </div>
+          {isLoading && (
+            <span className="text-[10px] text-on-surface-variant uppercase tracking-widest">
+              Loading...
+            </span>
+          )}
         </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
           <AnimatePresence mode="popLayout">
             {currentItems.map((item, index) => (
@@ -142,54 +271,79 @@ export default function Dashboard() {
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8, filter: 'blur(10px)' }}
+                exit={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
                 key={item.id}
                 onClick={() => setSelectedIndex(index)}
                 className={cn(
                   "group relative aspect-square rounded-3xl overflow-hidden cursor-pointer border transition-all duration-300",
-                  selectedIndex === index 
-                    ? "ring-2 ring-primary border-transparent shadow-2xl shadow-primary/10" 
-                    : "border-outline-variant/10 bg-surface-container hover:border-outline-variant/30"
+                  selectedIndex === index
+                    ? "ring-2 ring-primary border-transparent shadow-2xl shadow-primary/10"
+                    : "border-outline-variant/10 bg-surface-container hover:border-outline-variant/30",
                 )}
               >
-                <img 
-                  src={item.imageUrl} 
-                  alt={item.filename}
+                <img
+                  src={resolveImageUrl(item.imagePath)}
+                  alt={`labeling-item-${item.id}`}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                
+
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                
+
                 {/* Checkbox overlay */}
-                <div 
+                <div
                   onClick={(e) => toggleSelect(item.id, e)}
                   className={cn(
                     "absolute top-4 left-4 w-6 h-6 rounded-lg backdrop-blur-md border flex items-center justify-center transition-all",
-                    selectedIds.includes(item.id) 
-                      ? "bg-primary border-primary" 
-                      : "bg-surface/20 border-white/20 opacity-0 group-hover:opacity-100"
+                    selectedIds.includes(item.id)
+                      ? "bg-primary border-primary"
+                      : "bg-surface/20 border-white/20 opacity-0 group-hover:opacity-100",
                   )}
                 >
-                  {selectedIds.includes(item.id) && <CheckCircle2 className="w-4 h-4 text-black" />}
+                  {selectedIds.includes(item.id) && (
+                    <CheckCircle2 className="w-4 h-4 text-black" />
+                  )}
                 </div>
 
                 <div className="absolute bottom-4 left-4 right-4">
-                  <p className="text-[10px] font-mono text-white/50 truncate mb-1">{item.filename}</p>
-                  <p className="text-xs font-black text-white uppercase tracking-widest">{item.label}</p>
+                  <p className="text-[10px] font-mono text-white/50 truncate mb-1">
+                    {item.imagePath.split("/").pop()}
+                  </p>
+                  <p className="text-xs font-black text-white uppercase tracking-widest">
+                    BOXES {item.boxCount}
+                  </p>
                 </div>
 
-                {item.status === 'approved' && (
-                  <div className="absolute top-4 right-4 bg-green-500 text-black px-2 py-0.5 rounded text-[8px] font-black uppercase">Approved</div>
+                {item.status === "TRAINING_SET" && (
+                  <div className="absolute top-4 right-4 bg-green-500 text-black px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                    Approved
+                  </div>
                 )}
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
-        
+
         {currentItems.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-[60vh] opacity-20">
-            <CheckCircle2 className="w-16 h-16 mb-4" />
-            <p className="text-xl font-black uppercase tracking-widest">Inbox Dynamic Empty</p>
+          <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+            <Database className="w-14 h-14 mb-4 text-on-surface-variant/50" />
+            <p className="text-lg font-black uppercase tracking-widest text-on-surface">
+              {errorMessage
+                ? "라벨링 목록을 가져오지 못했습니다"
+                : "Inbox Dynamic Empty"}
+            </p>
+            <p className="text-xs text-on-surface-variant mt-2">
+              {errorMessage
+                ? "네트워크 또는 서버 상태를 확인한 뒤 다시 시도해 주세요."
+                : "검토 대기 항목이 없습니다."}
+            </p>
+            <button
+              onClick={() => fetchItems(activeTab)}
+              disabled={isLoading}
+              className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-high border border-outline-variant/20 text-xs font-bold text-on-surface hover:border-primary/40 disabled:opacity-50 transition-all"
+            >
+              <RotateCcw className="w-4 h-4" />
+              다시 불러오기
+            </button>
           </div>
         )}
       </div>
@@ -201,7 +355,9 @@ export default function Dashboard() {
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Crosshair className="w-4 h-4 text-primary" />
             </div>
-            <h3 className="text-sm font-black uppercase tracking-widest text-on-surface">Labeling Inspector</h3>
+            <h3 className="text-sm font-black uppercase tracking-widest text-on-surface">
+              Labeling Inspector
+            </h3>
           </div>
           <button className="text-on-surface-variant hover:text-on-surface transition-colors">
             <Info className="w-5 h-5" />
@@ -214,41 +370,58 @@ export default function Dashboard() {
               {/* Canvas Preview Area */}
               <section className="space-y-4">
                 <div className="relative aspect-video bg-black rounded-3xl overflow-hidden border border-outline-variant/20 group cursor-crosshair">
-                  <img src={selectedItem.imageUrl} className="w-full h-full object-cover opacity-80" />
-                  {/* Mock Bounding Box */}
-                  <motion.div 
-                    initial={false}
-                    animate={{ 
-                      left: selectedItem.coords.x, 
-                      top: selectedItem.coords.y, 
-                      width: selectedItem.coords.w, 
-                      height: selectedItem.coords.h 
-                    }}
-                    className="absolute border-2 border-primary shadow-[0_0_15px_rgba(123,208,255,0.4)] pointer-events-none"
-                  >
-                    <div className="absolute -top-6 left-0 bg-primary px-1.5 py-0.5 rounded text-[8px] font-black text-black uppercase">{selectedItem.label}</div>
-                    <div className="absolute top-0 left-0 w-2 h-2 bg-primary -translate-x-1/2 -translate-y-1/2 rounded-full ring-4 ring-primary/20" />
-                    <div className="absolute bottom-0 right-0 w-2 h-2 bg-primary translate-x-1/2 translate-y-1/2 rounded-full ring-4 ring-primary/20" />
-                  </motion.div>
-                  
+                  <img
+                    src={resolveImageUrl(
+                      selectedDetail?.imagePath ?? selectedItem.imagePath,
+                    )}
+                    className="w-full h-full object-cover opacity-80"
+                  />
+                  {selectedDetail?.boxes?.map((box) => (
+                    <motion.div
+                      key={box.id}
+                      initial={false}
+                      animate={{
+                        left: `${box.xMin * 100}%`,
+                        top: `${box.yMin * 100}%`,
+                        width: `${(box.xMax - box.xMin) * 100}%`,
+                        height: `${(box.yMax - box.yMin) * 100}%`,
+                      }}
+                      className="absolute border-2 border-primary shadow-[0_0_15px_rgba(123,208,255,0.4)] pointer-events-none"
+                    >
+                      <div className="absolute -top-6 left-0 bg-primary px-1.5 py-0.5 rounded text-[8px] font-black text-black uppercase">
+                        BOX {box.boxIndex}
+                      </div>
+                    </motion.div>
+                  ))}
+
                   {/* Drawing overlays */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="absolute top-4 right-4 flex gap-2">
-                      <button className="p-2 bg-surface-container-highest/80 backdrop-blur rounded-lg text-primary"><MousePointer2 className="w-4 h-4" /></button>
-                      <button className="p-2 bg-surface/20 backdrop-blur rounded-lg text-white"><Square className="w-4 h-4" /></button>
+                      <button className="p-2 bg-surface-container-highest/80 backdrop-blur rounded-lg text-primary">
+                        <MousePointer2 className="w-4 h-4" />
+                      </button>
+                      <button className="p-2 bg-surface/20 backdrop-blur rounded-lg text-white">
+                        <Square className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
-                <p className="text-[9px] text-center text-on-surface-variant italic">마우스로 영역을 드래그하여 바운딩 박스를 수정할 수 있습니다.</p>
+                <p className="text-[9px] text-center text-on-surface-variant italic">
+                  마우스로 영역을 드래그하여 바운딩 박스를 수정할 수 있습니다.
+                </p>
               </section>
 
               {/* Manual Verification Section */}
               <section className="space-y-6">
-                <h4 className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10 pb-2">Manual Verification</h4>
-                
+                <h4 className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10 pb-2">
+                  Manual Verification
+                </h4>
+
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest pl-1">알약 종류 (Class)</label>
+                    <label className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest pl-1">
+                      알약 종류 (Class)
+                    </label>
                     <select className="w-full bg-surface-container-high border border-outline-variant/20 rounded-xl p-4 text-xs text-on-surface font-bold focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer">
                       <option>Tylenol ER</option>
                       <option>Aspirin 500mg</option>
@@ -259,10 +432,10 @@ export default function Dashboard() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <CoordInput label="X Coordinate" value={selectedItem.coords.x} />
-                    <CoordInput label="Y Coordinate" value={selectedItem.coords.y} />
-                    <CoordInput label="Bound Width" value={selectedItem.coords.w} />
-                    <CoordInput label="Bound Height" value={selectedItem.coords.h} />
+                    <CoordInput label="X Min" value={selectedBox?.xMin ?? 0} />
+                    <CoordInput label="Y Min" value={selectedBox?.yMin ?? 0} />
+                    <CoordInput label="X Max" value={selectedBox?.xMax ?? 0} />
+                    <CoordInput label="Y Max" value={selectedBox?.yMax ?? 0} />
                   </div>
                 </div>
               </section>
@@ -274,18 +447,24 @@ export default function Dashboard() {
                     <CheckCircle2 className="w-3 h-3" />
                     Security Notice
                   </p>
-                  <p className="text-[10px] text-on-surface-variant leading-relaxed">승인 시 해당 데이터는 실시간으로 <span className="text-on-surface font-bold">'Training Set'</span>으로 이동되어 다음 모델 가중치 학습에 반영됩니다.</p>
+                  <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                    승인 시 해당 데이터는 실시간으로{" "}
+                    <span className="text-on-surface font-bold">
+                      'Training Set'
+                    </span>
+                    으로 이동되어 다음 모델 가중치 학습에 반영됩니다.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
-                  <button 
+                  <button
                     onClick={handleApprove}
                     className="w-full py-4 bg-primary text-on-primary font-black text-xs uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                   >
                     <CheckCircle2 className="w-5 h-5" />
                     Update Label & Approve
                   </button>
-                  <button 
+                  <button
                     onClick={handleReject}
                     className="w-full py-4 bg-error/10 text-error border border-error/20 font-black text-xs uppercase tracking-[0.15em] rounded-2xl flex items-center justify-center gap-3 hover:bg-error/20 transition-all"
                   >
@@ -298,8 +477,14 @@ export default function Dashboard() {
           ) : (
             <div className="h-full flex flex-col items-center justify-center opacity-30 text-center">
               <Database className="w-12 h-12 mb-4" />
-              <p className="text-xs font-black uppercase tracking-widest text-on-surface">No Item Selected</p>
-              <p className="text-[10px] mt-2">왼쪽 그리드에서 이미지를 선택하여<br/>인스펙팅을 시작하세요.</p>
+              <p className="text-xs font-black uppercase tracking-widest text-on-surface">
+                No Item Selected
+              </p>
+              <p className="text-[10px] mt-2">
+                왼쪽 그리드에서 이미지를 선택하여
+                <br />
+                인스펙팅을 시작하세요.
+              </p>
             </div>
           )}
         </div>
@@ -308,18 +493,22 @@ export default function Dashboard() {
   );
 }
 
-function CoordInput({ label, value }: { label: string, value: number }) {
+function CoordInput({ label, value }: { label: string; value: number }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[9px] font-bold text-on-surface-variant/50 uppercase tracking-widest pl-1">{label}</label>
+      <label className="text-[9px] font-bold text-on-surface-variant/50 uppercase tracking-widest pl-1">
+        {label}
+      </label>
       <div className="relative">
-        <input 
-          type="number" 
-          value={value} 
-          readOnly 
-          className="w-full bg-surface-container border border-outline-variant/10 rounded-xl px-4 py-2.5 text-[10px] font-mono text-on-surface focus:outline-none focus:border-primary transition-colors" 
+        <input
+          type="number"
+          value={Number.isFinite(value) ? value : 0}
+          readOnly
+          className="w-full bg-surface-container border border-outline-variant/10 rounded-xl px-4 py-2.5 text-[10px] font-mono text-on-surface focus:outline-none focus:border-primary transition-colors"
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-mono opacity-20">PX</div>
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-mono opacity-20">
+          NORM
+        </div>
       </div>
     </div>
   );

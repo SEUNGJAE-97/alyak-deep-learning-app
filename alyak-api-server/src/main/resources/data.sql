@@ -10,7 +10,8 @@ INSERT INTO users (email, password, name) VALUES
 ('user1@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '김철수'),
 ('user2@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '이영희'),
 ('user3@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '박민수'),
-('user4@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '정수진')
+('user4@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '정수진'),
+('admin','$2y$10$Q4mqIR.ZGF7KNecsmhF33uHnvfx.xRQx4GD694eZqR9MjKWgjNxM.','admin')
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- UserRole 데이터 (복합키: user_id + role_id)
@@ -19,7 +20,8 @@ INSERT INTO user_role (user_id, role_id) VALUES
 (2, 2),  -- user1@example.com -> USER
 (3, 2),  -- user2@example.com -> USER
 (4, 2),  -- user3@example.com -> USER
-(5, 2)   -- user4@example.com -> USER
+(5, 2),   -- user4@example.com -> USER
+(6,1)
 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id);
 
 -- Provider 데이터 (복합키: provider_name + user_id)
