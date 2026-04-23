@@ -126,6 +126,7 @@ export default function Dashboard() {
         );
         if (!response.ok) throw new Error("라벨링 상세를 불러오지 못했습니다.");
         const detail = (await response.json()) as LabelingItemDetail;
+        console.log("[LabelingDetail] selectedDetail?.boxes", detail?.boxes);
         setSelectedDetail(detail);
       } catch (error) {
         setErrorMessage(
@@ -137,6 +138,10 @@ export default function Dashboard() {
     };
     fetchItemDetail();
   }, [selectedItem, token, apiBaseUrl]);
+
+  useEffect(() => {
+    console.log("[LabelingDetail] selectedDetail?.boxes(state)", selectedDetail?.boxes);
+  }, [selectedDetail]);
 
   const handleApprove = async () => {
     if (!selectedItem) return;
