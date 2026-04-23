@@ -379,7 +379,7 @@ export default function Dashboard() {
                     src={resolveImageUrl(
                       selectedDetail?.imagePath ?? selectedItem.imagePath,
                     )}
-                    className="w-full h-full object-cover opacity-80"
+                    className="w-full h-full object-fill opacity-80"
                   />
                   {selectedDetail?.boxes?.map((box) => (
                     <motion.div
