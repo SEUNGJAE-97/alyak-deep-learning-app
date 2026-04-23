@@ -48,6 +48,10 @@ type EditableBox = {
   yMax: number;
 };
 
+type DeleteMenuState = {
+  boxId: number;
+};
+
 export default function Dashboard() {
   const [data, setData] = useState<PillData[]>([]);
   const [activeTab, setActiveTab] = useState<
@@ -66,7 +70,7 @@ export default function Dashboard() {
   const [editableBoxes, setEditableBoxes] = useState<EditableBox[]>([]);
   const [selectedBoxId, setSelectedBoxId] = useState<number | null>(null);
   const [hoveredBoxId, setHoveredBoxId] = useState<number | null>(null);
-  const [deleteArmed, setDeleteArmed] = useState(false);
+  const [deleteMenu, setDeleteMenu] = useState<DeleteMenuState | null>(null);
   const [draftBox, setDraftBox] = useState<EditableBox | null>(null);
   const [draggingBoxId, setDraggingBoxId] = useState<number | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
@@ -182,7 +186,7 @@ export default function Dashboard() {
     setEditableBoxes(boxes);
     setSelectedBoxId(boxes[0]?.id ?? null);
     setHoveredBoxId(null);
-    setDeleteArmed(false);
+    setDeleteMenu(null);
     setDraftBox(null);
     setDraggingBoxId(null);
     dragStartRef.current = null;
@@ -227,6 +231,9 @@ export default function Dashboard() {
   };
 
   const handlePreviewMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    setDeleteMenu(null);
     if (interactionMode !== "draw") return;
     const point = toNormalizedPoint(event);
     if (!point) return;
@@ -282,13 +289,13 @@ export default function Dashboard() {
       return next;
     });
     setSelectedBoxId(normalized.id);
-    setDeleteArmed(false);
   };
 
   const handleBoxMouseDown = (event: MouseEvent<HTMLDivElement>, box: EditableBox) => {
     event.stopPropagation();
+    event.preventDefault();
     setSelectedBoxId(box.id);
-    setDeleteArmed(false);
+    setDeleteMenu(null);
     if (interactionMode !== "select" || event.button !== 0) return;
     const point = toNormalizedPoint(event);
     if (!point) return;
@@ -300,7 +307,7 @@ export default function Dashboard() {
     event.preventDefault();
     event.stopPropagation();
     setSelectedBoxId(box.id);
-    setDeleteArmed(true);
+    setDeleteMenu({ boxId: box.id });
   };
 
   const handleBoxCoordChange = (
@@ -356,15 +363,14 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteSelectedBox = () => {
-    if (!selectedBoxId || !deleteArmed) return;
+  const handleDeleteBoxById = (targetBoxId: number) => {
     setEditableBoxes((prev) =>
       prev
-        .filter((box) => box.id !== selectedBoxId)
+        .filter((box) => box.id !== targetBoxId)
         .map((box, index) => ({ ...box, boxIndex: index })),
     );
     setSelectedBoxId(null);
-    setDeleteArmed(false);
+    setDeleteMenu(null);
   };
 
   const handleApprove = async () => {
@@ -614,7 +620,9 @@ export default function Dashboard() {
                     src={resolveImageUrl(
                       selectedDetail?.imagePath ?? selectedItem.imagePath,
                     )}
-                    className="w-full h-full object-fill opacity-80 z-0"
+                    draggable={false}
+                    onDragStart={(event) => event.preventDefault()}
+                    className="w-full h-full object-fill opacity-80 z-0 pointer-events-none select-none"
                   />
                   {editableBoxes.map((box) => (
                     <motion.div
@@ -674,7 +682,7 @@ export default function Dashboard() {
                       <button
                         onClick={() => {
                           setInteractionMode("select");
-                          setDeleteArmed(false);
+                          setDeleteMenu(null);
                         }}
                         className={cn(
                           "p-2 backdrop-blur rounded-lg",
@@ -689,8 +697,8 @@ export default function Dashboard() {
                         onClick={() => {
                           setInteractionMode("draw");
                           setDraggingBoxId(null);
-                          setDeleteArmed(false);
                           setHoveredBoxId(null);
+                          setDeleteMenu(null);
                         }}
                         className={cn(
                           "p-2 backdrop-blur rounded-lg",
@@ -703,6 +711,29 @@ export default function Dashboard() {
                       </button>
                     </div>
                   </div>
+                  {deleteMenu && interactionMode === "select" && (
+                    (() => {
+                      const targetBox = editableBoxes.find(
+                        (box) => box.id === deleteMenu.boxId,
+                      );
+                      if (!targetBox) return null;
+                      const centerX = ((targetBox.xMin + targetBox.xMax) / 2) * 100;
+                      const centerY = ((targetBox.yMin + targetBox.yMax) / 2) * 100;
+                      return (
+                        <button
+                          onMouseDown={(event) => event.stopPropagation()}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleDeleteBoxById(deleteMenu.boxId);
+                          }}
+                          className="absolute z-50 -translate-x-1/2 -translate-y-1/2 px-2 py-1 rounded-md border border-error/40 bg-white text-error text-[10px] font-black uppercase tracking-wider shadow-lg hover:bg-red-50"
+                          style={{ left: `${centerX}%`, top: `${centerY}%` }}
+                        >
+                          삭제
+                        </button>
+                      );
+                    })()
+                  )}
                 </div>
                 <p className="text-[9px] text-center text-on-surface-variant italic">
                   마우스로 영역을 드래그하여 바운딩 박스를 수정할 수 있습니다.
@@ -750,14 +781,6 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
-                  <button
-                    onClick={handleDeleteSelectedBox}
-                    disabled={!selectedBoxId || !deleteArmed}
-                    className="w-full py-3 bg-error/10 text-error border border-error/20 font-black text-xs uppercase tracking-[0.15em] rounded-2xl flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-error/20 transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Selected Box (Right Click)
-                  </button>
                   <button
                     onClick={handleSaveBoxes}
                     disabled={isSaving}
