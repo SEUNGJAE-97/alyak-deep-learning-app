@@ -24,6 +24,19 @@ type LabelingPageResponse = {
   totalElements: number;
 };
 
+type TrainingJobResponse = {
+  id: number;
+  externalJobId?: string;
+  status: "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+  progress: number;
+  message?: string;
+};
+
+type ToastState = {
+  type: "success" | "error";
+  text: string;
+} | null;
+
 function TooltipSelect<T extends string>({
   label,
   value,
@@ -144,12 +157,21 @@ export default function Training() {
   const [learningRate, setLearningRate] = useState(0.001);
   const [optimizer, setOptimizer] = useState("Adam");
   const [freezeLayers, setFreezeLayers] = useState("medium");
+  const [batchSize, setBatchSize] = useState(16);
+  const [epochs, setEpochs] = useState(100);
   const [items, setItems] = useState<TrainingItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [job, setJob] = useState<TrainingJobResponse | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const [jobError, setJobError] = useState<string | null>(null);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [toast, setToast] = useState<ToastState>(null);
 
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+  const fastApiBaseUrl =
+    import.meta.env.VITE_FAST_API_BASE_URL ?? "http://localhost:8001";
   const token = localStorage.getItem("admin_access_token");
 
   const resolveImageUrl = (imagePath: string) => {
@@ -183,6 +205,111 @@ export default function Training() {
     void fetchTrainingItems();
   }, [apiBaseUrl, token]);
 
+  useEffect(() => {
+    if (!job?.externalJobId) return;
+
+    const es = new EventSource(
+      `${fastApiBaseUrl}/train/jobs/${job.externalJobId}/logs/stream`,
+    );
+
+    es.addEventListener("log", (event) => {
+      try {
+        const parsed = JSON.parse((event as MessageEvent).data) as { line?: string };
+        if (!parsed.line) return;
+        setLogs((prev) => [...prev.slice(-199), parsed.line!]);
+      } catch {
+        // ignore malformed log payload
+      }
+    });
+
+    es.addEventListener("progress", () => {
+      // progress is polled from Spring, no-op for now
+    });
+
+    es.addEventListener("done", (event) => {
+      try {
+        const parsed = JSON.parse((event as MessageEvent).data) as {
+          status?: string;
+          message?: string;
+        };
+        if (parsed.status === "SUCCEEDED") {
+          setToast({ type: "success", text: parsed.message ?? "학습이 완료되었습니다." });
+        } else {
+          setToast({ type: "error", text: parsed.message ?? "학습이 종료되었습니다." });
+        }
+      } catch {
+        setToast({ type: "success", text: "학습이 완료되었습니다." });
+      }
+      es.close();
+    });
+
+    es.addEventListener("error", () => {
+      setToast({ type: "error", text: "로그 스트림 연결이 종료되었습니다." });
+      es.close();
+    });
+
+    return () => {
+      es.close();
+    };
+  }, [fastApiBaseUrl, job?.externalJobId]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  useEffect(() => {
+    if (!job || (job.status !== "PENDING" && job.status !== "RUNNING") || !token) {
+      return;
+    }
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/admin/training/jobs/${job.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return;
+        const next = (await response.json()) as TrainingJobResponse;
+        setJob(next);
+      } catch {
+        // polling failure should not break UI
+      }
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [apiBaseUrl, job, token]);
+
+  const handleStartTraining = async () => {
+    if (!token) return;
+    setIsStarting(true);
+    setJobError(null);
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/admin/training/jobs`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          datasetStatus: "TRAINING_SET",
+          epochs,
+          batchSize,
+          learningRate,
+          optimizer,
+          freezeLayers,
+        }),
+      });
+      if (!response.ok) throw new Error("학습 시작에 실패했습니다.");
+      const created = (await response.json()) as TrainingJobResponse;
+      setJob(created);
+      setLogs([]);
+    } catch (error) {
+      setJobError(error instanceof Error ? error.message : "학습 시작 중 오류가 발생했습니다.");
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
   const filteredItems = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
     if (!keyword) return items;
@@ -208,8 +335,10 @@ export default function Training() {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-tertiary" />
             <span className="text-xs font-mono text-on-surface-variant">
-              Est. Time:{" "}
-              <span className="text-on-surface font-bold">2h 15m</span>
+              Job:{" "}
+              <span className="text-on-surface font-bold">
+                {job ? `${job.status} (${job.progress ?? 0}%)` : "IDLE"}
+              </span>
             </span>
           </div>
         </div>
@@ -220,6 +349,18 @@ export default function Training() {
           </span>
         </div>
       </div>
+      {toast && (
+        <div
+          className={cn(
+            "fixed top-44 right-[420px] z-50 rounded-xl px-4 py-2 text-xs font-bold shadow-lg",
+            toast.type === "success"
+              ? "bg-green-500/90 text-black"
+              : "bg-error/90 text-white",
+          )}
+        >
+          {toast.text}
+        </div>
+      )}
 
       <div className="flex flex-col gap-8">
         <header className="flex justify-between items-center">
@@ -332,11 +473,15 @@ export default function Training() {
               Batch Size
             </label>
             <div className="relative">
-              <select className="w-full bg-surface-container-high border border-outline-variant/20 rounded-xl p-4 text-xs text-on-surface focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer">
-                <option>16</option>
-                <option>32</option>
-                <option>64</option>
-                <option>128</option>
+              <select
+                value={batchSize}
+                onChange={(e) => setBatchSize(Number(e.target.value))}
+                className="w-full bg-surface-container-high border border-outline-variant/20 rounded-xl p-4 text-xs text-on-surface focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
+              >
+                <option value={16}>16</option>
+                <option value={32}>32</option>
+                <option value={64}>64</option>
+                <option value={128}>128</option>
               </select>
               <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant pointer-events-none" />
             </div>
@@ -349,7 +494,8 @@ export default function Training() {
             </label>
             <input
               type="number"
-              defaultValue={100}
+              value={epochs}
+              onChange={(e) => setEpochs(Number(e.target.value))}
               className="w-full bg-surface-container-high border border-outline-variant/20 rounded-xl p-4 text-xs font-mono text-on-surface focus:outline-none focus:border-primary transition-colors"
             />
           </div>
@@ -393,10 +539,17 @@ export default function Training() {
           />
 
           <div className="pt-6 border-t border-outline-variant/10">
-            <button className="w-full py-4 bg-gradient-to-r from-primary to-primary/80 text-on-primary font-black text-xs uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all group">
+            <button
+              onClick={handleStartTraining}
+              disabled={isStarting}
+              className="w-full py-4 bg-gradient-to-r from-primary to-primary/80 text-on-primary font-black text-xs uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all group disabled:opacity-60"
+            >
               <Play className="w-5 h-5 fill-current group-hover:scale-110 transition-transform" />
-              INITIATE TRAINING
+              {isStarting ? "STARTING..." : "INITIATE TRAINING"}
             </button>
+            {jobError && (
+              <p className="text-[10px] text-error text-center mt-2">{jobError}</p>
+            )}
             <p className="text-[9px] text-center text-on-surface-variant mt-4 font-semibold uppercase tracking-widest opacity-60 italic">
               Ensure GPU cluster is in idle state before starting.
             </p>

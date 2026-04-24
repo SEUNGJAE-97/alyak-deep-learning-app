@@ -47,24 +47,93 @@ const mockAccuracyData = [
 ];
 
 export default function TrainingLogs() {
-  const [logs, setLogs] = useState<string[]>([
-    "[SYSTEM] Session initialized. Loading Alyak-RL-Core...",
-    "[INFO] CUDA detected: NVIDIA H100 Cluster Active.",
-    "[TRAIN] Epoch 1/100 started.",
-    "Step 100: Loss 0.22... Accuracy 0.81...",
-    "Step 200: Loss 0.09... Accuracy 0.92...",
-    "Step 300: Loss 0.04... Accuracy 0.97...",
-    "Step 400: Loss 0.025... Accuracy 0.988...",
-    "Step 450: Loss 0.021... Accuracy 0.992...",
-  ]);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [streamMessage, setStreamMessage] = useState<string>('대기 중');
   
   const consoleRef = useRef<HTMLDivElement>(null);
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+  const fastApiBaseUrl =
+    import.meta.env.VITE_FAST_API_BASE_URL ?? 'http://localhost:8001';
+  const token = localStorage.getItem('admin_access_token');
+
+  type TrainingJob = {
+    id: number;
+    externalJobId?: string;
+  };
+
+  type TrainingJobPage = {
+    content: TrainingJob[];
+  };
 
   useEffect(() => {
     if (consoleRef.current) {
       consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
     }
   }, [logs]);
+
+  useEffect(() => {
+    if (!token) {
+      setStreamMessage('로그인 토큰이 없습니다');
+      return;
+    }
+
+    let es: EventSource | null = null;
+
+    const connectStream = async () => {
+      setStreamMessage('학습 작업 조회 중...');
+      try {
+        const response = await fetch(
+          `${apiBaseUrl}/api/admin/training/jobs?page=0&pageSize=1&sort=id,desc`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!response.ok) {
+          setStreamMessage('학습 작업을 불러오지 못했습니다');
+          return;
+        }
+        const pageData = (await response.json()) as TrainingJobPage;
+        const latestJob = pageData.content?.[0];
+        if (!latestJob?.externalJobId) {
+          setStreamMessage('스트리밍할 학습 작업이 없습니다');
+          return;
+        }
+
+        setStreamMessage('스트림 연결 중...');
+        es = new EventSource(
+          `${fastApiBaseUrl}/train/jobs/${latestJob.externalJobId}/logs/stream`,
+        );
+
+        es.addEventListener('log', (event) => {
+          const payload = JSON.parse((event as MessageEvent).data) as { line?: string };
+          if (!payload.line) return;
+          setLogs((prev) => [...prev.slice(-299), payload.line]);
+          setStreamMessage('연결됨');
+        });
+
+        es.addEventListener('done', (event) => {
+          const payload = JSON.parse((event as MessageEvent).data) as { message?: string };
+          if (payload.message) {
+            setLogs((prev) => [...prev.slice(-299), `[SYSTEM] ${payload.message}`]);
+          }
+          setStreamMessage('학습 종료');
+          es?.close();
+        });
+
+        es.addEventListener('error', () => {
+          setStreamMessage('스트림 연결 종료');
+          es?.close();
+        });
+      } catch {
+        setStreamMessage('스트림 준비 중 오류 발생');
+      }
+    };
+
+    void connectStream();
+
+    return () => {
+      es?.close();
+    };
+  }, [apiBaseUrl, fastApiBaseUrl, token]);
 
   // Status can be 'normal' | 'warning' | 'error'
   const status: 'normal' | 'warning' | 'error' = 'normal';
@@ -201,6 +270,7 @@ export default function TrainingLogs() {
           <div className="flex items-center gap-2">
             <Terminal className="w-4 h-4 text-green-500" />
             <span className="text-[10px] font-mono text-green-500 font-bold uppercase tracking-widest">ALYAK-RL System Terminal</span>
+            <span className="text-[9px] font-mono text-white/40">({streamMessage})</span>
           </div>
           <div className="flex gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
@@ -213,6 +283,9 @@ export default function TrainingLogs() {
           ref={consoleRef}
           className="h-64 overflow-y-auto font-mono text-[11px] space-y-1.5 custom-scrollbar-minimal pr-4"
         >
+          {logs.length === 0 && (
+            <p className="text-on-surface-variant/60">스트림 로그를 기다리는 중...</p>
+          )}
           {logs.map((log, i) => (
             <motion.div 
               initial={{ opacity: 0, x: -10 }}
