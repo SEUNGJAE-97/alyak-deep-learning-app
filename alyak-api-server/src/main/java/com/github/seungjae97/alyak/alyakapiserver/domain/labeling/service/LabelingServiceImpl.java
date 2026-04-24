@@ -8,6 +8,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.response.L
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.entity.DataStatus;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.entity.PillImageBox;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.entity.PillImageData;
+import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.repository.PillImageBoxRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.repository.PillImageDataRepository;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
@@ -27,6 +28,7 @@ import java.util.List;
 @Transactional
 public class LabelingServiceImpl implements LabelingService {
 
+    private final PillImageBoxRepository pillImageBoxRepository;
     private final PillImageDataRepository pillImageDataRepository;
     private final LabelingImageStorageService labelingImageStorageService;
 
@@ -85,7 +87,8 @@ public class LabelingServiceImpl implements LabelingService {
         PillImageData imageData = pillImageDataRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(BusinessError.LABELING_ITEM_NOT_FOUND));
 
-        List<PillImageBox> newBoxes = new ArrayList<>();
+        pillImageBoxRepository.deleteAllByImageDataId(id);
+
         if (request != null && request.getBoxes() != null) {
             List<UpdateLabelingBoxesRequest.Box> sorted = request.getBoxes().stream()
                     .sorted(Comparator.comparingInt(box -> box.getBoxIndex() == null ? Integer.MAX_VALUE : box.getBoxIndex()))
@@ -93,7 +96,7 @@ public class LabelingServiceImpl implements LabelingService {
 
             for (int i = 0; i < sorted.size(); i++) {
                 UpdateLabelingBoxesRequest.Box box = sorted.get(i);
-                newBoxes.add(PillImageBox.builder()
+                imageData.addBox(PillImageBox.builder()
                         .boxIndex(box.getBoxIndex() == null ? i : box.getBoxIndex())
                         .xMin(box.getXMin())
                         .yMin(box.getYMin())
@@ -103,10 +106,7 @@ public class LabelingServiceImpl implements LabelingService {
             }
         }
 
-        imageData.replaceBoxes(newBoxes);
-        PillImageData saved = pillImageDataRepository.save(imageData);
-
-        return toDetailResponse(saved);
+        return toDetailResponse(pillImageDataRepository.save(imageData));
     }
 
     private LabelingItemDetailResponse toDetailResponse(PillImageData imageData) {

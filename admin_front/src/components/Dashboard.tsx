@@ -327,40 +327,30 @@ export default function Dashboard() {
     );
   };
 
-  const handleSaveBoxes = async () => {
+  const persistBoxes = async () => {
     if (!selectedItem || !token) return;
-    setIsSaving(true);
-    setErrorMessage(null);
-    try {
-      const response = await fetch(
-        `${apiBaseUrl}/api/admin/labeling/items/${selectedItem.id}/boxes`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            boxes: editableBoxes.map((box, index) => ({
-              boxIndex: index,
-              xMin: box.xMin,
-              yMin: box.yMin,
-              xMax: box.xMax,
-              yMax: box.yMax,
-            })),
-          }),
+    const response = await fetch(
+      `${apiBaseUrl}/api/admin/labeling/items/${selectedItem.id}/boxes`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      );
-      if (!response.ok) throw new Error("박스 저장에 실패했습니다.");
-      const detail = (await response.json()) as LabelingItemDetail;
-      setSelectedDetail(detail);
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "박스 저장 중 오류가 발생했습니다.",
-      );
-    } finally {
-      setIsSaving(false);
-    }
+        body: JSON.stringify({
+          boxes: editableBoxes.map((box, index) => ({
+            boxIndex: index,
+            xMin: box.xMin,
+            yMin: box.yMin,
+            xMax: box.xMax,
+            yMax: box.yMax,
+          })),
+        }),
+      },
+    );
+    if (!response.ok) throw new Error("박스 저장에 실패했습니다.");
+    const detail = (await response.json()) as LabelingItemDetail;
+    setSelectedDetail(detail);
   };
 
   const handleDeleteBoxById = (targetBoxId: number) => {
@@ -374,8 +364,11 @@ export default function Dashboard() {
   };
 
   const handleApprove = async () => {
-    if (!selectedItem) return;
+    if (!selectedItem || !token) return;
+    setIsSaving(true);
+    setErrorMessage(null);
     try {
+      await persistBoxes();
       const response = await fetch(
         `${apiBaseUrl}/api/admin/labeling/items/${selectedItem.id}/approve`,
         {
@@ -387,8 +380,10 @@ export default function Dashboard() {
       await fetchItems(activeTab);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "승인 중 오류가 발생했습니다.",
+        error instanceof Error ? error.message : "저장/승인 중 오류가 발생했습니다.",
       );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -782,18 +777,12 @@ export default function Dashboard() {
 
                 <div className="grid grid-cols-1 gap-3">
                   <button
-                    onClick={handleSaveBoxes}
-                    disabled={isSaving}
-                    className="w-full py-3 bg-surface-container-high border border-outline-variant/20 text-on-surface font-black text-xs uppercase tracking-[0.15em] rounded-2xl flex items-center justify-center gap-3 hover:border-primary/50 disabled:opacity-50 transition-all"
-                  >
-                    {isSaving ? "Saving..." : "Save Boxes"}
-                  </button>
-                  <button
                     onClick={handleApprove}
+                    disabled={isSaving}
                     className="w-full py-4 bg-primary text-on-primary font-black text-xs uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                   >
                     <CheckCircle2 className="w-5 h-5" />
-                    Update Label & Approve
+                    {isSaving ? "Saving & Approving..." : "Update Label & Approve"}
                   </button>
                   <button
                     onClick={handleReject}
