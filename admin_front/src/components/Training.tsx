@@ -9,27 +9,71 @@ import {
   Type
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/src/lib/utils';
 
-const datasetItems = [
-  { id: 1, label: 'Tylenol ER', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill1/300/300' },
-  { id: 2, label: 'Aspirin', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill2/300/300' },
-  { id: 3, label: 'Ibuprofen', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill3/300/300' },
-  { id: 4, label: 'Vitamin C', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill4/300/300' },
-  { id: 5, label: 'Capsule A', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill5/300/300' },
-  { id: 6, label: 'Antibiotics', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill6/300/300' },
-  { id: 7, label: 'Softgel', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill7/300/300' },
-  { id: 8, label: 'Tylenol ER', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill8/300/300' },
-  { id: 9, label: 'Aspirin', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill9/300/300' },
-  { id: 10, label: 'Intersection', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill10/300/300' },
-  { id: 11, label: 'Highway', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill11/300/300' },
-  { id: 12, label: 'Medical_Capsule', resolution: '1024x1024', image: 'https://picsum.photos/seed/pill12/300/300' },
-];
+type TrainingItem = {
+  id: number;
+  imagePath: string;
+  status: 'INBOX' | 'TRAINING_SET' | 'TRASH';
+  boxCount: number;
+};
+
+type LabelingPageResponse = {
+  content: TrainingItem[];
+  totalElements: number;
+};
 
 export default function Training() {
   const [learningRate, setLearningRate] = useState(0.001);
   const [optimizer, setOptimizer] = useState('Adam');
+  const [items, setItems] = useState<TrainingItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+  const token = localStorage.getItem('admin_access_token');
+
+  const resolveImageUrl = (imagePath: string) => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    return `${apiBaseUrl}${imagePath}`;
+  };
+
+  useEffect(() => {
+    const fetchTrainingItems = async () => {
+      if (!token) return;
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `${apiBaseUrl}/api/admin/labeling/items?status=TRAINING_SET&page=0&pageSize=200`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!response.ok) throw new Error('Training Set 목록 조회 실패');
+        const pageData = (await response.json()) as LabelingPageResponse;
+        setItems(pageData.content ?? []);
+      } catch (error) {
+        console.error('[Training] fetch failed', error);
+        setItems([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchTrainingItems();
+  }, [apiBaseUrl, token]);
+
+  const filteredItems = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+    if (!keyword) return items;
+    return items.filter((item) =>
+      item.imagePath.toLowerCase().includes(keyword) ||
+      String(item.id).includes(keyword),
+    );
+  }, [items, searchText]);
 
   return (
     <div className="ml-64 mt-36 p-8 pr-[420px] min-h-screen bg-background">
@@ -38,7 +82,7 @@ export default function Training() {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <ImageIcon className="w-4 h-4 text-primary" />
-            <span className="text-xs font-mono text-on-surface-variant">Total Images: <span className="text-on-surface font-bold">12,450</span></span>
+            <span className="text-xs font-mono text-on-surface-variant">Total Images: <span className="text-on-surface font-bold">{items.length}</span></span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-tertiary" />
@@ -59,6 +103,8 @@ export default function Training() {
             <input 
               className="w-full bg-surface-container border border-outline-variant/20 rounded-xl py-3 pl-12 pr-4 text-xs text-on-surface placeholder:text-outline-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
               placeholder="데이터셋 필터링 및 검색..." 
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
               type="text" 
             />
           </div>
@@ -66,7 +112,7 @@ export default function Training() {
 
         {/* Image Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-          {datasetItems.map((item, idx) => (
+          {filteredItems.map((item, idx) => (
             <motion.div 
               key={item.id}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -77,8 +123,8 @@ export default function Training() {
               <div className="aspect-square overflow-hidden relative">
                 <img 
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  src={item.image}
-                  alt={item.label}
+                  src={resolveImageUrl(item.imagePath)}
+                  alt={`training-item-${item.id}`}
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
@@ -86,12 +132,15 @@ export default function Training() {
                 </div>
               </div>
               <div className="p-3">
-                <p className="text-[10px] font-bold text-on-surface truncate">{item.label}</p>
-                <p className="text-[9px] text-on-surface-variant font-mono mt-1 opacity-60">{item.resolution}</p>
+                <p className="text-[10px] font-bold text-on-surface truncate">{item.imagePath.split('/').pop() ?? `item-${item.id}`}</p>
+                <p className="text-[9px] text-on-surface-variant font-mono mt-1 opacity-60">ID {item.id} · BOX {item.boxCount}</p>
               </div>
             </motion.div>
           ))}
         </div>
+        {isLoading && (
+          <p className="text-xs text-on-surface-variant">Training Set 불러오는 중...</p>
+        )}
       </div>
 
       {/* Right Configuration Panel */}
