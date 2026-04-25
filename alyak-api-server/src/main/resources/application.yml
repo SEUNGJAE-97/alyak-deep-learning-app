@@ -89,6 +89,10 @@ fast-api:
   server:
     url: ${OCR_SERVER_URL:http://fast-api:8000}
 
+training:
+  callback:
+    token: ${TRAINING_CALLBACK_TOKEN:local-training-callback-token}
+
 # Firebase (FCM) — docker-compose 운영에서는 credentials-path 단일 사용
 firebase:
   credentials-path: ${FIREBASE_CREDENTIALS_PATH:}

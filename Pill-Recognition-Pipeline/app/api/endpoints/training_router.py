@@ -6,13 +6,21 @@ from threading import Lock
 import queue
 import time
 import json
+import os
+import logging
+import urllib.request
+import urllib.error
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 _jobs: dict[str, dict] = {}
 _jobs_lock = Lock()
 _log_queues: dict[str, queue.Queue] = {}
 _log_lock = Lock()
+
+SPRING_CALLBACK_BASE_URL = os.getenv("SPRING_CALLBACK_BASE_URL", "http://alyak-api:8080")
+SPRING_CALLBACK_TOKEN = os.getenv("TRAINING_CALLBACK_TOKEN", "local-training-callback-token")
 
 
 class TrainRequest(BaseModel):
@@ -24,6 +32,32 @@ class TrainRequest(BaseModel):
     freezeLayers: str | None = None
 
 
+def _notify_spring_completion(job_id: str, status: str, progress: int, message: str) -> None:
+    callback_url = f"{SPRING_CALLBACK_BASE_URL}/api/internal/training/jobs/{job_id}/complete"
+    payload = {
+        "status": status,
+        "progress": progress,
+        "message": message,
+    }
+    req = urllib.request.Request(
+        callback_url,
+        data=json.dumps(payload).encode("utf-8"),
+        method="PATCH",
+        headers={
+            "Content-Type": "application/json",
+            "X-Internal-Token": SPRING_CALLBACK_TOKEN,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as response:
+            if response.status >= 300:
+                logger.warning("Spring callback non-success status: %s", response.status)
+    except urllib.error.HTTPError as e:
+        logger.warning("Spring callback failed with HTTPError: %s", e)
+    except Exception as e:
+        logger.warning("Spring callback failed: %s", e)
+
+
 def _run_training(job_id: str, req: TrainRequest) -> None:
     def emit(event: str, payload: dict) -> None:
         with _log_lock:
@@ -31,29 +65,40 @@ def _run_training(job_id: str, req: TrainRequest) -> None:
         if q:
             q.put((event, payload))
 
-    epochs = max(req.epochs, 1)
-    emit("log", {"line": f"Training session started. epochs={epochs}"})
-    for epoch in range(1, epochs + 1):
-        # Simulated training step; replace with real pipeline.
-        time.sleep(0.2)
-        progress = int((epoch / epochs) * 100)
-        with _jobs_lock:
-            if job_id not in _jobs:
-                return
-            if _jobs[job_id]["status"] == "CANCELLED":
-                emit("done", {"status": "CANCELLED", "message": "Training cancelled"})
-                return
-            _jobs[job_id]["progress"] = progress
-            _jobs[job_id]["message"] = f"Epoch {epoch}/{epochs}"
-        emit("progress", {"progress": progress, "status": "RUNNING"})
-        emit("log", {"line": f"Epoch {epoch}/{epochs} complete"})
+    try:
+        epochs = max(req.epochs, 1)
+        emit("log", {"line": f"Training session started. epochs={epochs}"})
+        for epoch in range(1, epochs + 1):
+            # Simulated training step; replace with real pipeline.
+            time.sleep(0.2)
+            progress = int((epoch / epochs) * 100)
+            with _jobs_lock:
+                if job_id not in _jobs:
+                    return
+                if _jobs[job_id]["status"] == "CANCELLED":
+                    emit("done", {"status": "CANCELLED", "message": "Training cancelled"})
+                    _notify_spring_completion(job_id, "CANCELLED", progress, "Training cancelled")
+                    return
+                _jobs[job_id]["progress"] = progress
+                _jobs[job_id]["message"] = f"Epoch {epoch}/{epochs}"
+            emit("progress", {"progress": progress, "status": "RUNNING"})
+            emit("log", {"line": f"Epoch {epoch}/{epochs} complete"})
 
-    with _jobs_lock:
-        if job_id in _jobs:
-            _jobs[job_id]["status"] = "SUCCEEDED"
-            _jobs[job_id]["progress"] = 100
-            _jobs[job_id]["message"] = "Training complete"
-    emit("done", {"status": "SUCCEEDED", "message": "Training complete"})
+        with _jobs_lock:
+            if job_id in _jobs:
+                _jobs[job_id]["status"] = "SUCCEEDED"
+                _jobs[job_id]["progress"] = 100
+                _jobs[job_id]["message"] = "Training complete"
+        emit("done", {"status": "SUCCEEDED", "message": "Training complete"})
+        _notify_spring_completion(job_id, "SUCCEEDED", 100, "Training complete")
+    except Exception as e:
+        with _jobs_lock:
+            if job_id in _jobs:
+                _jobs[job_id]["status"] = "FAILED"
+                _jobs[job_id]["message"] = str(e)
+        emit("error", {"message": str(e)})
+        emit("done", {"status": "FAILED", "message": str(e)})
+        _notify_spring_completion(job_id, "FAILED", 0, str(e))
 
 
 @router.post("/train/jobs")

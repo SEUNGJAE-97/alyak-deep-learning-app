@@ -6,6 +6,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.FastApi
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.dto.FastApiStartTrainingRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.dto.FastApiTrainingJobResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.request.CreateTrainingJobRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.request.TrainingCompletionCallbackRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.response.TrainingJobResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.entity.TrainingJob;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.entity.TrainingJobStatus;
@@ -18,8 +19,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -86,27 +85,18 @@ public class TrainingJobServiceImpl implements TrainingJobService {
     }
 
     @Override
-    public void syncRunningJobs() {
-        List<TrainingJob> runningJobs = trainingJobRepository.findByStatus(TrainingJobStatus.RUNNING);
-        for (TrainingJob job : runningJobs) {
-            if (job.getExternalJobId() == null || job.getExternalJobId().isBlank()) {
-                continue;
-            }
-            try {
-                FastApiTrainingJobResponse status = fastApiTrainingClient.getJobStatus(job.getExternalJobId());
-                if (status == null) {
-                    continue;
-                }
-                job.syncStatus(
-                        toInternalStatus(status.getStatus()),
-                        status.getProgress(),
-                        status.getMessage()
-                );
-                trainingJobRepository.save(job);
-            } catch (Exception e) {
-                log.warn("Training job sync failed. id={}, externalJobId={}", job.getId(), job.getExternalJobId(), e);
-            }
+    public void completeByExternalJobId(String externalJobId, TrainingCompletionCallbackRequest request) {
+        if (externalJobId == null || externalJobId.isBlank()) {
+            return;
         }
+        trainingJobRepository.findByExternalJobId(externalJobId).ifPresent(job -> {
+            job.syncStatus(
+                    toInternalStatus(request == null ? null : request.getStatus()),
+                    request == null ? null : request.getProgress(),
+                    request == null ? null : request.getMessage()
+            );
+            trainingJobRepository.save(job);
+        });
     }
 
     private TrainingJobStatus toInternalStatus(String fastApiStatus) {

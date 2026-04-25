@@ -208,14 +208,21 @@ export default function Training() {
   useEffect(() => {
     if (!job?.externalJobId) return;
 
+    let receivedDone = false;
+    let hasReceivedLog = false;
     const es = new EventSource(
       `${fastApiBaseUrl}/train/jobs/${job.externalJobId}/logs/stream`,
     );
+
+    es.onopen = () => {
+      // optional: connection established
+    };
 
     es.addEventListener("log", (event) => {
       try {
         const parsed = JSON.parse((event as MessageEvent).data) as { line?: string };
         if (!parsed.line) return;
+        hasReceivedLog = true;
         setLogs((prev) => [...prev.slice(-199), parsed.line!]);
       } catch {
         // ignore malformed log payload
@@ -227,6 +234,7 @@ export default function Training() {
     });
 
     es.addEventListener("done", (event) => {
+      receivedDone = true;
       try {
         const parsed = JSON.parse((event as MessageEvent).data) as {
           status?: string;
@@ -244,8 +252,9 @@ export default function Training() {
     });
 
     es.addEventListener("error", () => {
-      setToast({ type: "error", text: "로그 스트림 연결이 종료되었습니다." });
-      es.close();
+      if (!receivedDone && !hasReceivedLog && es.readyState === EventSource.CLOSED) {
+        setToast({ type: "error", text: "로그 스트림 연결에 실패했습니다." });
+      }
     });
 
     return () => {
@@ -258,26 +267,6 @@ export default function Training() {
     const timer = window.setTimeout(() => setToast(null), 3500);
     return () => window.clearTimeout(timer);
   }, [toast]);
-
-  useEffect(() => {
-    if (!job || (job.status !== "PENDING" && job.status !== "RUNNING") || !token) {
-      return;
-    }
-    const timer = window.setInterval(async () => {
-      try {
-        const response = await fetch(`${apiBaseUrl}/api/admin/training/jobs/${job.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!response.ok) return;
-        const next = (await response.json()) as TrainingJobResponse;
-        setJob(next);
-      } catch {
-        // polling failure should not break UI
-      }
-    }, 5000);
-
-    return () => window.clearInterval(timer);
-  }, [apiBaseUrl, job, token]);
 
   const handleStartTraining = async () => {
     if (!token) return;
