@@ -5,12 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  CheckCircle2,
-  ChevronRight,
-  X,
-  History as HistoryIcon,
-} from "lucide-react";
+import { CheckCircle2, ChevronRight, History as HistoryIcon, X } from "lucide-react";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
 import Training from "./components/Training";
@@ -19,7 +14,10 @@ import Archives from "./components/Archives";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import WorkflowStepper from "./components/WorkflowStepper";
-import { TrainingStreamProvider } from "./components/TrainingStreamContext";
+import {
+  TrainingStreamProvider,
+  useTrainingStream,
+} from "./components/TrainingStreamContext";
 
 export type ViewType = "Overview" | "TrainingLogs" | "Training" | "Archives";
 type LoginSuccessPayload = {
@@ -30,7 +28,6 @@ type LoginSuccessPayload = {
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>("Overview");
-  const [showToast, setShowToast] = useState(false);
 
   // Simple persistence for demo purposes
   useEffect(() => {
@@ -40,12 +37,6 @@ export default function App() {
       setIsAuthenticated(true);
     }
 
-    // Simulate training completion after 10 seconds for demo
-    const timer = setTimeout(() => {
-      setShowToast(true);
-    }, 10000);
-
-    return () => clearTimeout(timer);
   }, [isAuthenticated]);
 
   const handleLogin = ({ accessToken, userId }: LoginSuccessPayload) => {
@@ -68,56 +59,42 @@ export default function App() {
 
   return (
     <TrainingStreamProvider>
+      <AppShell
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        handleLogout={handleLogout}
+      />
+    </TrainingStreamProvider>
+  );
+}
+
+function AppShell({
+  currentView,
+  setCurrentView,
+  handleLogout,
+}: {
+  currentView: ViewType;
+  setCurrentView: (view: ViewType) => void;
+  handleLogout: () => void;
+}) {
+  const { toast, dismissToast } = useTrainingStream();
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => dismissToast(), 10000);
+    return () => window.clearTimeout(timer);
+  }, [toast, dismissToast]);
+
+  return (
+    <>
       <div className="min-h-screen bg-background text-on-surface scroll-smooth">
-        <Navbar onViewChange={setCurrentView} trainingComplete={showToast} />
+        <Navbar onViewChange={setCurrentView} />
         <WorkflowStepper currentView={currentView} />
         <Sidebar
           onLogout={handleLogout}
           currentView={currentView}
           onViewChange={setCurrentView}
         />
-
-        <AnimatePresence>
-          {showToast && (
-            <motion.div
-              initial={{ opacity: 0, y: -20, x: "-50%" }}
-              animate={{ opacity: 1, y: 0, x: "-50%" }}
-              exit={{ opacity: 0, y: -20, x: "-50%" }}
-              className="fixed top-24 left-1/2 z-[100] w-full max-w-sm"
-            >
-              <div className="bg-surface-container-high/90 backdrop-blur-2xl border border-primary/30 rounded-2xl p-4 shadow-2xl flex items-center gap-4 group">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-black text-on-surface uppercase tracking-tight">
-                    Training Complete!
-                  </p>
-                  <p className="text-xs text-on-surface-variant">
-                    Model v2.1.0-LTYK weights stabilized.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setCurrentView("Archives");
-                      setShowToast(false);
-                    }}
-                    className="bg-primary text-on-primary text-[10px] font-black py-1 px-3 rounded uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
-                  >
-                    View Results
-                  </button>
-                  <button
-                    onClick={() => setShowToast(false)}
-                    className="text-on-surface-variant hover:text-on-surface transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <main className="relative z-0">
           <AnimatePresence mode="wait">
@@ -136,6 +113,66 @@ export default function App() {
           </AnimatePresence>
         </main>
       </div>
-    </TrainingStreamProvider>
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-sm">
+          <div
+            className={
+              toast.type === "success"
+                ? "backdrop-blur-2xl border rounded-2xl p-4 shadow-2xl flex items-center gap-4 bg-surface-container-high/90 border-primary/30 text-on-surface"
+                : "backdrop-blur-2xl border rounded-2xl p-4 shadow-2xl flex items-center gap-4 bg-error/90 border-error/40 text-white"
+            }
+          >
+            <div
+              className={
+                toast.type === "success"
+                  ? "w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary"
+                  : "w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white/15 text-white"
+              }
+            >
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-black uppercase tracking-tight">
+                {toast.title}
+              </p>
+              {toast.description && (
+                <p
+                  className={
+                    toast.type === "success"
+                      ? "text-xs mt-0.5 text-on-surface-variant"
+                      : "text-xs mt-0.5 text-white/90"
+                  }
+                >
+                  {toast.description}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {toast.type === "success" && (
+                <button
+                  onClick={() => {
+                    setCurrentView("Archives");
+                    dismissToast();
+                  }}
+                  className="bg-primary text-on-primary text-[10px] font-black py-1 px-3 rounded uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
+                >
+                  View Results
+                </button>
+              )}
+              <button
+                onClick={dismissToast}
+                className={
+                  toast.type === "success"
+                    ? "text-on-surface-variant hover:text-on-surface transition-colors"
+                    : "text-white/70 hover:text-white transition-colors"
+                }
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

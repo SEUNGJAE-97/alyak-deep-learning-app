@@ -25,11 +25,6 @@ type LabelingPageResponse = {
   totalElements: number;
 };
 
-type ToastState = {
-  type: "success" | "error";
-  text: string;
-} | null;
-
 function TooltipSelect<T extends string>({
   label,
   value,
@@ -159,7 +154,6 @@ export default function Training() {
     useTrainingStream();
   const [isStarting, setIsStarting] = useState(false);
   const [jobError, setJobError] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastState>(null);
 
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
@@ -195,20 +189,6 @@ export default function Training() {
 
     void fetchTrainingItems();
   }, [apiBaseUrl, token]);
-
-  useEffect(() => {
-    if (streamStatus === "done") {
-      setToast({ type: "success", text: "학습이 완료되었습니다." });
-    } else if (streamStatus === "error") {
-      setToast({ type: "error", text: "로그 스트림 연결에 실패했습니다." });
-    }
-  }, [streamStatus]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(null), 3500);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
 
   const handleStartTraining = async () => {
     if (!token) return;
@@ -289,19 +269,6 @@ export default function Training() {
           </span>
         </div>
       </div>
-      {toast && (
-        <div
-          className={cn(
-            "fixed top-44 right-[420px] z-50 rounded-xl px-4 py-2 text-xs font-bold shadow-lg",
-            toast.type === "success"
-              ? "bg-green-500/90 text-black"
-              : "bg-error/90 text-white",
-          )}
-        >
-          {toast.text}
-        </div>
-      )}
-
       <div className="flex flex-col gap-8">
         <header className="flex justify-between items-center">
           <h1 className="text-3xl font-black tracking-tight text-on-surface">

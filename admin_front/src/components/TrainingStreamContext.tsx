@@ -9,6 +9,11 @@ import {
 } from "react";
 
 type StreamStatus = "idle" | "connecting" | "running" | "done" | "error";
+type GlobalToast = {
+  type: "success" | "error";
+  title: string;
+  description?: string;
+} | null;
 
 export type TrainingJob = {
   id: number;
@@ -26,6 +31,8 @@ type TrainingStreamContextType = {
   setJob: (job: TrainingJob | null) => void;
   clearLogs: () => void;
   connectStream: (externalJobId?: string) => Promise<void>;
+  toast: GlobalToast;
+  dismissToast: () => void;
 };
 
 const TrainingStreamContext = createContext<TrainingStreamContextType | null>(
@@ -37,6 +44,7 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
   const [streamStatus, setStreamStatus] = useState<StreamStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [job, setJob] = useState<TrainingJob | null>(null);
+  const [toast, setToast] = useState<GlobalToast>(null);
   const esRef = useRef<EventSource | null>(null);
 
   const apiBaseUrl =
@@ -106,17 +114,32 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
           }
           setStreamStatus("done");
           setProgress(100);
+          setToast({
+            type: "success",
+            title: "Training Complete!",
+            description: "Model v2.1.0-LTYK weights stabilized.",
+          });
           es.close();
           esRef.current = null;
         });
 
         es.addEventListener("error", () => {
           setStreamStatus("error");
+          setToast({
+            type: "error",
+            title: "Training Stream Error",
+            description: "로그 스트림 연결에 실패했습니다.",
+          });
           es.close();
           esRef.current = null;
         });
       } catch {
         setStreamStatus("error");
+        setToast({
+          type: "error",
+          title: "Training Stream Error",
+          description: "로그 스트림 연결에 실패했습니다.",
+        });
       }
     },
     [apiBaseUrl, fastApiBaseUrl],
@@ -135,6 +158,7 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
     setProgress(0);
     setStreamStatus("idle");
   };
+  const dismissToast = () => setToast(null);
 
   return (
     <TrainingStreamContext.Provider
@@ -146,6 +170,8 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
         setJob,
         clearLogs,
         connectStream,
+        toast,
+        dismissToast,
       }}
     >
       {children}
