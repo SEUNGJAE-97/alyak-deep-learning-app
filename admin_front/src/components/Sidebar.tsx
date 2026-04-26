@@ -13,6 +13,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import { motion } from "motion/react";
 import { ViewType } from "../App";
+import { useTrainingStream } from "./TrainingStreamContext";
 
 const navItems: { icon: any; label: ViewType; displayLabel: string }[] = [
   { icon: LayoutDashboard, label: "Overview", displayLabel: "Overview" },
@@ -76,6 +77,8 @@ export default function Sidebar({
   currentView,
   onViewChange,
 }: SidebarProps) {
+  const { progress, streamStatus } = useTrainingStream();
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 z-40 bg-surface-container-lowest border-r border-outline-variant/10 flex flex-col p-4 gap-2">
       <div className="mt-20 mb-8 px-2 flex items-center gap-3">
@@ -110,8 +113,15 @@ export default function Sidebar({
 
             {item.label === "TrainingLogs" && (
               <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary ai-pulse" />
-                <span className="text-[8px] opacity-40">45%</span>
+                <div
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    streamStatus === "done"
+                      ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.7)]"
+                      : "bg-primary ai-pulse",
+                  )}
+                />
+                <span className="text-[8px] opacity-40">{progress}%</span>
               </div>
             )}
           </button>
