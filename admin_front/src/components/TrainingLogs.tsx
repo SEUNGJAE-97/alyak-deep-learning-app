@@ -136,7 +136,6 @@ export default function TrainingLogs() {
           </div>
         </div>
       </section>
-
       {/* Main Charts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         {/* Loss Curve */}
@@ -229,64 +228,6 @@ export default function TrainingLogs() {
           </div>
         </section>
       </div>
-
-      {/* Terminal Console */}
-      <section className="bg-black/90 rounded-2xl border border-outline-variant/20 shadow-2xl p-6 relative overflow-hidden">
-        <header className="flex justify-between items-center mb-4 border-b border-white/5 pb-4">
-          <div className="flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-green-500" />
-            <span className="text-[10px] font-mono text-green-500 font-bold uppercase tracking-widest">
-              ALYAK-RL System Terminal
-            </span>
-            <span className="text-[9px] font-mono text-white/40">
-              ({streamMessage})
-            </span>
-          </div>
-          <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
-            <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
-            <div className="w-2.5 h-2.5 rounded-full bg-white/20" />
-          </div>
-        </header>
-
-        <div
-          ref={consoleRef}
-          className="h-64 overflow-y-auto font-mono text-[11px] space-y-1.5 custom-scrollbar-minimal pr-4"
-        >
-          {logs.length === 0 && (
-            <p className="text-on-surface-variant/60">
-              스트림 로그를 기다리는 중...
-            </p>
-          )}
-          {logs.map((log, i) => (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              key={i}
-              className={cn(
-                "leading-relaxed",
-                log.includes("[ERROR]")
-                  ? "text-error"
-                  : log.includes("[WARNING]")
-                    ? "text-yellow-500"
-                    : log.includes("[SYSTEM]")
-                      ? "text-primary"
-                      : "text-on-surface-variant",
-              )}
-            >
-              <span className="mr-2 opacity-30">
-                [{new Date().toLocaleTimeString("ko-KR", { hour12: false })}]
-              </span>
-              {log}
-            </motion.div>
-          ))}
-          <motion.div
-            animate={{ opacity: [0, 1] }}
-            transition={{ duration: 0.8, repeat: Infinity }}
-            className="w-1.5 h-4 bg-primary inline-block align-middle ml-1"
-          />
-        </div>
-      </section>
     </div>
   );
 }
