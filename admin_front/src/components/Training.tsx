@@ -11,6 +11,7 @@ import { motion } from "motion/react";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/src/lib/utils";
+import { useTrainingStream, type TrainingJob } from "./TrainingStreamContext";
 
 type TrainingItem = {
   id: number;
@@ -22,14 +23,6 @@ type TrainingItem = {
 type LabelingPageResponse = {
   content: TrainingItem[];
   totalElements: number;
-};
-
-type TrainingJobResponse = {
-  id: number;
-  externalJobId?: string;
-  status: "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
-  progress: number;
-  message?: string;
 };
 
 type ToastState = {
@@ -162,16 +155,14 @@ export default function Training() {
   const [items, setItems] = useState<TrainingItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [job, setJob] = useState<TrainingJobResponse | null>(null);
+  const { streamStatus, progress, job, setJob, clearLogs, connectStream } =
+    useTrainingStream();
   const [isStarting, setIsStarting] = useState(false);
   const [jobError, setJobError] = useState<string | null>(null);
-  const [logs, setLogs] = useState<string[]>([]);
   const [toast, setToast] = useState<ToastState>(null);
 
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
-  const fastApiBaseUrl =
-    import.meta.env.VITE_FAST_API_BASE_URL ?? "http://localhost:8001";
   const token = localStorage.getItem("admin_access_token");
 
   const resolveImageUrl = (imagePath: string) => {
@@ -206,61 +197,12 @@ export default function Training() {
   }, [apiBaseUrl, token]);
 
   useEffect(() => {
-    if (!job?.externalJobId) return;
-
-    let receivedDone = false;
-    let hasReceivedLog = false;
-    const es = new EventSource(
-      `${fastApiBaseUrl}/train/jobs/${job.externalJobId}/logs/stream`,
-    );
-
-    es.onopen = () => {
-      // optional: connection established
-    };
-
-    es.addEventListener("log", (event) => {
-      try {
-        const parsed = JSON.parse((event as MessageEvent).data) as { line?: string };
-        if (!parsed.line) return;
-        hasReceivedLog = true;
-        setLogs((prev) => [...prev.slice(-199), parsed.line!]);
-      } catch {
-        // ignore malformed log payload
-      }
-    });
-
-    es.addEventListener("progress", () => {
-      // progress is polled from Spring, no-op for now
-    });
-
-    es.addEventListener("done", (event) => {
-      receivedDone = true;
-      try {
-        const parsed = JSON.parse((event as MessageEvent).data) as {
-          status?: string;
-          message?: string;
-        };
-        if (parsed.status === "SUCCEEDED") {
-          setToast({ type: "success", text: parsed.message ?? "학습이 완료되었습니다." });
-        } else {
-          setToast({ type: "error", text: parsed.message ?? "학습이 종료되었습니다." });
-        }
-      } catch {
-        setToast({ type: "success", text: "학습이 완료되었습니다." });
-      }
-      es.close();
-    });
-
-    es.addEventListener("error", () => {
-      if (!receivedDone && !hasReceivedLog && es.readyState === EventSource.CLOSED) {
-        setToast({ type: "error", text: "로그 스트림 연결에 실패했습니다." });
-      }
-    });
-
-    return () => {
-      es.close();
-    };
-  }, [fastApiBaseUrl, job?.externalJobId]);
+    if (streamStatus === "done") {
+      setToast({ type: "success", text: "학습이 완료되었습니다." });
+    } else if (streamStatus === "error") {
+      setToast({ type: "error", text: "로그 스트림 연결에 실패했습니다." });
+    }
+  }, [streamStatus]);
 
   useEffect(() => {
     if (!toast) return;
@@ -289,11 +231,16 @@ export default function Training() {
         }),
       });
       if (!response.ok) throw new Error("학습 시작에 실패했습니다.");
-      const created = (await response.json()) as TrainingJobResponse;
+      const created = (await response.json()) as TrainingJob;
       setJob(created);
-      setLogs([]);
+      clearLogs();
+      await connectStream(created.externalJobId);
     } catch (error) {
-      setJobError(error instanceof Error ? error.message : "학습 시작 중 오류가 발생했습니다.");
+      setJobError(
+        error instanceof Error
+          ? error.message
+          : "학습 시작 중 오류가 발생했습니다.",
+      );
     } finally {
       setIsStarting(false);
     }
@@ -326,7 +273,11 @@ export default function Training() {
             <span className="text-xs font-mono text-on-surface-variant">
               Job:{" "}
               <span className="text-on-surface font-bold">
-                {job ? `${job.status} (${job.progress ?? 0}%)` : "IDLE"}
+                {streamStatus === "running" || streamStatus === "done"
+                  ? `${streamStatus.toUpperCase()} (${progress}%)`
+                  : job
+                    ? `${job.status} (${job.progress ?? 0}%)`
+                    : "IDLE"}
               </span>
             </span>
           </div>
@@ -537,7 +488,9 @@ export default function Training() {
               {isStarting ? "STARTING..." : "INITIATE TRAINING"}
             </button>
             {jobError && (
-              <p className="text-[10px] text-error text-center mt-2">{jobError}</p>
+              <p className="text-[10px] text-error text-center mt-2">
+                {jobError}
+              </p>
             )}
             <p className="text-[9px] text-center text-on-surface-variant mt-4 font-semibold uppercase tracking-widest opacity-60 italic">
               Ensure GPU cluster is in idle state before starting.

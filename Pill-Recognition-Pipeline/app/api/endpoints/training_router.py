@@ -81,8 +81,7 @@ def _run_training(job_id: str, req: TrainRequest) -> None:
                     return
                 _jobs[job_id]["progress"] = progress
                 _jobs[job_id]["message"] = f"Epoch {epoch}/{epochs}"
-            emit("progress", {"progress": progress, "status": "RUNNING"})
-            emit("log", {"line": f"Epoch {epoch}/{epochs} complete"})
+            emit("log", {"line": f"Epoch {epoch}/{epochs} complete", "progress": progress})
 
         with _jobs_lock:
             if job_id in _jobs:

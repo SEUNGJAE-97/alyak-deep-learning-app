@@ -1,0 +1,160 @@
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+
+type StreamStatus = "idle" | "connecting" | "running" | "done" | "error";
+
+export type TrainingJob = {
+  id: number;
+  externalJobId?: string;
+  status: "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+  progress: number;
+  message?: string;
+};
+
+type TrainingStreamContextType = {
+  logs: string[];
+  streamStatus: StreamStatus;
+  progress: number;
+  job: TrainingJob | null;
+  setJob: (job: TrainingJob | null) => void;
+  clearLogs: () => void;
+  connectStream: (externalJobId?: string) => Promise<void>;
+};
+
+const TrainingStreamContext = createContext<TrainingStreamContextType | null>(
+  null,
+);
+
+export function TrainingStreamProvider({ children }: { children: ReactNode }) {
+  const [logs, setLogs] = useState<string[]>([]);
+  const [streamStatus, setStreamStatus] = useState<StreamStatus>("idle");
+  const [progress, setProgress] = useState(0);
+  const [job, setJob] = useState<TrainingJob | null>(null);
+  const esRef = useRef<EventSource | null>(null);
+
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+  const fastApiBaseUrl =
+    import.meta.env.VITE_FAST_API_BASE_URL ?? "http://localhost:8001";
+
+  const connectStream = useCallback(
+    async (externalJobId?: string) => {
+      // 파라미터 추가
+      const token = localStorage.getItem("admin_access_token");
+      if (!token) return;
+      if (esRef.current) return;
+
+      setStreamStatus("connecting");
+
+      try {
+        let jobId = externalJobId; // 직접 받은 경우 Spring 재조회 생략
+
+        if (!jobId) {
+          // 앱 최초 마운트 시 - Spring에서 RUNNING job 조회
+          const res = await fetch(
+            `${apiBaseUrl}/api/admin/training/jobs?page=0&pageSize=1&sort=id,desc`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          if (!res.ok) {
+            setStreamStatus("error");
+            return;
+          }
+
+          const page = await res.json();
+          const latestJob = page.content?.[0];
+
+          if (!latestJob?.externalJobId || latestJob.status !== "RUNNING") {
+            setStreamStatus("idle");
+            return;
+          }
+          jobId = latestJob.externalJobId as string;
+        }
+
+        // SSE 연결
+        const es = new EventSource(
+          `${fastApiBaseUrl}/train/jobs/${jobId}/logs/stream`,
+        );
+        esRef.current = es;
+
+        es.addEventListener("log", (e) => {
+          const payload = JSON.parse((e as MessageEvent).data) as {
+            line?: string;
+            progress?: number;
+          };
+          if (payload.line) {
+            setLogs((prev) => [...prev.slice(-499), payload.line!]);
+          }
+          if (payload.progress !== undefined) {
+            setProgress(payload.progress);
+          }
+          setStreamStatus("running");
+        });
+
+        es.addEventListener("done", (e) => {
+          const payload = JSON.parse((e as MessageEvent).data) as {
+            message?: string;
+          };
+          if (payload.message) {
+            setLogs((prev) => [...prev, `[SYSTEM] ${payload.message}`]);
+          }
+          setStreamStatus("done");
+          setProgress(100);
+          es.close();
+          esRef.current = null;
+        });
+
+        es.addEventListener("error", () => {
+          setStreamStatus("error");
+          es.close();
+          esRef.current = null;
+        });
+      } catch {
+        setStreamStatus("error");
+      }
+    },
+    [apiBaseUrl, fastApiBaseUrl],
+  );
+
+  useEffect(() => {
+    void connectStream();
+    return () => {
+      esRef.current?.close();
+      esRef.current = null;
+    };
+  }, [connectStream]);
+
+  const clearLogs = () => {
+    setLogs([]);
+    setProgress(0);
+    setStreamStatus("idle");
+  };
+
+  return (
+    <TrainingStreamContext.Provider
+      value={{
+        logs,
+        streamStatus,
+        progress,
+        job,
+        setJob,
+        clearLogs,
+        connectStream,
+      }}
+    >
+      {children}
+    </TrainingStreamContext.Provider>
+  );
+}
+
+export function useTrainingStream() {
+  const ctx = useContext(TrainingStreamContext);
+  if (!ctx) throw new Error("TrainingStreamProvider 밖에서 사용됨");
+  return ctx;
+}
