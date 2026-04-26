@@ -266,7 +266,20 @@ export default function TrainingLogs() {
   const status: "normal" | "warning" | "error" = "normal";
 
   return (
-    <div className="ml-64 mt-36 p-8 min-h-screen bg-background">
+    <div className="training-logs ml-64 mt-36 p-8 min-h-screen bg-background">
+      <style>{`
+        .training-logs .recharts-surface:focus,
+        .training-logs .recharts-surface:focus-visible,
+        .training-logs .recharts-wrapper:focus,
+        .training-logs .recharts-wrapper:focus-visible,
+        .training-logs .recharts-responsive-container:focus,
+        .training-logs .recharts-responsive-container:focus-visible,
+        .training-logs .recharts-responsive-container *:focus,
+        .training-logs .recharts-responsive-container *:focus-visible {
+          outline: none !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       {/* Top Progress Section */}
       <section className="mb-12 bg-surface-container-low/40 backdrop-blur-xl border border-outline-variant/10 rounded-2xl p-8 shadow-2xl">
         <div className="flex justify-between items-end mb-6">
