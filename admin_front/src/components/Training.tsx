@@ -413,7 +413,7 @@ export default function Training() {
                   alt={`training-item-${item.id}`}
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-3">
                   <span className="text-[8px] font-bold text-white uppercase tracking-widest bg-primary/40 px-1.5 py-0.5 rounded">
                     Metadata Synced
                   </span>

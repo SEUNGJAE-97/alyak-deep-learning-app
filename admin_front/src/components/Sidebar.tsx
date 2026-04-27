@@ -87,10 +87,10 @@ export default function Sidebar({
         </div>
         <div>
           <h2 className="text-sm font-black text-primary leading-none uppercase tracking-tighter">
-            Pill RL Engine
+            Alyak Training Console
           </h2>
           <p className="text-[10px] text-on-surface font-black uppercase tracking-widest mt-1 bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 inline-block">
-            v2.1.0-ltyk
+            web v1
           </p>
         </div>
       </div>

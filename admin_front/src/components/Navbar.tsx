@@ -28,17 +28,7 @@ export default function Navbar({ onViewChange, trainingComplete }: NavbarProps) 
         </div>
       </div>
 
-      {/* Center Model Info Bar */}
-      <div className="hidden lg:flex items-center gap-3 px-6 py-2 bg-surface-container-low/40 backdrop-blur-md rounded-full border border-outline-variant/10">
-        <div className="w-1.5 h-1.5 rounded-full bg-primary ai-pulse" />
-        <p className="text-[10px] font-mono font-bold tracking-wider text-on-surface-variant flex items-center gap-4">
-          <span className="text-on-surface">CURRENT ACTIVE MODEL: <span className="text-primary tracking-widest text-[11px] font-black">V2.1.0-LTYK</span></span>
-          <span className="opacity-20">|</span>
-          <span>VISION-TRANSFORMER (VIT)</span>
-          <span className="opacity-20">|</span>
-          <span>STABLE READY</span>
-        </p>
-      </div>
+      <div />
 
       <div className="flex items-center gap-4">
         <div className="relative">
