@@ -141,7 +141,8 @@ public class LabelingServiceImpl implements LabelingService {
         return updateStatus(id, DataStatus.TRASH);
     }
 
-    private LabelingItemResponse updateStatus(Long id, DataStatus status) {
+    @Override
+    public LabelingItemResponse updateStatus(Long id, DataStatus status) {
         PillImageData imageData = pillImageDataRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(BusinessError.LABELING_ITEM_NOT_FOUND));
 
@@ -149,6 +150,19 @@ public class LabelingServiceImpl implements LabelingService {
 
         PillImageData saved = pillImageDataRepository.save(imageData);
         return toResponse(saved);
+    }
+
+    @Override
+    public List<LabelingItemResponse> updateStatuses(List<Long> ids, DataStatus status) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        List<PillImageData> imageDataList = new ArrayList<>(pillImageDataRepository.findAllById(ids));
+        for (PillImageData imageData : imageDataList) {
+            imageData.updateStatus(status);
+        }
+        List<PillImageData> saved = pillImageDataRepository.saveAll(imageDataList);
+        return saved.stream().map(this::toResponse).toList();
     }
 
     private LabelingItemResponse toResponse(PillImageData imageData) {

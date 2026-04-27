@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import React from "react";
 import {
   Mail,
@@ -23,6 +23,13 @@ type LoginSuccessPayload = {
   userId: number;
 };
 
+type TrainingSystemStatusResponse = {
+  connected?: boolean;
+  status?: "READY" | "OFFLINE";
+  runningJobs?: number;
+  pendingJobs?: number;
+};
+
 export default function Login({
   onLogin,
 }: {
@@ -32,9 +39,40 @@ export default function Login({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [systemOnline, setSystemOnline] = useState(false);
+  const [runningJobs, setRunningJobs] = useState(0);
+  const [pendingJobs, setPendingJobs] = useState(0);
 
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+
+  useEffect(() => {
+    const es = new EventSource(`${apiBaseUrl}/api/internal/training/jobs/system-status/stream`);
+
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as TrainingSystemStatusResponse;
+        const online = data.connected !== false && data.status !== "OFFLINE";
+        setSystemOnline(online);
+        setRunningJobs(data.runningJobs ?? 0);
+        setPendingJobs(data.pendingJobs ?? 0);
+      } catch {
+        setSystemOnline(false);
+        setRunningJobs(0);
+        setPendingJobs(0);
+      }
+    };
+
+    es.onerror = () => {
+      setSystemOnline(false);
+      setRunningJobs(0);
+      setPendingJobs(0);
+    };
+
+    return () => {
+      es.close();
+    };
+  }, [apiBaseUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,15 +158,28 @@ export default function Login({
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">
-                  시스템 무결성
+                  시스템 상태
                 </span>
-                <div className="w-2 h-2 rounded-full bg-tertiary ai-pulse"></div>
+                <div
+                  className={
+                    systemOnline
+                      ? "w-2 h-2 rounded-full bg-tertiary ai-pulse"
+                      : "w-2 h-2 rounded-full bg-red-500 ai-pulse"
+                  }
+                ></div>
               </div>
-              <div className="text-2xl font-bold text-on-surface">99.98%</div>
+              <div className="text-2xl font-black text-on-surface">
+                {systemOnline ? "ONLINE" : "OFFLINE"}
+              </div>
+              <p className="text-[10px] text-on-surface-variant mt-1 font-medium">
+                {systemOnline
+                  ? "학습 서버/아카이브 API 연결 정상"
+                  : "학습 서버 상태를 확인할 수 없습니다"}
+              </p>
               <div className="h-1 bg-surface-container-highest mt-3 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: "95%" }}
+                  animate={{ width: "100%" }}
                   transition={{ duration: 2, delay: 0.5 }}
                   className="h-full bg-primary"
                 />
@@ -141,12 +192,21 @@ export default function Login({
               className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/10 max-w-xs shadow-xl transform"
             >
               <div className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">
-                활성 노드
+                최근 학습 상태
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-primary">14.2k</span>
-                <span className="text-xs text-tertiary font-mono">+12.4%</span>
+                <span className="text-3xl font-black text-primary">
+                  {runningJobs > 0 ? "RUNNING" : systemOnline ? "READY" : "WAIT"}
+                </span>
+                <span className="text-xs text-tertiary font-mono">QUEUE {pendingJobs}</span>
               </div>
+              <p className="text-[10px] text-on-surface-variant mt-2 font-medium">
+                {runningJobs > 0
+                  ? `현재 ${runningJobs}개 작업이 실행 중입니다`
+                  : systemOnline
+                    ? "즉시 학습 요청을 처리할 수 있습니다"
+                    : "학습 서버 재연결을 대기 중입니다"}
+              </p>
             </motion.div>
           </div>
         </div>

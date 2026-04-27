@@ -90,6 +90,16 @@ class TrainService:
             gpu_available = False
             device = "cpu"
 
+        running_jobs = 0
+        pending_jobs = 0
+        with self._jobs_lock:
+            for job in self._jobs.values():
+                status = (job or {}).get("status")
+                if status == "RUNNING":
+                    running_jobs += 1
+                elif status == "PENDING":
+                    pending_jobs += 1
+
         return {
             "status": "READY",
             "connected": True,
@@ -103,6 +113,8 @@ class TrainService:
             "gpuMemoryTotalMb": gpu_memory_total_mb,
             "gpuMemoryFreeMb": gpu_memory_free_mb,
             "gpuMemoryUsedMb": gpu_memory_used_mb,
+            "runningJobs": running_jobs,
+            "pendingJobs": pending_jobs,
         }
 
     def _resolve_cpu_name(self) -> str | None:

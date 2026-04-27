@@ -1,6 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.admin.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.request.CreateLabelingItemRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.request.BulkUpdateLabelingStatusRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.request.UpdateLabelingBoxesRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.response.CreateLabelingItemResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.dto.response.LabelingItemDetailResponse;
@@ -23,7 +24,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @AdminApiController
 @RequiredArgsConstructor
@@ -78,5 +82,13 @@ public class AdminLabelingController {
     @Operation(summary = "라벨링 항목 반려", description = "지정한 항목 상태를 TRASH로 변경합니다.")
     public ResponseEntity<LabelingItemResponse> reject(@PathVariable Long id) {
         return ResponseEntity.ok(labelingService.reject(id));
+    }
+
+    @PatchMapping("/items/bulk/status")
+    @Operation(summary = "라벨링 항목 상태 일괄 변경", description = "선택한 항목들의 상태를 INBOX/TRAINING_SET/TRASH로 일괄 변경합니다.")
+    public ResponseEntity<List<LabelingItemResponse>> bulkUpdateStatus(
+            @RequestBody BulkUpdateLabelingStatusRequest request
+    ) {
+        return ResponseEntity.ok(labelingService.updateStatuses(request.getIds(), request.getStatus()));
     }
 }

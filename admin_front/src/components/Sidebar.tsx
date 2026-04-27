@@ -99,21 +99,13 @@ export default function Sidebar({
   const retryCountRef = useRef(0);
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
-  const token = localStorage.getItem("admin_access_token");
 
   useEffect(() => {
-    if (!token) return;
-    let mounted = true;
-    let timerId: number | undefined;
+    const es = new EventSource(`${apiBaseUrl}/api/internal/training/jobs/system-status/stream`);
 
-    const fetchSystemStatus = async () => {
+    es.onmessage = (event) => {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/admin/training/system-status`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!response.ok) throw new Error("시스템 상태 조회 실패");
-        const data = (await response.json()) as TrainingSystemStatusResponse;
-        if (!mounted) return;
+        const data = JSON.parse(event.data) as TrainingSystemStatusResponse;
         setSystemStatus(data);
         if (data.connected === false || data.status === "OFFLINE") {
           setSystemRetryCount((prev) => {
@@ -126,31 +118,36 @@ export default function Sidebar({
           retryCountRef.current = 0;
         }
       } catch {
-        if (!mounted) return;
         setSystemStatus({
           status: "OFFLINE",
           connected: false,
           message: "재연결 시도 중...",
           device: "cpu",
         });
-        setSystemRetryCount((prev) => {
-          const next = Math.min(prev + 1, MAX_AUTO_RETRY);
-          retryCountRef.current = next;
-          return next;
-        });
-      } finally {
-        if (mounted && retryCountRef.current < MAX_AUTO_RETRY) {
-          timerId = window.setTimeout(fetchSystemStatus, 7000);
-        }
       }
     };
 
-    void fetchSystemStatus();
-    return () => {
-      mounted = false;
-      if (timerId) window.clearTimeout(timerId);
+    es.onerror = () => {
+      setSystemStatus({
+        status: "OFFLINE",
+        connected: false,
+        message: "재연결 시도 중...",
+        device: "cpu",
+      });
+      setSystemRetryCount((prev) => {
+        const next = Math.min(prev + 1, MAX_AUTO_RETRY);
+        retryCountRef.current = next;
+        return next;
+      });
+      if (retryCountRef.current >= MAX_AUTO_RETRY) {
+        es.close();
+      }
     };
-  }, [apiBaseUrl, token, manualRetryTick]);
+
+    return () => {
+      es.close();
+    };
+  }, [apiBaseUrl, manualRetryTick]);
 
   const isSystemConnected =
     systemStatus?.connected !== false && systemStatus?.status !== "OFFLINE";

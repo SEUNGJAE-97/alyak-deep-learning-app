@@ -52,6 +52,12 @@ type DeleteMenuState = {
   boxId: number;
 };
 
+type BulkActionToastState = {
+  ids: number[];
+  message: string;
+  actions: Array<{ label: string; status: PillData["status"] }>;
+};
+
 export default function Dashboard() {
   const [data, setData] = useState<PillData[]>([]);
   const [activeTab, setActiveTab] = useState<
@@ -73,6 +79,7 @@ export default function Dashboard() {
   const [deleteMenu, setDeleteMenu] = useState<DeleteMenuState | null>(null);
   const [draftBox, setDraftBox] = useState<EditableBox | null>(null);
   const [draggingBoxId, setDraggingBoxId] = useState<number | null>(null);
+  const [bulkActionToast, setBulkActionToast] = useState<BulkActionToastState | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
   const dragStartRef = useRef<{ point: { x: number; y: number }; box: EditableBox } | null>(null);
 
@@ -111,6 +118,7 @@ export default function Dashboard() {
       setData(pageData.content ?? []);
       setSelectedIndex(0);
       setSelectedIds([]);
+      setBulkActionToast(null);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -409,16 +417,71 @@ export default function Dashboard() {
   const toggleSelectAll = () => {
     if (selectedIds.length === currentItems.length) {
       setSelectedIds([]);
+      setBulkActionToast(null);
     } else {
-      setSelectedIds(currentItems.map((i) => i.id));
+      const allIds = currentItems.map((i) => i.id);
+      setSelectedIds(allIds);
+      const actions =
+        activeTab === "Inbox"
+          ? [
+              { label: "전체를 Training Set으로 보내기", status: "TRAINING_SET" as const },
+              { label: "전체를 Trash로 보내기", status: "TRASH" as const },
+            ]
+          : activeTab === "Training Set"
+            ? [
+                { label: "전체를 Inbox로 보내기", status: "INBOX" as const },
+                { label: "전체를 Trash로 보내기", status: "TRASH" as const },
+              ]
+            : [
+                { label: "전체를 Inbox로 보내기", status: "INBOX" as const },
+                { label: "전체를 Training Set으로 보내기", status: "TRAINING_SET" as const },
+              ];
+      setBulkActionToast({
+        ids: allIds,
+        message: `선택한 ${allIds.length}개 항목을 어디로 이동할까요?`,
+        actions,
+      });
     }
   };
 
   const toggleSelect = (id: number, e: MouseEvent) => {
     e.stopPropagation();
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
+    setSelectedIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id];
+      if (next.length !== currentItems.length) {
+        setBulkActionToast(null);
+      }
+      return next;
+    });
+  };
+
+  const handleBulkMove = async (targetStatus: PillData["status"]) => {
+    if (!token || !bulkActionToast || bulkActionToast.ids.length === 0) return;
+    setIsSaving(true);
+    setErrorMessage(null);
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/admin/labeling/items/bulk/status`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ids: bulkActionToast.ids,
+          status: targetStatus,
+        }),
+      });
+      if (!response.ok) throw new Error("일괄 상태 변경에 실패했습니다.");
+      setSelectedIds([]);
+      setBulkActionToast(null);
+      await fetchItems(activeTab);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "일괄 상태 변경 중 오류가 발생했습니다.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -809,6 +872,32 @@ export default function Dashboard() {
           )}
         </div>
       </aside>
+
+      {bulkActionToast && (
+        <div className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 w-[min(92vw,640px)]">
+          <div className="bg-surface-container-high/95 backdrop-blur-xl border border-outline-variant/20 rounded-2xl shadow-2xl px-4 py-3 flex items-center justify-between gap-4">
+            <p className="text-[11px] text-on-surface font-bold">{bulkActionToast.message}</p>
+            <div className="flex items-center gap-2">
+              {bulkActionToast.actions.map((action) => (
+                <button
+                  key={action.status}
+                  disabled={isSaving}
+                  onClick={() => handleBulkMove(action.status)}
+                  className="px-3 py-2 rounded-xl bg-primary/15 border border-primary/30 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary/25 transition-all disabled:opacity-60"
+                >
+                  {action.label}
+                </button>
+              ))}
+              <button
+                onClick={() => setBulkActionToast(null)}
+                className="px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface-variant text-[10px] font-black uppercase tracking-widest hover:text-on-surface transition-all"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

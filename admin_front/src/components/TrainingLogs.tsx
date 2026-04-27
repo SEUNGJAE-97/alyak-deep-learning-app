@@ -17,6 +17,11 @@ import { useTrainingStream } from "./TrainingStreamContext";
 
 type MetricKey = "train_loss" | "val_loss" | "val_acc" | "mAP" | "lr";
 type ChartPoint = { epoch: number } & Partial<Record<MetricKey, number>>;
+type ParsedEpochLine = {
+  epoch: number;
+  total: number;
+  point: ChartPoint;
+};
 
 const METRICS: {
   key: MetricKey;
@@ -56,10 +61,11 @@ const METRICS: {
   },
 ];
 
-function parseLogLine(line: string): ChartPoint | null {
-  const epochMatch = line.match(/\[EPOCH\s+(\d+)\/\d+\]/);
+function parseLogLine(line: string): ParsedEpochLine | null {
+  const epochMatch = line.match(/\[EPOCH\s+(\d+)\/(\d+)\]/);
   if (!epochMatch) return null;
   const epoch = parseInt(epochMatch[1], 10);
+  const total = parseInt(epochMatch[2], 10);
   const point: ChartPoint = { epoch };
   const extract = (key: string) => {
     const m = line.match(new RegExp(`${key}=([\\d.eE+\\-]+)`));
@@ -75,7 +81,7 @@ function parseLogLine(line: string): ChartPoint | null {
   if (va !== undefined) point.val_acc = va;
   if (mp !== undefined) point.mAP = mp;
   if (lr !== undefined) point.lr = lr;
-  return point;
+  return { epoch, total, point };
 }
 
 function extractRemainingTime(logs: string[]): string | null {
@@ -133,12 +139,14 @@ export default function TrainingLogs() {
     new Set(METRICS.map((m) => m.key)),
   );
   const chartData = useMemo<ChartPoint[]>(() => {
-    const points: ChartPoint[] = [];
+    const byEpoch = new Map<number, ChartPoint>();
     for (const line of logs) {
-      const p = parseLogLine(line);
-      if (p) points.push(p);
+      const parsed = parseLogLine(line);
+      if (!parsed) continue;
+      const prev = byEpoch.get(parsed.epoch) ?? { epoch: parsed.epoch };
+      byEpoch.set(parsed.epoch, { ...prev, ...parsed.point });
     }
-    return points;
+    return [...byEpoch.values()].sort((a, b) => a.epoch - b.epoch);
   }, [logs]);
   const effectiveChartData = chartData;
   const remainingTime = useMemo(() => {
@@ -289,6 +297,7 @@ export default function TrainingLogs() {
                 <Area
                   type="monotone"
                   dataKey="loss"
+                  connectNulls
                   stroke="#ff897d"
                   strokeWidth={3}
                   fillOpacity={1}
@@ -342,6 +351,7 @@ export default function TrainingLogs() {
                 <Area
                   type="monotone"
                   dataKey="acc"
+                  connectNulls
                   stroke="#7bd0ff"
                   strokeWidth={3}
                   fillOpacity={1}
@@ -435,6 +445,7 @@ export default function TrainingLogs() {
                       key={m.key}
                       type="monotone"
                       dataKey={m.key}
+                      connectNulls
                       stroke={m.color}
                       strokeWidth={2}
                       dot={false}

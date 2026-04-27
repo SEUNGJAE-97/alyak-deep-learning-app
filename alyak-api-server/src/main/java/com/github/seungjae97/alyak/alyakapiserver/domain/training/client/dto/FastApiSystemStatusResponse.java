@@ -18,4 +18,6 @@ public class FastApiSystemStatusResponse {
     private Integer gpuMemoryTotalMb;
     private Integer gpuMemoryFreeMb;
     private Integer gpuMemoryUsedMb;
+    private Integer runningJobs;
+    private Integer pendingJobs;
 }
