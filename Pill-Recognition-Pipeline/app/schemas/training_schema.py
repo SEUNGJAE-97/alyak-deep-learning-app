@@ -8,3 +8,4 @@ class TrainRequest(BaseModel):
     learningRate: float
     optimizer: str
     freezeLayers: str | None = None
+    baseModelPath: str | None = None

@@ -12,4 +12,5 @@ public class CreateTrainingJobRequest {
     private Double learningRate;
     private String optimizer;
     private String freezeLayers;
+    private Long baseModelId;
 }

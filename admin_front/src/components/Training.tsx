@@ -26,6 +26,17 @@ type LabelingPageResponse = {
   totalElements: number;
 };
 
+type BaseModelItem = {
+  id: number;
+  version: string;
+  status: "STABLE" | "ARCHIVED" | "DEPRECATED";
+};
+
+type ArchiveModelPageResponse = {
+  content: BaseModelItem[];
+  totalElements: number;
+};
+
 function TooltipSelect<T extends string>({
   label,
   value,
@@ -149,6 +160,8 @@ export default function Training() {
   const [batchSize, setBatchSize] = useState(16);
   const [epochs, setEpochs] = useState(100);
   const [items, setItems] = useState<TrainingItem[]>([]);
+  const [baseModels, setBaseModels] = useState<BaseModelItem[]>([]);
+  const [baseModelId, setBaseModelId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const { logs, streamStatus, progress, job, setJob, clearLogs, connectStream } =
@@ -191,6 +204,27 @@ export default function Training() {
     void fetchTrainingItems();
   }, [apiBaseUrl, token]);
 
+  useEffect(() => {
+    const fetchBaseModels = async () => {
+      if (!token) return;
+      try {
+        const response = await fetch(
+          `${apiBaseUrl}/api/admin/archives/models?page=0&pageSize=100`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!response.ok) throw new Error("베이스 모델 목록 조회 실패");
+        const pageData = (await response.json()) as ArchiveModelPageResponse;
+        const models = pageData.content ?? [];
+        setBaseModels(models);
+        setBaseModelId((prev) => prev ?? models[0]?.id ?? null);
+      } catch {
+        setBaseModels([]);
+        setBaseModelId(null);
+      }
+    };
+    void fetchBaseModels();
+  }, [apiBaseUrl, token]);
+
   const handleStartTraining = async () => {
     if (!token) return;
     if (isTrainingActive) return;
@@ -210,6 +244,7 @@ export default function Training() {
           learningRate,
           optimizer,
           freezeLayers,
+          baseModelId,
         }),
       });
       if (!response.ok) throw new Error("학습 시작에 실패했습니다.");
@@ -413,11 +448,24 @@ export default function Training() {
 
         <div className="space-y-8 flex-1 overflow-y-auto pr-2 custom-scrollbar">
           {/* Base Model Select */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest px-1">
-              Base Model Select
-            </label>
-          </div>
+          <TooltipSelect
+            label="Base Model Select"
+            value={String(baseModelId ?? "")}
+            onChange={(value) => setBaseModelId(value ? Number(value) : null)}
+            options={(baseModels.length > 0
+              ? baseModels
+              : [{ id: -1, version: "No model available", status: "DEPRECATED" as const }]
+            ).map((model) => ({
+              value: String(model.id),
+              label: model.version,
+            }))}
+            tooltipTitle="베이스 모델 선택"
+            tooltipRows={[
+              { key: "Stable", desc: "권장 기본 모델" },
+              { key: "Archived", desc: "과거 버전 모델" },
+              { key: "Deprecated", desc: "사용 비권장 모델" },
+            ]}
+          />
 
           {/* Learning Rate */}
           <div className="space-y-4">

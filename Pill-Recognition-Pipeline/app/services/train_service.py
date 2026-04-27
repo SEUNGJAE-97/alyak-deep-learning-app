@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 # 학습된 모델 경로
 BASE_MODEL_PATH = os.getenv("BASE_MODEL_PATH", "models/pill_trained.pt")
+TRAINING_RUNS_ROOT = os.getenv("TRAINING_RUNS_ROOT", "/app/shared-images/model-runs")
 
 # freeze 파라미터 변환
 FREEZE_MAP: dict[str, int | None] = {
@@ -101,8 +102,8 @@ class TrainService:
     def _to_user_friendly_error(self, error: Exception) -> str:
         if isinstance(error, FileNotFoundError):
             missing_path = getattr(error, "filename", None) or ""
-            if "pill_trained.pt" in missing_path:
-                return "기본 모델 파일을 찾을 수 없습니다. 모델 경로를 확인해 주세요."
+            if missing_path.endswith(".pt") or "pill_trained.pt" in missing_path:
+                return "선택한 베이스 모델 파일을 찾을 수 없습니다. 모델 경로를 확인해 주세요."
             return "학습에 필요한 파일을 찾을 수 없습니다. 경로 설정을 확인해 주세요."
 
         raw_message = str(error)
@@ -123,7 +124,15 @@ class TrainService:
         map50 = metrics.get("metrics/mAP50(B)")
         map50_95 = metrics.get("metrics/mAP50-95(B)")
         lr_val = trainer.optimizer.param_groups[0]["lr"] if trainer.optimizer else req.learningRate
-        tloss = float(trainer.tloss) if hasattr(trainer, "tloss") and trainer.tloss is not None else None
+        tloss = None
+        if hasattr(trainer, "tloss") and trainer.tloss is not None:
+            try:
+                if hasattr(trainer.tloss, "mean") and hasattr(trainer.tloss, "item"):
+                    tloss = float(trainer.tloss.mean().item())
+                else:
+                    tloss = float(trainer.tloss)
+            except Exception:
+                tloss = None
 
         parts = [f"[EPOCH {epoch:03d}/{total}]"]
         if tloss is not None:
@@ -136,6 +145,11 @@ class TrainService:
             parts.append(f"mAP={map50_95:.4f}")
         parts.append(f"lr={lr_val:.2e}")
         return " | ".join(parts)
+
+    def _build_run_name(self, job_id: str) -> str:
+        # job_id 전체를 사용해 run 디렉토리 충돌을 방지한다.
+        safe_job_id = (job_id or "").replace("/", "_").replace("\\", "_")
+        return f"pill_{safe_job_id}"
 
     def _on_fit_epoch_end(self, job_id: str, req: TrainRequest, trainer) -> None:
         if self._is_cancelled(job_id):
@@ -163,6 +177,8 @@ class TrainService:
             epochs = max(req.epochs, 1)
             freeze = FREEZE_MAP.get(req.freezeLayers or "medium", 10)
             dataset_yaml_path = prepare_dataset(job_id)
+            run_name = self._build_run_name(job_id)
+            base_model_path = req.baseModelPath or BASE_MODEL_PATH
 
             self._emit(
                 job_id,
@@ -170,7 +186,7 @@ class TrainService:
                 {
                     "line": (
                         f"[SYSTEM] Session initialized | "
-                        f"model={BASE_MODEL_PATH} | epochs={epochs} | "
+                        f"model={base_model_path} | epochs={epochs} | "
                         f"batch={req.batchSize} | lr={req.learningRate} | "
                         f"optimizer={req.optimizer} | freeze={freeze}"
                     ),
@@ -178,7 +194,7 @@ class TrainService:
             )
 
             self._emit(job_id, "log", {"line": "[SYSTEM] Loading pretrained weights..."})
-            model = YOLO(BASE_MODEL_PATH)
+            model = YOLO(base_model_path)
 
             def on_fit_epoch_end(trainer) -> None:
                 self._on_fit_epoch_end(job_id, req, trainer)
@@ -201,15 +217,15 @@ class TrainService:
                 freeze=freeze,
                 single_cls=True,
                 patience=20,
-                project="runs/finetune",
-                name=f"pill_{job_id[:8]}",
+                project=TRAINING_RUNS_ROOT,
+                name=run_name,
             )
 
             self._mark_job_succeeded(job_id)
             self._emit(
                 job_id,
                 "log",
-                {"line": f"[SYSTEM] Training complete. Best weights: runs/finetune/pill_{job_id[:8]}/weights/best.pt"},
+                {"line": f"[SYSTEM] Training complete. Best weights: {TRAINING_RUNS_ROOT}/{run_name}/weights/best.pt"},
             )
             self._emit(job_id, "done", {"status": "SUCCEEDED", "message": "Training complete"})
             notify_spring_completion(job_id, "SUCCEEDED", 100, "Training complete")

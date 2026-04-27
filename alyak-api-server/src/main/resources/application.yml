@@ -117,3 +117,7 @@ app:
     root-path: ${APP_UPLOAD_ROOT_PATH:./uploads}
   dummy-labeling:
     enabled: ${APP_DUMMY_LABELING_ENABLED:true}
+
+archive:
+  runs-root: ${ARCHIVE_RUNS_ROOT:./archive-runs}
+  import-on-startup: ${ARCHIVE_IMPORT_ON_STARTUP:true}

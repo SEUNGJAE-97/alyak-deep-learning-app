@@ -84,6 +84,8 @@ services:
       FIREBASE_PROJECT_ID: uplifted-studio-457001-h1
       APP_UPLOAD_ROOT_PATH: /app/shared-images/uploads
       APP_DUMMY_LABELING_ENABLED: "true"
+      ARCHIVE_RUNS_ROOT: /app/shared-images/model-runs
+      ARCHIVE_IMPORT_ON_STARTUP: "true"
     depends_on:
       mysql:
         condition: service_healthy
@@ -123,6 +125,7 @@ services:
       - ../shared-images:/app/shared-images
     environment:
       - PYTHONPATH=/app
+      - TRAINING_RUNS_ROOT=/app/shared-images/model-runs
     networks:
       - alyak-network
 

@@ -9,6 +9,7 @@ Build YOLO dataset files from Spring TRAINING_SET items.
 import logging
 import os
 import random
+import shutil
 from pathlib import Path
 
 import httpx
@@ -95,6 +96,11 @@ def _write_label_file(item_detail: dict) -> str | None:
     return label_path
 
 
+def _safe_copy(src: str, dst: str) -> None:
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    shutil.copy2(src, dst)
+
+
 def _resolve_image_abs_path(web_image_path: str) -> str:
     """
     Convert web path to mounted filesystem path.
@@ -141,13 +147,45 @@ def prepare_dataset(job_id: str, val_ratio: float = 0.2) -> str:
     train_items = valid_items[:split_idx]
     val_items = valid_items[split_idx:] if len(valid_items) > 1 else valid_items[:1]
 
-    yaml_dir = f"/tmp/datasets/{job_id}"
-    os.makedirs(yaml_dir, exist_ok=True)
-    yaml_path = f"{yaml_dir}/data.yaml"
+    dataset_root = f"/tmp/datasets/{job_id}"
+    train_img_dir = f"{dataset_root}/images/train"
+    val_img_dir = f"{dataset_root}/images/val"
+    train_lbl_dir = f"{dataset_root}/labels/train"
+    val_lbl_dir = f"{dataset_root}/labels/val"
+    os.makedirs(train_img_dir, exist_ok=True)
+    os.makedirs(val_img_dir, exist_ok=True)
+    os.makedirs(train_lbl_dir, exist_ok=True)
+    os.makedirs(val_lbl_dir, exist_ok=True)
+
+    train_txt_path = f"{dataset_root}/train.txt"
+    val_txt_path = f"{dataset_root}/val.txt"
+    yaml_path = f"{dataset_root}/data.yaml"
+
+    def materialize_split(split_items: list[dict], img_dir: str, lbl_dir: str) -> list[str]:
+        image_paths: list[str] = []
+        for item in split_items:
+            src_img = item["image_path"]
+            src_lbl = item["label_path"]
+            file_name = os.path.basename(src_img)
+            stem = Path(file_name).stem
+            dst_img = os.path.join(img_dir, file_name)
+            dst_lbl = os.path.join(lbl_dir, f"{stem}.txt")
+            _safe_copy(src_img, dst_img)
+            _safe_copy(src_lbl, dst_lbl)
+            image_paths.append(dst_img)
+        return image_paths
+
+    train_image_paths = materialize_split(train_items, train_img_dir, train_lbl_dir)
+    val_image_paths = materialize_split(val_items, val_img_dir, val_lbl_dir)
+
+    with open(train_txt_path, "w", encoding="utf-8") as file:
+        file.write("\n".join(train_image_paths))
+    with open(val_txt_path, "w", encoding="utf-8") as file:
+        file.write("\n".join(val_image_paths))
 
     data_yaml = {
-        "train": [item["image_path"] for item in train_items],
-        "val": [item["image_path"] for item in val_items],
+        "train": train_txt_path,
+        "val": val_txt_path,
         "nc": 1,
         "names": ["pill"],
     }

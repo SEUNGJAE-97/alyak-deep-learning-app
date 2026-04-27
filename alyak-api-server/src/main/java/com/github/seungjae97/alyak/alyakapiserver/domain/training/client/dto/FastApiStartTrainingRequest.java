@@ -12,4 +12,5 @@ public class FastApiStartTrainingRequest {
     private Double learningRate;
     private String optimizer;
     private String freezeLayers;
+    private String baseModelPath;
 }

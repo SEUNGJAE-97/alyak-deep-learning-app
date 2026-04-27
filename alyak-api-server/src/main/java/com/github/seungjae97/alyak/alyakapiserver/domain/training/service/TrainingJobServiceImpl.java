@@ -8,8 +8,10 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.dto.Fas
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.request.CreateTrainingJobRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.request.TrainingCompletionCallbackRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.response.TrainingJobResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.training.entity.ModelArchive;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.entity.TrainingJob;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.entity.TrainingJobStatus;
+import com.github.seungjae97.alyak.alyakapiserver.domain.training.repository.ModelArchiveRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.repository.TrainingJobRepository;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TrainingJobServiceImpl implements TrainingJobService {
 
     private final TrainingJobRepository trainingJobRepository;
+    private final ModelArchiveRepository modelArchiveRepository;
     private final FastApiTrainingClient fastApiTrainingClient;
     private final ObjectMapper objectMapper;
 
@@ -44,6 +47,7 @@ public class TrainingJobServiceImpl implements TrainingJobService {
                 .message("Job created")
                 .build();
         job = trainingJobRepository.save(job);
+        String baseModelPath = resolveBaseModelPath(request.getBaseModelId());
 
         try {
             FastApiTrainingJobResponse fastApiResponse = fastApiTrainingClient.startTraining(
@@ -54,6 +58,7 @@ public class TrainingJobServiceImpl implements TrainingJobService {
                             .learningRate(request.getLearningRate())
                             .optimizer(request.getOptimizer())
                             .freezeLayers(request.getFreezeLayers())
+                            .baseModelPath(baseModelPath)
                             .build()
             );
 
@@ -68,6 +73,15 @@ public class TrainingJobServiceImpl implements TrainingJobService {
         }
 
         return TrainingJobResponse.from(trainingJobRepository.save(job));
+    }
+
+    private String resolveBaseModelPath(Long baseModelId) {
+        if (baseModelId == null) {
+            return null;
+        }
+        ModelArchive archive = modelArchiveRepository.findById(baseModelId)
+                .orElseThrow(() -> new BusinessException(BusinessError.LABELING_ITEM_NOT_FOUND));
+        return archive.getModelPath();
     }
 
     @Override

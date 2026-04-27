@@ -1,19 +1,14 @@
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   Legend,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-} from 'recharts';
-import { 
+} from "recharts";
+import {
   History as HistoryIcon,
   Database,
   Cpu,
@@ -22,64 +17,117 @@ import {
   FileText,
   Layers,
   ChevronRight,
-  Calendar
-} from 'lucide-react';
-import { motion } from 'motion/react';
-import { useState } from 'react';
-import { cn } from '@/src/lib/utils';
+  Calendar,
+} from "lucide-react";
+import { motion } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/src/lib/utils";
 
-const modelVersions = [
-  { 
-    version: 'v2.1.0-LTYK', 
-    date: '2026-04-21', 
-    accuracy: 99.2, 
-    loss: 0.021, 
-    map: 0.985, 
-    dataset: 'Alyak_Full_v4',
-    params: { lr: 0.0001, batch: 64, epochs: 100 },
-    status: 'Stable'
-  },
-  { 
-    version: 'v2.0.5-PRE', 
-    date: '2026-04-15', 
-    accuracy: 98.5, 
-    loss: 0.034, 
-    map: 0.972, 
-    dataset: 'Alyak_Base_v3',
-    params: { lr: 0.0005, batch: 32, epochs: 150 },
-    status: 'Archived'
-  },
-  { 
-    version: 'v1.8.2-TEST', 
-    date: '2026-03-28', 
-    accuracy: 97.1, 
-    loss: 0.052, 
-    map: 0.945, 
-    dataset: 'Alyak_Alpha_v2',
-    params: { lr: 0.001, batch: 32, epochs: 80 },
-    status: 'Deprecated'
-  },
-  { 
-    version: 'v1.0.0-INIT', 
-    date: '2026-02-10', 
-    accuracy: 92.4, 
-    loss: 0.120, 
-    map: 0.880, 
-    dataset: 'Alyak_Raw_v1',
-    params: { lr: 0.001, batch: 16, epochs: 50 },
-    status: 'Archived'
-  },
-];
+type ArchiveStatus = "STABLE" | "ARCHIVED" | "DEPRECATED";
+type ArchiveModel = {
+  id: number;
+  version: string;
+  date: string;
+  status: ArchiveStatus;
+  accuracy: number | null;
+  loss: number | null;
+  map: number | null;
+  dataset: string | null;
+  params: { lr: number | null; batch: number | null; epochs: number | null; optimizer?: string | null };
+};
 
-const compareData = [
-  { metric: 'Accuracy', new: 99.2, old: 98.5 },
-  { metric: 'mAP', new: 98.5, old: 97.2 },
-  { metric: 'Recall', new: 97.8, old: 96.5 },
-  { metric: 'Precision', new: 98.9, old: 97.8 },
-];
+type ArchiveListResponse = {
+  content: ArchiveModel[];
+};
+
+type CompareResponse = {
+  baseVersion: string;
+  targetVersion: string;
+  metrics: Array<{ metric: string; base: number | null; target: number | null }>;
+};
 
 export default function Archives() {
-  const [selectedModel, setSelectedModel] = useState(modelVersions[0]);
+  const [models, setModels] = useState<ArchiveModel[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
+  const [compareData, setCompareData] = useState<Array<{ metric: string; new: number; old: number }>>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+  const token = localStorage.getItem("admin_access_token");
+
+  const selectedModel = useMemo(
+    () => models.find((model) => model.id === selectedModelId) ?? null,
+    [models, selectedModelId],
+  );
+
+  useEffect(() => {
+    const fetchArchives = async () => {
+      if (!token) return;
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/admin/archives/models?page=0&pageSize=50`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error("아카이브 목록을 불러오지 못했습니다.");
+        const page = (await response.json()) as ArchiveListResponse;
+        const content = page.content ?? [];
+        setModels(content);
+        setSelectedModelId(content[0]?.id ?? null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "아카이브 조회 중 오류가 발생했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    void fetchArchives();
+  }, [apiBaseUrl, token]);
+
+  useEffect(() => {
+    const fetchCompare = async () => {
+      if (!token || !selectedModel || models.length < 2) {
+        setCompareData([]);
+        return;
+      }
+      const target = models.find((m) => m.id !== selectedModel.id);
+      if (!target) {
+        setCompareData([]);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${apiBaseUrl}/api/admin/archives/models/compare?baseId=${target.id}&targetId=${selectedModel.id}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!response.ok) throw new Error("비교 데이터 조회 실패");
+        const data = (await response.json()) as CompareResponse;
+        const mapped = data.metrics.map((metric) => ({
+          metric: metric.metric,
+          old: metric.base ?? 0,
+          new: metric.target ?? 0,
+        }));
+        setCompareData(mapped);
+      } catch {
+        setCompareData([]);
+      }
+    };
+    void fetchCompare();
+  }, [apiBaseUrl, models, selectedModel, token]);
+
+  const statusLabel = (status: ArchiveStatus) => {
+    if (status === "STABLE") return "Stable";
+    if (status === "DEPRECATED") return "Deprecated";
+    return "Archived";
+  };
+
+  const formatDate = (date?: string | null) => {
+    if (!date) return "-";
+    return date.slice(0, 10);
+  };
+
+  const metricPercent = (value: number | null) => (value == null ? 0 : value * 100);
 
   return (
     <div className="ml-64 mt-36 p-8 min-h-screen bg-background">
@@ -96,54 +144,64 @@ export default function Archives() {
         <div className="xl:col-span-4 space-y-4">
           <div className="flex items-center justify-between px-2 mb-4">
             <h3 className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Model Versions</h3>
-            <span className="text-[10px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">Total: {modelVersions.length}</span>
+            <span className="text-[10px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">Total: {models.length}</span>
           </div>
-          
+
           <div className="space-y-3">
-            {modelVersions.map((model) => (
+            {models.map((model) => (
               <motion.button
-                key={model.version}
+                key={model.id}
                 whileHover={{ x: 4 }}
-                onClick={() => setSelectedModel(model)}
+                onClick={() => setSelectedModelId(model.id)}
                 className={cn(
                   "w-full text-left p-4 rounded-2xl border transition-all relative overflow-hidden group",
-                  selectedModel.version === model.version 
-                    ? "bg-surface-container-high border-primary/40 shadow-xl shadow-primary/5" 
-                    : "bg-surface-container-low/40 border-outline-variant/10 hover:border-outline-variant/30"
+                  selectedModel?.id === model.id
+                    ? "bg-surface-container-high border-primary/40 shadow-xl shadow-primary/5"
+                    : "bg-surface-container-low/40 border-outline-variant/10 hover:border-outline-variant/30",
                 )}
               >
-                {selectedModel.version === model.version && (
+                {selectedModel?.id === model.id && (
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
                 )}
                 <div className="flex justify-between items-start mb-2 text-xs">
                   <span className={cn(
                     "font-bold px-2 py-0.5 rounded-[4px] tracking-widest uppercase text-[9px]",
-                    model.status === 'Stable' ? "bg-green-500/20 text-green-400" :
-                    model.status === 'Archived' ? "bg-primary/20 text-primary" : "bg-on-surface-variant/20 text-on-surface-variant"
+                    model.status === "STABLE" ? "bg-green-500/20 text-green-400" :
+                    model.status === "ARCHIVED" ? "bg-primary/20 text-primary" : "bg-on-surface-variant/20 text-on-surface-variant",
                   )}>
-                    {model.status}
+                    {statusLabel(model.status)}
                   </span>
-                  <span className="text-on-surface-variant font-mono opacity-60">{model.date}</span>
+                  <span className="text-on-surface-variant font-mono opacity-60">{formatDate(model.date)}</span>
                 </div>
                 <h4 className="text-sm font-black text-on-surface mb-1">{model.version}</h4>
                 <div className="flex gap-4 text-[10px] font-mono text-on-surface-variant">
-                  <span>Acc: <span className="text-on-surface">{model.accuracy}%</span></span>
-                  <span>mAP: <span className="text-on-surface">{model.map}</span></span>
+                  <span>Acc: <span className="text-on-surface">{metricPercent(model.accuracy).toFixed(1)}%</span></span>
+                  <span>mAP: <span className="text-on-surface">{(model.map ?? 0).toFixed(3)}</span></span>
                 </div>
               </motion.button>
             ))}
+            {!isLoading && models.length === 0 && (
+              <p className="text-xs text-on-surface-variant px-2">표시할 아카이브가 없습니다.</p>
+            )}
+            {error && <p className="text-xs text-error px-2">{error}</p>}
           </div>
         </div>
 
         {/* Right: Detailed Analysis */}
         <div className="xl:col-span-8 space-y-8">
+          {!selectedModel ? (
+            <section className="bg-surface-container-low/40 backdrop-blur-xl border border-outline-variant/10 rounded-3xl p-8 shadow-2xl">
+              <p className="text-sm text-on-surface-variant">선택된 모델이 없습니다.</p>
+            </section>
+          ) : (
+            <>
           {/* Performance Comparison Dashboard */}
           <section className="bg-surface-container-low/40 backdrop-blur-xl border border-outline-variant/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
             <h3 className="text-xs font-black text-on-surface mb-8 uppercase tracking-widest flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              Performance Comparison: {selectedModel.version} vs v2.0.5-PRE
+              Performance Comparison: {selectedModel.version}
             </h3>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -156,15 +214,22 @@ export default function Archives() {
                     />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '20px' }} />
                     <Bar name={selectedModel.version} dataKey="new" fill="#7bd0ff" radius={[6, 6, 0, 0]} />
-                    <Bar name="v2.0.5-PRE (Old)" dataKey="old" fill="#ffafd3" fillOpacity={0.4} radius={[6, 6, 0, 0]} />
+                    <Bar name="Base" dataKey="old" fill="#ffafd3" fillOpacity={0.4} radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
 
               <div className="space-y-6 flex flex-col justify-center">
                 <div className="grid grid-cols-2 gap-4">
-                  <ComparisonStat label="Accuracy Delta" value={(selectedModel.accuracy - 98.5).toFixed(1)} unit="%" />
-                  <ComparisonStat label="mAP Improvement" value={(selectedModel.map - 0.972).toFixed(3)} positive />
+                  <ComparisonStat
+                    label="Accuracy"
+                    value={metricPercent(selectedModel.accuracy).toFixed(1)}
+                    unit="%"
+                  />
+                  <ComparisonStat
+                    label="mAP"
+                    value={(selectedModel.map ?? 0).toFixed(3)}
+                  />
                 </div>
                 <div className="p-4 bg-surface-container-high/50 rounded-2xl border border-outline-variant/10">
                   <p className="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest mb-2 flex items-center gap-2">
@@ -172,9 +237,7 @@ export default function Archives() {
                     Insight
                   </p>
                   <p className="text-xs text-on-surface leading-relaxed opacity-80 font-medium">
-                    {selectedModel.accuracy > 98.5 
-                      ? "현재 선택된 모델이 이전 버전 대비 전반적인 탐지 정확도 및 객체 검출 정밀도(mAP)에서 유의미한 성능 향상을 보이고 있습니다."
-                      : "이전 버전 대비 정확도는 하락했으나, 특정 환경(예: 저조도)에서의 데이터셋 노이즈에 대한 견고성이 강화된 것으로 판단됩니다."}
+                    모델 버전별 아카이브 정보를 기반으로 성능과 하이퍼파라미터를 비교합니다.
                   </p>
                 </div>
               </div>
@@ -195,7 +258,7 @@ export default function Archives() {
                   </div>
                   <div>
                     <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mb-0.5">Source Identifier</p>
-                    <p className="text-xs font-mono text-on-surface font-bold">{selectedModel.dataset}</p>
+                    <p className="text-xs font-mono text-on-surface font-bold">{selectedModel.dataset ?? "-"}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/10">
@@ -217,10 +280,10 @@ export default function Archives() {
                 Hyperparameters
               </h4>
               <div className="space-y-3">
-                <ParamRow label="Learning Rate" value={selectedModel.params.lr} mono />
-                <ParamRow label="Batch Size" value={selectedModel.params.batch} />
-                <ParamRow label="Epochs" value={selectedModel.params.epochs} />
-                <ParamRow label="Optimizer" value="AdamW" />
+                <ParamRow label="Learning Rate" value={selectedModel.params.lr ?? "-"} mono />
+                <ParamRow label="Batch Size" value={selectedModel.params.batch ?? "-"} />
+                <ParamRow label="Epochs" value={selectedModel.params.epochs ?? "-"} />
+                <ParamRow label="Optimizer" value={selectedModel.params.optimizer ?? "-"} />
               </div>
             </section>
           </div>
@@ -230,6 +293,8 @@ export default function Archives() {
             이 모델 가중치로 롤백 (Rollback)
             <ArrowRight className="w-4 h-4" />
           </button>
+          </>
+          )}
         </div>
       </div>
     </div>
