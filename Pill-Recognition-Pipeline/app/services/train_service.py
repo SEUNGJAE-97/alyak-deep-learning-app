@@ -69,23 +69,83 @@ class TrainService:
             except queue.Empty:
                 yield ": heartbeat\n\n"
 
+    def _emit(self, job_id: str, event: str, payload: dict[str, Any]) -> None:
+        with self._log_lock:
+            q = self._log_queues.get(job_id)
+        if q:
+            q.put((event, payload))
+
+    def _is_cancelled(self, job_id: str) -> bool:
+        with self._jobs_lock:
+            return self._jobs.get(job_id, {}).get("status") == "CANCELLED"
+
+    def _update_job_progress(self, job_id: str, progress: int, message: str) -> None:
+        with self._jobs_lock:
+            if job_id in self._jobs:
+                self._jobs[job_id]["progress"] = progress
+                self._jobs[job_id]["message"] = message
+
+    def _mark_job_succeeded(self, job_id: str) -> None:
+        with self._jobs_lock:
+            if job_id in self._jobs:
+                self._jobs[job_id]["status"] = "SUCCEEDED"
+                self._jobs[job_id]["progress"] = 100
+                self._jobs[job_id]["message"] = "Training complete"
+
+    def _mark_job_failed(self, job_id: str, error_message: str) -> None:
+        with self._jobs_lock:
+            if job_id in self._jobs:
+                self._jobs[job_id]["status"] = "FAILED"
+                self._jobs[job_id]["message"] = error_message
+
+    def _build_epoch_log_line(self, epoch: int, total: int, trainer, req: TrainRequest) -> str:
+        metrics = trainer.metrics or {}
+        val_box_loss = metrics.get("val/box_loss")
+        map50 = metrics.get("metrics/mAP50(B)")
+        map50_95 = metrics.get("metrics/mAP50-95(B)")
+        lr_val = trainer.optimizer.param_groups[0]["lr"] if trainer.optimizer else req.learningRate
+        tloss = float(trainer.tloss) if hasattr(trainer, "tloss") and trainer.tloss is not None else None
+
+        parts = [f"[EPOCH {epoch:03d}/{total}]"]
+        if tloss is not None:
+            parts.append(f"loss={tloss:.4f}")
+        if val_box_loss is not None:
+            parts.append(f"val_loss={val_box_loss:.4f}")
+        if map50 is not None:
+            parts.append(f"val_acc={map50:.4f}")
+        if map50_95 is not None:
+            parts.append(f"mAP={map50_95:.4f}")
+        parts.append(f"lr={lr_val:.2e}")
+        return " | ".join(parts)
+
+    def _on_fit_epoch_end(self, job_id: str, req: TrainRequest, trainer) -> None:
+        if self._is_cancelled(job_id):
+            trainer.epoch = trainer.epochs
+            return
+
+        epoch = trainer.epoch + 1
+        total = trainer.epochs
+        progress = int((epoch / total) * 100)
+
+        self._update_job_progress(job_id, progress, f"Epoch {epoch}/{total}")
+        log_line = self._build_epoch_log_line(epoch, total, trainer, req)
+        self._emit(job_id, "log", {"line": log_line, "progress": progress})
+
+    def _on_train_start(self, job_id: str, trainer) -> None:
+        self._emit(job_id, "log", {"line": f"[INFO] CUDA: {trainer.device} | imgsz={trainer.args.imgsz}"})
+
     def run_yolo_training(self, job_id: str, req: TrainRequest) -> None:
         """
         Ultralytics YOLO 파인튜닝 실행.
         on_fit_epoch_end 콜백으로 epoch마다 메트릭을 SSE로 전송.
         """
 
-        def emit(event: str, payload: dict[str, Any]) -> None:
-            with self._log_lock:
-                q = self._log_queues.get(job_id)
-            if q:
-                q.put((event, payload))
-
         try:
             epochs = max(req.epochs, 1)
             freeze = FREEZE_MAP.get(req.freezeLayers or "medium", 10)
 
-            emit(
+            self._emit(
+                job_id,
                 "log",
                 {
                     "line": (
@@ -97,51 +157,21 @@ class TrainService:
                 },
             )
 
-            emit("log", {"line": "[SYSTEM] Loading pretrained weights..."})
+            self._emit(job_id, "log", {"line": "[SYSTEM] Loading pretrained weights..."})
             model = YOLO(BASE_MODEL_PATH)
 
             def on_fit_epoch_end(trainer) -> None:
-                with self._jobs_lock:
-                    if self._jobs.get(job_id, {}).get("status") == "CANCELLED":
-                        trainer.epoch = trainer.epochs
-                        return
-
-                epoch = trainer.epoch + 1
-                total = trainer.epochs
-                progress = int((epoch / total) * 100)
-
-                metrics = trainer.metrics or {}
-                val_box_loss = metrics.get("val/box_loss")
-                map50 = metrics.get("metrics/mAP50(B)")
-                map50_95 = metrics.get("metrics/mAP50-95(B)")
-                lr_val = trainer.optimizer.param_groups[0]["lr"] if trainer.optimizer else req.learningRate
-                tloss = float(trainer.tloss) if hasattr(trainer, "tloss") and trainer.tloss is not None else None
-
-                parts = [f"[EPOCH {epoch:03d}/{total}]"]
-                if tloss is not None:
-                    parts.append(f"loss={tloss:.4f}")
-                if val_box_loss is not None:
-                    parts.append(f"val_loss={val_box_loss:.4f}")
-                if map50 is not None:
-                    parts.append(f"val_acc={map50:.4f}")
-                if map50_95 is not None:
-                    parts.append(f"mAP={map50_95:.4f}")
-                parts.append(f"lr={lr_val:.2e}")
-
-                with self._jobs_lock:
-                    if job_id in self._jobs:
-                        self._jobs[job_id]["progress"] = progress
-                        self._jobs[job_id]["message"] = f"Epoch {epoch}/{total}"
-
-                emit("log", {"line": " | ".join(parts), "progress": progress})
+                self._on_fit_epoch_end(job_id, req, trainer)
 
             def on_train_start(trainer) -> None:
-                emit("log", {"line": f"[INFO] CUDA: {trainer.device} | imgsz={trainer.args.imgsz}"})
+                self._on_train_start(job_id, trainer)
 
+            # 콜백함수 등록
             model.add_callback("on_fit_epoch_end", on_fit_epoch_end)
             model.add_callback("on_train_start", on_train_start)
 
-            emit("log", {"line": "[SYSTEM] Training started..."})
+            # 학습 시작
+            self._emit(job_id, "log", {"line": "[SYSTEM] Training started..."})
             model.train(
                 data=DATASET_YAML_PATH,
                 epochs=epochs,
@@ -155,24 +185,20 @@ class TrainService:
                 name=f"pill_{job_id[:8]}",
             )
 
-            with self._jobs_lock:
-                if job_id in self._jobs:
-                    self._jobs[job_id]["status"] = "SUCCEEDED"
-                    self._jobs[job_id]["progress"] = 100
-                    self._jobs[job_id]["message"] = "Training complete"
-
-            emit("log", {"line": f"[SYSTEM] Training complete. Best weights: runs/finetune/pill_{job_id[:8]}/weights/best.pt"})
-            emit("done", {"status": "SUCCEEDED", "message": "Training complete"})
+            self._mark_job_succeeded(job_id)
+            self._emit(
+                job_id,
+                "log",
+                {"line": f"[SYSTEM] Training complete. Best weights: runs/finetune/pill_{job_id[:8]}/weights/best.pt"},
+            )
+            self._emit(job_id, "done", {"status": "SUCCEEDED", "message": "Training complete"})
             notify_spring_completion(job_id, "SUCCEEDED", 100, "Training complete")
 
         except Exception as e:
             logger.exception("Training failed for job %s", job_id)
-            with self._jobs_lock:
-                if job_id in self._jobs:
-                    self._jobs[job_id]["status"] = "FAILED"
-                    self._jobs[job_id]["message"] = str(e)
-            emit("log", {"line": f"[ERROR] {e}"})
-            emit("done", {"status": "FAILED", "message": str(e)})
+            self._mark_job_failed(job_id, str(e))
+            self._emit(job_id, "log", {"line": f"[ERROR] {e}"})
+            self._emit(job_id, "done", {"status": "FAILED", "message": str(e)})
             notify_spring_completion(job_id, "FAILED", 0, str(e))
 
 
