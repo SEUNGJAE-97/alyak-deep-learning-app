@@ -19,6 +19,11 @@ def get_training_job(job_id: str):
     return train_service.get_job(job_id)
 
 
+@router.get("/train/system/status")
+def get_training_system_status():
+    return train_service.get_system_status()
+
+
 @router.get("/train/jobs/{job_id}/logs/stream")
 def stream_training_logs(job_id: str):
     return StreamingResponse(train_service.stream_logs(job_id), media_type="text/event-stream")

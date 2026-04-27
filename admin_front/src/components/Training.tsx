@@ -368,16 +368,7 @@ export default function Training() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {isTrainingActive ? (
-            <div className="w-3 h-3 rounded-full border border-dashed border-primary animate-spin" />
-          ) : (
-            <div className="w-2 h-2 rounded-full bg-green-500 ai-pulse" />
-          )}
-          <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-            {isTrainingActive ? "Training In Progress" : "System Ready"}
-          </span>
-        </div>
+        <div />
       </div>
       <div className="flex flex-col gap-8">
         <header className="flex justify-between items-center">
@@ -596,6 +587,7 @@ export default function Training() {
           </div>
         </div>
       </aside>
+
     </div>
   );
 }

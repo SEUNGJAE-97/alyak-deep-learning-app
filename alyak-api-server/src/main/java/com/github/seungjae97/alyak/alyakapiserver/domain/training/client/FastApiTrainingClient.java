@@ -1,6 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.training.client;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.dto.FastApiStartTrainingRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.dto.FastApiSystemStatusResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.dto.FastApiTrainingJobResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +31,13 @@ public class FastApiTrainingClient {
         return restTemplate.getForObject(
                 fastApiServerUrl + "/train/jobs/" + externalJobId,
                 FastApiTrainingJobResponse.class
+        );
+    }
+
+    public FastApiSystemStatusResponse getSystemStatus() {
+        return restTemplate.getForObject(
+                fastApiServerUrl + "/train/system/status",
+                FastApiSystemStatusResponse.class
         );
     }
 }

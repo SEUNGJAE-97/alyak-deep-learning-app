@@ -1,6 +1,8 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.admin.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.request.CreateTrainingJobRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.FastApiTrainingClient;
+import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.dto.FastApiSystemStatusResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.response.TrainingJobResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.service.TrainingJobService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminTrainingController {
 
     private final TrainingJobService trainingJobService;
+    private final FastApiTrainingClient fastApiTrainingClient;
 
     @PostMapping("/jobs")
     @Operation(summary = "학습 작업 생성", description = "FastAPI 학습 작업을 생성하고 Spring DB에 이력을 저장합니다.")
@@ -40,5 +43,29 @@ public class AdminTrainingController {
     ) {
         Pageable pageable = PageRequest.of(page, pageSize);
         return ResponseEntity.ok(trainingJobService.getJobs(pageable));
+    }
+
+    @GetMapping("/system-status")
+    @Operation(summary = "학습 서버 상태 조회", description = "Spring 프록시를 통해 FastAPI 시스템 상태를 조회합니다.")
+    public ResponseEntity<FastApiSystemStatusResponse> getSystemStatus() {
+        try {
+            FastApiSystemStatusResponse status = fastApiTrainingClient.getSystemStatus();
+            if (status == null) {
+                return ResponseEntity.ok(buildOfflineStatus("학습 서버 상태 응답이 비어 있습니다."));
+            }
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            return ResponseEntity.ok(buildOfflineStatus("재연결 시도 중..."));
+        }
+    }
+
+    private FastApiSystemStatusResponse buildOfflineStatus(String message) {
+        FastApiSystemStatusResponse status = new FastApiSystemStatusResponse();
+        status.setStatus("OFFLINE");
+        status.setConnected(false);
+        status.setMessage(message);
+        status.setDevice("cpu");
+        status.setCpuName("알 수 없음");
+        return status;
     }
 }

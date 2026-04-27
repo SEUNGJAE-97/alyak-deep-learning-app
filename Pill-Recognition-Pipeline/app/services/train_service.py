@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import platform
 import queue
 import re
 import time
@@ -8,6 +9,7 @@ from threading import Lock
 from typing import Any, Generator
 from uuid import uuid4
 
+import torch
 from ultralytics import YOLO
 
 from app.schemas.training_schema import TrainRequest
@@ -56,6 +58,72 @@ class TrainService:
         if not job:
             return {"jobId": job_id, "status": "FAILED", "progress": 0, "message": "Job not found"}
         return job
+
+    def get_system_status(self) -> dict[str, Any]:
+        cpu_cores = os.cpu_count()
+        cpu_name = self._resolve_cpu_name()
+        load_percent = None
+        try:
+            if hasattr(os, "getloadavg") and cpu_cores:
+                load_1m = os.getloadavg()[0]
+                load_percent = round((load_1m / cpu_cores) * 100, 1)
+        except Exception:
+            load_percent = None
+
+        device = "cpu"
+        gpu_available = False
+        gpu_name = None
+        gpu_memory_total_mb = None
+        gpu_memory_free_mb = None
+        gpu_memory_used_mb = None
+
+        try:
+            gpu_available = bool(torch.cuda.is_available())
+            if gpu_available:
+                device = "cuda"
+                gpu_name = torch.cuda.get_device_name(0)
+                free_bytes, total_bytes = torch.cuda.mem_get_info(0)
+                gpu_memory_total_mb = int(total_bytes / (1024 * 1024))
+                gpu_memory_free_mb = int(free_bytes / (1024 * 1024))
+                gpu_memory_used_mb = gpu_memory_total_mb - gpu_memory_free_mb
+        except Exception:
+            gpu_available = False
+            device = "cpu"
+
+        return {
+            "status": "READY",
+            "connected": True,
+            "message": "학습 서버 정상",
+            "device": device,
+            "cpuName": cpu_name,
+            "cpuCores": cpu_cores,
+            "cpuLoadPercent": load_percent,
+            "gpuAvailable": gpu_available,
+            "gpuName": gpu_name,
+            "gpuMemoryTotalMb": gpu_memory_total_mb,
+            "gpuMemoryFreeMb": gpu_memory_free_mb,
+            "gpuMemoryUsedMb": gpu_memory_used_mb,
+        }
+
+    def _resolve_cpu_name(self) -> str | None:
+        try:
+            cpu_name = platform.processor()
+            if cpu_name:
+                return cpu_name
+        except Exception:
+            pass
+
+        try:
+            if os.path.exists("/proc/cpuinfo"):
+                with open("/proc/cpuinfo", "r", encoding="utf-8") as file:
+                    for line in file:
+                        if line.lower().startswith("model name"):
+                            _, value = line.split(":", 1)
+                            return value.strip()
+        except Exception:
+            pass
+
+        return None
 
     def stream_logs(self, job_id: str) -> Generator[str, None, None]:
         with self._log_lock:

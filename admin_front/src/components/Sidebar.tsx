@@ -1,5 +1,4 @@
 import {
-  BarChart3,
   BrainCircuit,
   Cpu,
   Database,
@@ -7,11 +6,13 @@ import {
   History as HistoryIcon,
   LayoutDashboard,
   LogOut,
+  RotateCcw,
   ShieldCheck,
   Terminal,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { ViewType } from "../App";
 import { useTrainingStream } from "./TrainingStreamContext";
 
@@ -23,12 +24,20 @@ const navItems: { icon: any; label: ViewType; displayLabel: string }[] = [
 ];
 
 const secondaryItems = [{ icon: HelpCircle, label: "Support" }];
+const MAX_AUTO_RETRY = 10;
 
-interface SidebarProps {
-  onLogout: () => void;
-  currentView: ViewType;
-  onViewChange: (view: ViewType) => void;
-}
+type TrainingSystemStatusResponse = {
+  status?: "READY" | "OFFLINE";
+  connected?: boolean;
+  message?: string;
+  device?: string;
+  cpuName?: string | null;
+  cpuLoadPercent?: number | null;
+  gpuAvailable?: boolean;
+  gpuName?: string | null;
+  gpuMemoryTotalMb?: number | null;
+  gpuMemoryUsedMb?: number | null;
+};
 
 function ResourceItem({
   icon: Icon,
@@ -72,12 +81,96 @@ function ResourceItem({
   );
 }
 
+interface SidebarProps {
+  onLogout: () => void;
+  currentView: ViewType;
+  onViewChange: (view: ViewType) => void;
+}
+
 export default function Sidebar({
   onLogout,
   currentView,
   onViewChange,
 }: SidebarProps) {
   const { progress, streamStatus } = useTrainingStream();
+  const [systemStatus, setSystemStatus] = useState<TrainingSystemStatusResponse | null>(null);
+  const [systemRetryCount, setSystemRetryCount] = useState(0);
+  const [manualRetryTick, setManualRetryTick] = useState(0);
+  const retryCountRef = useRef(0);
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+  const token = localStorage.getItem("admin_access_token");
+
+  useEffect(() => {
+    if (!token) return;
+    let mounted = true;
+    let timerId: number | undefined;
+
+    const fetchSystemStatus = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/admin/training/system-status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error("시스템 상태 조회 실패");
+        const data = (await response.json()) as TrainingSystemStatusResponse;
+        if (!mounted) return;
+        setSystemStatus(data);
+        if (data.connected === false || data.status === "OFFLINE") {
+          setSystemRetryCount((prev) => {
+            const next = Math.min(prev + 1, MAX_AUTO_RETRY);
+            retryCountRef.current = next;
+            return next;
+          });
+        } else {
+          setSystemRetryCount(0);
+          retryCountRef.current = 0;
+        }
+      } catch {
+        if (!mounted) return;
+        setSystemStatus({
+          status: "OFFLINE",
+          connected: false,
+          message: "재연결 시도 중...",
+          device: "cpu",
+        });
+        setSystemRetryCount((prev) => {
+          const next = Math.min(prev + 1, MAX_AUTO_RETRY);
+          retryCountRef.current = next;
+          return next;
+        });
+      } finally {
+        if (mounted && retryCountRef.current < MAX_AUTO_RETRY) {
+          timerId = window.setTimeout(fetchSystemStatus, 7000);
+        }
+      }
+    };
+
+    void fetchSystemStatus();
+    return () => {
+      mounted = false;
+      if (timerId) window.clearTimeout(timerId);
+    };
+  }, [apiBaseUrl, token, manualRetryTick]);
+
+  const isSystemConnected =
+    systemStatus?.connected !== false && systemStatus?.status !== "OFFLINE";
+  const cpuText =
+    systemStatus?.cpuLoadPercent != null
+      ? `CPU ${systemStatus.cpuLoadPercent.toFixed(1)}%`
+      : "CPU -";
+  const cpuNameText = systemStatus?.cpuName?.trim() || "CPU 정보 없음";
+  const gpuNameText = systemStatus?.gpuName?.trim() || "GPU 정보 없음";
+  const gpuText =
+    systemStatus?.gpuAvailable
+      ? systemStatus.gpuMemoryTotalMb != null && systemStatus.gpuMemoryUsedMb != null
+        ? `GPU ${systemStatus.gpuMemoryUsedMb}/${systemStatus.gpuMemoryTotalMb}MB`
+        : `GPU ${systemStatus.gpuName ?? "사용 가능"}`
+      : "GPU 미사용";
+  const cpuUsage = Math.max(0, Math.min(100, systemStatus?.cpuLoadPercent ?? 0));
+  const gpuUsage = systemStatus?.gpuAvailable && systemStatus?.gpuMemoryTotalMb && systemStatus?.gpuMemoryUsedMb
+    ? Math.max(0, Math.min(100, Math.round((systemStatus.gpuMemoryUsedMb / systemStatus.gpuMemoryTotalMb) * 100)))
+    : 0;
+  const isAutoRetryExhausted = !isSystemConnected && systemRetryCount >= MAX_AUTO_RETRY;
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 z-40 bg-surface-container-lowest border-r border-outline-variant/10 flex flex-col p-4 gap-2">
@@ -127,40 +220,64 @@ export default function Sidebar({
           </button>
         ))}
       </nav>
-      {/* Server Infrastructure Widget
-      <div className="px-2 mb-6 space-y-4">
+      <div className="px-2 mb-4 space-y-4">
         <div className="bg-surface-container-low/40 backdrop-blur-xl border border-outline-variant/10 rounded-2xl p-4 shadow-xl">
-          <h3 className="text-[9px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-            <Cpu className="w-3 h-3 text-primary" />
-            Server Infrastructure
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[9px] font-black text-on-surface-variant uppercase tracking-[0.2em] flex items-center gap-2">
+              <Cpu className="w-3 h-3 text-primary" />
+              Server Status
+            </h3>
+            <div className="flex items-center gap-2">
+              {!isSystemConnected ? (
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 ai-pulse" />
+              ) : (
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+              )}
+              <span className="text-[8px] text-on-surface-variant font-bold">
+                {isSystemConnected
+                  ? "ONLINE"
+                  : isAutoRetryExhausted
+                    ? "OFFLINE"
+                    : `RETRY ${systemRetryCount}`}
+              </span>
+              {isAutoRetryExhausted && (
+                <button
+                  onClick={() => {
+                    retryCountRef.current = 0;
+                    setSystemRetryCount(0);
+                    setManualRetryTick((prev) => prev + 1);
+                  }}
+                  className="w-5 h-5 rounded-md border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:border-outline-variant/60 transition-colors flex items-center justify-center"
+                  title="재연결"
+                  aria-label="재연결"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
           <div className="space-y-3">
             <ResourceItem
               icon={Cpu}
               label="CPU"
-              detail="EPYC 7763"
-              usage={42}
+              detail={cpuNameText}
+              usage={cpuUsage}
             />
             <ResourceItem
               icon={Database}
-              label="RAM"
-              detail="512GB DDR4"
-              usage={68}
+              label="LOAD"
+              detail={cpuText}
+              usage={cpuUsage}
             />
-            <div className="relative group">
-              <ResourceItem
-                icon={ShieldCheck}
-                label="GPU"
-                detail="H100 x 4"
-                usage={85}
-              />
-              <div className="absolute -right-1 -top-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-              </div>
-            </div>
+            <ResourceItem
+              icon={ShieldCheck}
+              label="GPU"
+              detail={systemStatus?.gpuAvailable ? gpuNameText : gpuText}
+              usage={gpuUsage}
+            />
           </div>
         </div>
-      </div> */}
+      </div>
       <div className="border-t border-outline-variant/10 pt-4 flex flex-col gap-1">
         {secondaryItems.map((item) => (
           <a
