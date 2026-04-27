@@ -198,7 +198,7 @@ class TrainService:
         self._emit(job_id, "log", {"line": log_line, "progress": progress})
 
     def _on_train_start(self, job_id: str, trainer) -> None:
-        self._emit(job_id, "log", {"line": f"[INFO] CUDA: {trainer.device} | imgsz={trainer.args.imgsz}"})
+        self._emit(job_id, "log", {"line": "[SYSTEM] 모델 학습 중..."})
 
     def run_yolo_training(self, job_id: str, req: TrainRequest) -> None:
         """

@@ -340,7 +340,7 @@ export default function Training() {
       ? latestSystemMessage
       : isErrorState
         ? "재시도"
-        : "INITIATE TRAINING";
+        : "학습 시작하기";
 
   return (
     <div className="ml-64 mt-36 p-8 pr-[420px] min-h-screen bg-background">
