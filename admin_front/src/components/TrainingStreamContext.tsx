@@ -41,6 +41,17 @@ const TrainingStreamContext = createContext<TrainingStreamContextType | null>(
 
 const TRAINING_STREAM_CACHE_KEY = "training_stream_cache_v1";
 
+function extractLatestModelName(logs: string[]): string | null {
+  for (let i = logs.length - 1; i >= 0; i -= 1) {
+    const line = logs[i];
+    const match = line.match(/Best weights:\s.*\/([^\/]+)\/weights\/best\.pt/i);
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+  return null;
+}
+
 export function TrainingStreamProvider({ children }: { children: ReactNode }) {
   const [logs, setLogs] = useState<string[]>([]);
   const [streamStatus, setStreamStatus] = useState<StreamStatus>(() => {
@@ -150,8 +161,13 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
             );
             setToast({
               type: "success",
-              title: "Training Complete!",
-              description: "Model v2.1.0-LTYK weights stabilized.",
+              title: "학습 완료",
+              description: (() => {
+                const modelName = extractLatestModelName(logs);
+                return modelName
+                  ? `${modelName} 모델 학습이 성공적으로 완료되었습니다.`
+                  : "모델 학습이 성공적으로 완료되었습니다.";
+              })(),
             });
           } else {
             setStreamStatus("error");
@@ -167,7 +183,7 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
             );
             setToast({
               type: "error",
-              title: "Training Failed",
+              title: "학습 실패",
               description: payload.message ?? "학습 중 오류가 발생했습니다.",
             });
           }
@@ -179,7 +195,7 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
           setStreamStatus("error");
           setToast({
             type: "error",
-            title: "Training Stream Error",
+            title: "학습 실패",
             description: "로그 스트림 연결에 실패했습니다.",
           });
           es.close();
@@ -189,7 +205,7 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
         setStreamStatus("error");
         setToast({
           type: "error",
-          title: "Training Stream Error",
+          title: "학습 실패",
           description: "로그 스트림 연결에 실패했습니다.",
         });
       }

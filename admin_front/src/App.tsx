@@ -118,14 +118,14 @@ function AppShell({
           <div
             className={
               toast.type === "success"
-                ? "backdrop-blur-2xl border rounded-2xl p-4 shadow-2xl flex items-center gap-4 bg-surface-container-high/90 border-primary/30 text-on-surface"
+                ? "relative backdrop-blur-2xl border rounded-2xl p-4 shadow-2xl flex items-center gap-4 bg-green-800 border-green-600 text-white"
                 : "backdrop-blur-2xl border rounded-2xl p-4 shadow-2xl flex items-center gap-4 bg-red-700 border-red-500 text-white"
             }
           >
             <div
               className={
                 toast.type === "success"
-                  ? "w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary"
+                  ? "w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-green-900 text-white border border-green-400"
                   : "w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-red-900 text-white border border-red-400"
               }
             >
@@ -143,7 +143,7 @@ function AppShell({
                 <p
                   className={
                     toast.type === "success"
-                      ? "text-xs mt-0.5 text-on-surface-variant"
+                      ? "text-xs mt-0.5 text-white/90"
                       : "text-xs mt-0.5 text-white/90"
                   }
                 >
@@ -151,6 +151,16 @@ function AppShell({
                 </p>
               )}
             </div>
+            <button
+              onClick={dismissToast}
+              className={
+                toast.type === "success"
+                  ? "absolute top-3 right-3 text-white/70 hover:text-white transition-colors"
+                  : "absolute top-3 right-3 text-white/70 hover:text-white transition-colors"
+              }
+            >
+              <X className="w-4 h-4" />
+            </button>
             <div className="flex items-center gap-2">
               {toast.type === "success" && (
                 <button
@@ -158,21 +168,11 @@ function AppShell({
                     setCurrentView("Archives");
                     dismissToast();
                   }}
-                  className="bg-primary text-on-primary text-[10px] font-black py-1 px-3 rounded uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
+                  className="bg-green-950 text-white text-[10px] font-black py-1 px-3 rounded uppercase tracking-widest border border-green-500 hover:scale-105 active:scale-95 transition-all"
                 >
                   View Results
                 </button>
               )}
-              <button
-                onClick={dismissToast}
-                className={
-                  toast.type === "success"
-                    ? "text-on-surface-variant hover:text-on-surface transition-colors"
-                    : "text-white/70 hover:text-white transition-colors"
-                }
-              >
-                <X className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </div>
