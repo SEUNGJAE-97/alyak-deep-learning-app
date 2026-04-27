@@ -111,7 +111,17 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
           const latestJob = page.content?.[0];
 
           if (!latestJob?.externalJobId || latestJob.status !== "RUNNING") {
-            setStreamStatus("idle");
+            setJob(latestJob ?? null);
+            setProgress(latestJob?.progress ?? 0);
+            if (!latestJob) {
+              setStreamStatus("idle");
+            } else if (latestJob.status === "SUCCEEDED") {
+              setStreamStatus("done");
+            } else if (latestJob.status === "FAILED" || latestJob.status === "CANCELLED") {
+              setStreamStatus("error");
+            } else {
+              setStreamStatus("idle");
+            }
             return;
           }
           jobId = latestJob.externalJobId as string;

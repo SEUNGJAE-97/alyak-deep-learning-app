@@ -7,8 +7,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,10 +35,8 @@ public class AdminTrainingController {
     @GetMapping("/jobs")
     @Operation(summary = "학습 작업 목록 조회", description = "학습 작업 목록을 페이지네이션으로 조회합니다.")
     public ResponseEntity<Page<TrainingJobResponse>> getJobs(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int pageSize
+            @PageableDefault(page = 0, size = 20, sort = "id") Pageable pageable
     ) {
-        Pageable pageable = PageRequest.of(page, pageSize);
         return ResponseEntity.ok(trainingJobService.getJobs(pageable));
     }
 }
