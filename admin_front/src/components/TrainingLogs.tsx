@@ -78,6 +78,15 @@ function parseLogLine(line: string): ChartPoint | null {
   return point;
 }
 
+function extractRemainingTime(logs: string[]): string | null {
+  for (let i = logs.length - 1; i >= 0; i -= 1) {
+    const line = logs[i];
+    const match = line.match(/eta=(\d{2}:\d{2}:\d{2})/);
+    if (match) return match[1];
+  }
+  return null;
+}
+
 function MetricTooltip({
   active,
   payload,
@@ -118,117 +127,6 @@ function MetricTooltip({
   );
 }
 
-const mockLossData = [
-  { step: 0, loss: 0.5 },
-  { step: 50, loss: 0.35 },
-  { step: 100, loss: 0.22 },
-  { step: 150, loss: 0.15 },
-  { step: 200, loss: 0.09 },
-  { step: 250, loss: 0.06 },
-  { step: 300, loss: 0.04 },
-  { step: 350, loss: 0.03 },
-  { step: 400, loss: 0.025 },
-  { step: 450, loss: 0.021 },
-];
-
-const mockAccuracyData = [
-  { step: 0, acc: 0.65 },
-  { step: 50, acc: 0.72 },
-  { step: 100, acc: 0.81 },
-  { step: 150, acc: 0.88 },
-  { step: 200, acc: 0.92 },
-  { step: 250, acc: 0.95 },
-  { step: 300, acc: 0.97 },
-  { step: 350, acc: 0.98 },
-  { step: 400, acc: 0.988 },
-  { step: 450, acc: 0.992 },
-];
-
-const SHOW_DUMMY_COMPOSITE_METRICS = true;
-
-const mockCompositeMetricsData: ChartPoint[] = [
-  {
-    epoch: 1,
-    train_loss: 1.23,
-    val_loss: 1.35,
-    val_acc: 0.52,
-    mAP: 0.41,
-    lr: 0.001,
-  },
-  {
-    epoch: 2,
-    train_loss: 1.05,
-    val_loss: 1.19,
-    val_acc: 0.58,
-    mAP: 0.47,
-    lr: 0.001,
-  },
-  {
-    epoch: 3,
-    train_loss: 0.89,
-    val_loss: 1.02,
-    val_acc: 0.64,
-    mAP: 0.53,
-    lr: 0.0008,
-  },
-  {
-    epoch: 4,
-    train_loss: 0.76,
-    val_loss: 0.91,
-    val_acc: 0.7,
-    mAP: 0.59,
-    lr: 0.0008,
-  },
-  {
-    epoch: 5,
-    train_loss: 0.65,
-    val_loss: 0.83,
-    val_acc: 0.75,
-    mAP: 0.66,
-    lr: 0.0006,
-  },
-  {
-    epoch: 6,
-    train_loss: 0.56,
-    val_loss: 0.77,
-    val_acc: 0.79,
-    mAP: 0.71,
-    lr: 0.0006,
-  },
-  {
-    epoch: 7,
-    train_loss: 0.49,
-    val_loss: 0.71,
-    val_acc: 0.83,
-    mAP: 0.76,
-    lr: 0.0004,
-  },
-  {
-    epoch: 8,
-    train_loss: 0.43,
-    val_loss: 0.67,
-    val_acc: 0.86,
-    mAP: 0.8,
-    lr: 0.0004,
-  },
-  {
-    epoch: 9,
-    train_loss: 0.39,
-    val_loss: 0.64,
-    val_acc: 0.88,
-    mAP: 0.84,
-    lr: 0.0002,
-  },
-  {
-    epoch: 10,
-    train_loss: 0.35,
-    val_loss: 0.61,
-    val_acc: 0.9,
-    mAP: 0.87,
-    lr: 0.0002,
-  },
-];
-
 export default function TrainingLogs() {
   const { logs, streamStatus, progress } = useTrainingStream();
   const [activeMetrics, setActiveMetrics] = useState<Set<MetricKey>>(
@@ -242,12 +140,24 @@ export default function TrainingLogs() {
     }
     return points;
   }, [logs]);
-  const effectiveChartData = useMemo(
+  const effectiveChartData = chartData;
+  const remainingTime = useMemo(() => {
+    if (streamStatus === "done") return "00:00:00";
+    return extractRemainingTime(logs) ?? "--:--:--";
+  }, [logs, streamStatus]);
+  const lossCurveData = useMemo(
     () =>
-      SHOW_DUMMY_COMPOSITE_METRICS && chartData.length === 0
-        ? mockCompositeMetricsData
-        : chartData,
-    [chartData],
+      effectiveChartData
+        .filter((point) => typeof point.train_loss === "number")
+        .map((point) => ({ epoch: point.epoch, loss: point.train_loss as number })),
+    [effectiveChartData],
+  );
+  const accuracyCurveData = useMemo(
+    () =>
+      effectiveChartData
+        .filter((point) => typeof point.val_acc === "number")
+        .map((point) => ({ epoch: point.epoch, acc: point.val_acc as number })),
+    [effectiveChartData],
   );
   const toggleMetric = (key: MetricKey) => {
     setActiveMetrics((prev) => {
@@ -298,7 +208,7 @@ export default function TrainingLogs() {
               Remaining Time
             </p>
             <p className="text-xl font-mono text-on-surface font-black">
-              01:12:45
+              {remainingTime}
             </p>
           </div>
         </div>
@@ -326,12 +236,6 @@ export default function TrainingLogs() {
         </div>
 
         <div className="mt-4 flex justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-primary" />
-            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-              Active Step: <span className="text-on-surface">45,210</span>
-            </span>
-          </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-primary ai-pulse" />
@@ -352,8 +256,15 @@ export default function TrainingLogs() {
             Loss Curve
           </h4>
           <div className="h-64">
+            {lossCurveData.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-[11px] text-on-surface-variant/40 font-mono">
+                  SSE loss 로그 대기 중...
+                </p>
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockLossData}>
+              <AreaChart data={lossCurveData}>
                 <defs>
                   <linearGradient id="colorLoss" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#ba1a1a" stopOpacity={0.2} />
@@ -365,8 +276,8 @@ export default function TrainingLogs() {
                   stroke="#2a2b33"
                   vertical={false}
                 />
-                <XAxis dataKey="step" hide />
-                <YAxis hide domain={[0, 0.6]} />
+                <XAxis dataKey="epoch" hide />
+                <YAxis hide />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#191f31",
@@ -386,6 +297,7 @@ export default function TrainingLogs() {
                 />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </section>
 
@@ -397,8 +309,15 @@ export default function TrainingLogs() {
             Accuracy Curve
           </h4>
           <div className="h-64">
+            {accuracyCurveData.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-[11px] text-on-surface-variant/40 font-mono">
+                  SSE accuracy 로그 대기 중...
+                </p>
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockAccuracyData}>
+              <AreaChart data={accuracyCurveData}>
                 <defs>
                   <linearGradient id="colorAcc" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#7bd0ff" stopOpacity={0.2} />
@@ -410,8 +329,8 @@ export default function TrainingLogs() {
                   stroke="#2a2b33"
                   vertical={false}
                 />
-                <XAxis dataKey="step" hide />
-                <YAxis hide domain={[0.6, 1.0]} />
+                <XAxis dataKey="epoch" hide />
+                <YAxis hide />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#191f31",
@@ -431,6 +350,7 @@ export default function TrainingLogs() {
                 />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </section>
       </div>

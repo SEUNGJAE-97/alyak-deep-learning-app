@@ -19,5 +19,7 @@ public class ModelArchiveCompareResponse {
         private String metric;
         private BigDecimal base;
         private BigDecimal target;
+        private BigDecimal delta;
+        private BigDecimal deltaPercent;
     }
 }

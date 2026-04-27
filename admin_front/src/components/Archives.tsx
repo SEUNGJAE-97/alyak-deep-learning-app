@@ -43,13 +43,27 @@ type ArchiveListResponse = {
 type CompareResponse = {
   baseVersion: string;
   targetVersion: string;
-  metrics: Array<{ metric: string; base: number | null; target: number | null }>;
+  metrics: Array<{
+    metric: string;
+    base: number | null;
+    target: number | null;
+    delta: number | null;
+    deltaPercent: number | null;
+  }>;
+};
+
+type ArchiveDetailResponse = {
+  summary: { id: number };
+  imageCount: number | null;
+  augmentationSummary: string | null;
 };
 
 export default function Archives() {
   const [models, setModels] = useState<ArchiveModel[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
   const [compareData, setCompareData] = useState<Array<{ metric: string; new: number; old: number }>>([]);
+  const [compareMetrics, setCompareMetrics] = useState<CompareResponse["metrics"]>([]);
+  const [selectedModelDetail, setSelectedModelDetail] = useState<ArchiveDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,14 +99,36 @@ export default function Archives() {
   }, [apiBaseUrl, token]);
 
   useEffect(() => {
+    const fetchModelDetail = async () => {
+      if (!token || !selectedModelId) {
+        setSelectedModelDetail(null);
+        return;
+      }
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/admin/archives/models/${selectedModelId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error("모델 상세 조회 실패");
+        const detail = (await response.json()) as ArchiveDetailResponse;
+        setSelectedModelDetail(detail);
+      } catch {
+        setSelectedModelDetail(null);
+      }
+    };
+    void fetchModelDetail();
+  }, [apiBaseUrl, selectedModelId, token]);
+
+  useEffect(() => {
     const fetchCompare = async () => {
       if (!token || !selectedModel || models.length < 2) {
         setCompareData([]);
+        setCompareMetrics([]);
         return;
       }
       const target = models.find((m) => m.id !== selectedModel.id);
       if (!target) {
         setCompareData([]);
+        setCompareMetrics([]);
         return;
       }
 
@@ -103,6 +139,7 @@ export default function Archives() {
         );
         if (!response.ok) throw new Error("비교 데이터 조회 실패");
         const data = (await response.json()) as CompareResponse;
+        setCompareMetrics(data.metrics ?? []);
         const mapped = data.metrics.map((metric) => ({
           metric: metric.metric,
           old: metric.base ?? 0,
@@ -111,6 +148,7 @@ export default function Archives() {
         setCompareData(mapped);
       } catch {
         setCompareData([]);
+        setCompareMetrics([]);
       }
     };
     void fetchCompare();
@@ -128,9 +166,31 @@ export default function Archives() {
   };
 
   const metricPercent = (value: number | null) => (value == null ? 0 : value * 100);
+  const findCompareMetric = (metricName: string) =>
+    compareMetrics.find((metric) => metric.metric.toLowerCase() === metricName.toLowerCase()) ?? null;
 
   return (
-    <div className="ml-64 mt-36 p-8 min-h-screen bg-background">
+    <div className="archives-page ml-64 mt-36 p-8 min-h-screen bg-background">
+      <style>{`
+        .archives-page .recharts-surface:focus,
+        .archives-page .recharts-surface:focus-visible,
+        .archives-page .recharts-wrapper:focus,
+        .archives-page .recharts-wrapper:focus-visible,
+        .archives-page .recharts-responsive-container:focus,
+        .archives-page .recharts-responsive-container:focus-visible,
+        .archives-page .recharts-responsive-container *:focus,
+        .archives-page .recharts-responsive-container *:focus-visible {
+          outline: none !important;
+          box-shadow: none !important;
+        }
+
+        .archives-page .recharts-layer,
+        .archives-page .recharts-bar-rectangle,
+        .archives-page .recharts-legend-wrapper,
+        .archives-page .recharts-tooltip-wrapper {
+          user-select: none;
+        }
+      `}</style>
       <header className="mb-12">
         <div className="flex items-center gap-3 mb-2">
           <HistoryIcon className="w-6 h-6 text-primary" />
@@ -209,6 +269,7 @@ export default function Archives() {
                     <XAxis dataKey="metric" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#909097' }} />
                     <YAxis axisLine={false} tickLine={false} hide />
                     <Tooltip 
+                      cursor={false}
                       contentStyle={{ backgroundColor: '#191f31', border: '1px solid #45464d', borderRadius: '12px' }}
                       itemStyle={{ fontSize: '10px' }}
                     />
@@ -221,15 +282,27 @@ export default function Archives() {
 
               <div className="space-y-6 flex flex-col justify-center">
                 <div className="grid grid-cols-2 gap-4">
+                  {(() => {
+                    const accuracyMetric = findCompareMetric("Accuracy");
+                    const value = accuracyMetric?.deltaPercent ?? accuracyMetric?.delta ?? 0;
+                    return (
                   <ComparisonStat
                     label="Accuracy"
-                    value={metricPercent(selectedModel.accuracy).toFixed(1)}
+                    value={value.toFixed(1)}
                     unit="%"
                   />
+                    );
+                  })()}
+                  {(() => {
+                    const mapMetric = findCompareMetric("mAP");
+                    const value = mapMetric?.delta ?? 0;
+                    return (
                   <ComparisonStat
                     label="mAP"
-                    value={(selectedModel.map ?? 0).toFixed(3)}
+                    value={value.toFixed(3)}
                   />
+                    );
+                  })()}
                 </div>
                 <div className="p-4 bg-surface-container-high/50 rounded-2xl border border-outline-variant/10">
                   <p className="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest mb-2 flex items-center gap-2">
@@ -264,11 +337,17 @@ export default function Archives() {
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/10">
                   <div>
                     <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mb-1">Image Count</p>
-                    <p className="text-sm font-black text-on-surface uppercase tracking-tighter">12,450장</p>
+                    <p className="text-sm font-black text-on-surface uppercase tracking-tighter">
+                      {selectedModelDetail?.imageCount != null
+                        ? `${selectedModelDetail.imageCount.toLocaleString()}장`
+                        : "-"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mb-1">Augmented</p>
-                    <p className="text-sm font-black text-on-surface uppercase tracking-tighter">Yes (3.5x)</p>
+                    <p className="text-sm font-black text-on-surface uppercase tracking-tighter">
+                      {selectedModelDetail?.augmentationSummary ?? "-"}
+                    </p>
                   </div>
                 </div>
               </div>

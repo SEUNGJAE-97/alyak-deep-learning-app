@@ -39,13 +39,34 @@ const TrainingStreamContext = createContext<TrainingStreamContextType | null>(
   null,
 );
 
+const TRAINING_STREAM_CACHE_KEY = "training_stream_cache_v1";
+
 export function TrainingStreamProvider({ children }: { children: ReactNode }) {
   const [logs, setLogs] = useState<string[]>([]);
-  const [streamStatus, setStreamStatus] = useState<StreamStatus>("idle");
+  const [streamStatus, setStreamStatus] = useState<StreamStatus>(() => {
+    try {
+      const raw = localStorage.getItem(TRAINING_STREAM_CACHE_KEY);
+      if (!raw) return "idle";
+      const parsed = JSON.parse(raw) as { streamStatus?: StreamStatus };
+      return parsed.streamStatus ?? "idle";
+    } catch {
+      return "idle";
+    }
+  });
   const [progress, setProgress] = useState(0);
-  const [job, setJob] = useState<TrainingJob | null>(null);
+  const [job, setJob] = useState<TrainingJob | null>(() => {
+    try {
+      const raw = localStorage.getItem(TRAINING_STREAM_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { job?: TrainingJob | null };
+      return parsed.job ?? null;
+    } catch {
+      return null;
+    }
+  });
   const [toast, setToast] = useState<GlobalToast>(null);
   const esRef = useRef<EventSource | null>(null);
+  const hydratedRef = useRef(false);
 
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
@@ -177,6 +198,43 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+    try {
+      const raw = localStorage.getItem(TRAINING_STREAM_CACHE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        logs?: string[];
+        progress?: number;
+      };
+      if (Array.isArray(parsed.logs)) {
+        setLogs(parsed.logs.slice(-500));
+      }
+      if (typeof parsed.progress === "number") {
+        setProgress(parsed.progress);
+      }
+    } catch {
+      // ignore malformed cache
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        TRAINING_STREAM_CACHE_KEY,
+        JSON.stringify({
+          logs: logs.slice(-500),
+          streamStatus,
+          progress,
+          job,
+        }),
+      );
+    } catch {
+      // ignore storage failures
+    }
+  }, [logs, streamStatus, progress, job]);
+
+  useEffect(() => {
     void connectStream();
     return () => {
       esRef.current?.close();
@@ -188,6 +246,11 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
     setLogs([]);
     setProgress(0);
     setStreamStatus("idle");
+    try {
+      localStorage.removeItem(TRAINING_STREAM_CACHE_KEY);
+    } catch {
+      // ignore storage failures
+    }
   };
   const dismissToast = () => setToast(null);
 

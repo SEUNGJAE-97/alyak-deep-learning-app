@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -123,6 +124,8 @@ public class ModelArchiveServiceImpl implements ModelArchiveService {
                 .argsPath(argsPath.toString())
                 .resultsPath(resultsPath.toString())
                 .datasetName(args.get("data"))
+                .imageCount(resolveImageCount(args))
+                .augmentationSummary(resolveAugmentationSummary(args))
                 .epochs(parseInt(args.get("epochs")))
                 .batchSize(parseInt(args.get("batch")))
                 .learningRate(parseDecimal(args.get("lr0")))
@@ -141,11 +144,27 @@ public class ModelArchiveServiceImpl implements ModelArchiveService {
     }
 
     private ModelArchiveCompareResponse.MetricDelta metric(String name, BigDecimal base, BigDecimal target) {
+        BigDecimal delta = calculateDelta(base, target);
+        BigDecimal deltaPercent = calculateDeltaPercent(base, delta);
         return ModelArchiveCompareResponse.MetricDelta.builder()
                 .metric(name)
                 .base(base)
                 .target(target)
+                .delta(delta)
+                .deltaPercent(deltaPercent)
                 .build();
+    }
+
+    private BigDecimal calculateDelta(BigDecimal base, BigDecimal target) {
+        if (base == null || target == null) return null;
+        return target.subtract(base);
+    }
+
+    private BigDecimal calculateDeltaPercent(BigDecimal base, BigDecimal delta) {
+        if (base == null || delta == null || BigDecimal.ZERO.compareTo(base) == 0) return null;
+        return delta
+                .divide(base, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
     }
 
     private Map<String, String> parseArgsYaml(Path argsPath) throws IOException {
@@ -219,6 +238,36 @@ public class ModelArchiveServiceImpl implements ModelArchiveService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private Integer resolveImageCount(Map<String, String> args) {
+        List<String> keys = List.of(
+                "image_count",
+                "imageCount",
+                "num_images",
+                "n_images",
+                "train_image_count"
+        );
+        for (String key : keys) {
+            Integer parsed = parseInt(args.get(key));
+            if (parsed != null) return parsed;
+        }
+        return null;
+    }
+
+    private String resolveAugmentationSummary(Map<String, String> args) {
+        List<String> summaryKeys = List.of("augmentation_summary", "augmentationSummary");
+        for (String key : summaryKeys) {
+            String val = args.get(key);
+            if (val != null && !val.isBlank()) return val;
+        }
+
+        String augment = args.get("augment");
+        if (augment != null) {
+            if ("true".equalsIgnoreCase(augment)) return "Yes";
+            if ("false".equalsIgnoreCase(augment)) return "No";
+        }
+        return null;
     }
 
     private String resolveVersion(Path runDir, Map<String, String> args) {

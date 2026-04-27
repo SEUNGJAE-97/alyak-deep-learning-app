@@ -2,6 +2,8 @@ import json
 import logging
 import os
 import queue
+import re
+import time
 from threading import Lock
 from typing import Any, Generator
 from uuid import uuid4
@@ -33,6 +35,7 @@ class TrainService:
         self._jobs_lock = Lock()
         self._log_queues: dict[str, queue.Queue] = {}
         self._log_lock = Lock()
+        self._timing_by_job: dict[str, dict[str, float]] = {}
 
     def create_job(self) -> dict[str, Any]:
         job_id = str(uuid4())
@@ -118,7 +121,7 @@ class TrainService:
 
         return "학습 중 오류가 발생했습니다. 서버 로그를 확인해 주세요."
 
-    def _build_epoch_log_line(self, epoch: int, total: int, trainer, req: TrainRequest) -> str:
+    def _build_epoch_log_line(self, epoch: int, total: int, trainer, req: TrainRequest, eta_seconds: int | None = None) -> str:
         metrics = trainer.metrics or {}
         val_box_loss = metrics.get("val/box_loss")
         map50 = metrics.get("metrics/mAP50(B)")
@@ -144,12 +147,35 @@ class TrainService:
         if map50_95 is not None:
             parts.append(f"mAP={map50_95:.4f}")
         parts.append(f"lr={lr_val:.2e}")
+        if eta_seconds is not None:
+            eta_seconds = max(0, int(eta_seconds))
+            h = eta_seconds // 3600
+            m = (eta_seconds % 3600) // 60
+            s = eta_seconds % 60
+            parts.append(f"eta={h:02d}:{m:02d}:{s:02d}")
         return " | ".join(parts)
 
     def _build_run_name(self, job_id: str) -> str:
-        # job_id 전체를 사용해 run 디렉토리 충돌을 방지한다.
-        safe_job_id = (job_id or "").replace("/", "_").replace("\\", "_")
-        return f"pill_{safe_job_id}"
+        """
+        model-runs 디렉토리에서 기존 pill_detection_vN을 스캔해
+        다음 버전명을 생성한다.
+        """
+        prefix = "pill_detection_v"
+        max_version = 0
+
+        try:
+            os.makedirs(TRAINING_RUNS_ROOT, exist_ok=True)
+            pattern = re.compile(rf"^{re.escape(prefix)}(\d+)$")
+            for entry in os.listdir(TRAINING_RUNS_ROOT):
+                match = pattern.match(entry)
+                if match:
+                    max_version = max(max_version, int(match.group(1)))
+        except Exception:
+            # 스캔에 실패하면 충돌 가능성이 낮은 job_id fallback 사용
+            safe_job_id = (job_id or "").replace("/", "_").replace("\\", "_")
+            return f"pill_{safe_job_id}"
+
+        return f"{prefix}{max_version + 1}"
 
     def _on_fit_epoch_end(self, job_id: str, req: TrainRequest, trainer) -> None:
         if self._is_cancelled(job_id):
@@ -159,9 +185,16 @@ class TrainService:
         epoch = trainer.epoch + 1
         total = trainer.epochs
         progress = int((epoch / total) * 100)
+        timing = self._timing_by_job.get(job_id)
+        eta_seconds = None
+        if timing is not None:
+            elapsed = max(0.0, time.monotonic() - timing["started_at"])
+            avg_per_epoch = elapsed / epoch if epoch > 0 else 0.0
+            remaining_epochs = max(0, total - epoch)
+            eta_seconds = int(avg_per_epoch * remaining_epochs)
 
         self._update_job_progress(job_id, progress, f"Epoch {epoch}/{total}")
-        log_line = self._build_epoch_log_line(epoch, total, trainer, req)
+        log_line = self._build_epoch_log_line(epoch, total, trainer, req, eta_seconds)
         self._emit(job_id, "log", {"line": log_line, "progress": progress})
 
     def _on_train_start(self, job_id: str, trainer) -> None:
@@ -179,6 +212,7 @@ class TrainService:
             dataset_yaml_path = prepare_dataset(job_id)
             run_name = self._build_run_name(job_id)
             base_model_path = req.baseModelPath or BASE_MODEL_PATH
+            self._timing_by_job[job_id] = {"started_at": time.monotonic()}
 
             self._emit(
                 job_id,
@@ -238,6 +272,7 @@ class TrainService:
             self._emit(job_id, "done", {"status": "FAILED", "message": user_message})
             notify_spring_completion(job_id, "FAILED", 0, user_message)
         finally:
+            self._timing_by_job.pop(job_id, None)
             cleanup_dataset(job_id)
 
 
