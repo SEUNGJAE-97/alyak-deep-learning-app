@@ -6,6 +6,7 @@ import {
   Image as ImageIcon,
   ChevronDown,
   Info,
+  RotateCcw,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { createPortal } from "react-dom";
@@ -150,7 +151,7 @@ export default function Training() {
   const [items, setItems] = useState<TrainingItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const { streamStatus, progress, job, setJob, clearLogs, connectStream } =
+  const { logs, streamStatus, progress, job, setJob, clearLogs, connectStream } =
     useTrainingStream();
   const [isStarting, setIsStarting] = useState(false);
   const [jobError, setJobError] = useState<string | null>(null);
@@ -192,6 +193,7 @@ export default function Training() {
 
   const handleStartTraining = async () => {
     if (!token) return;
+    if (isTrainingActive) return;
     setIsStarting(true);
     setJobError(null);
     try {
@@ -236,6 +238,75 @@ export default function Training() {
     );
   }, [items, searchText]);
 
+  const isErrorState =
+    streamStatus === "error" ||
+    job?.status === "FAILED" ||
+    job?.status === "CANCELLED";
+  const isDoneState = streamStatus === "done" || job?.status === "SUCCEEDED";
+
+  const isTrainingActive =
+    !isErrorState &&
+    !isDoneState &&
+    (isStarting ||
+      streamStatus === "connecting" ||
+      streamStatus === "running" ||
+      job?.status === "PENDING" ||
+      job?.status === "RUNNING");
+
+  const mapSystemMessage = (line: string) => {
+    const normalized = line.replace(/^\[(SYSTEM|INFO|ERROR)\]\s*/, "");
+
+    if (normalized.includes("TRAINING_SET 이미지가 없습니다")) {
+      return "Training Set 이미지가 없어 학습할 수 없습니다";
+    }
+    if (normalized.includes("유효한 학습 이미지")) {
+      return "유효한 학습 이미지가 없습니다";
+    }
+    if (normalized.includes("Session initialized")) {
+      return "학습 세션 초기화 중";
+    }
+    if (normalized.includes("Fetched")) {
+      return "학습 대상 이미지 목록 불러오는 중";
+    }
+    if (normalized.includes("Valid items")) {
+      return "학습 데이터셋 검증 완료";
+    }
+    if (normalized.includes("Loading pretrained weights")) {
+      return "모델 가중치 로딩 중";
+    }
+    if (normalized.includes("Training started")) {
+      return "모델 학습 시작";
+    }
+    if (normalized.includes("Training complete")) {
+      return "학습이 완료되었습니다";
+    }
+    if (normalized.includes("Dataset ready")) {
+      return "데이터셋 준비 완료";
+    }
+    if (line.includes("[ERROR]")) {
+      return "학습 중 오류가 발생했습니다";
+    }
+    return normalized;
+  };
+
+  const latestSystemMessage = useMemo(() => {
+    for (let i = logs.length - 1; i >= 0; i -= 1) {
+      const line = logs[i];
+      if (line.includes("[SYSTEM]") || line.includes("[INFO]") || line.includes("[ERROR]")) {
+        return mapSystemMessage(line);
+      }
+    }
+    return "학습 데이터셋 준비 중...";
+  }, [logs]);
+
+  const trainingButtonText = isStarting
+    ? "학습 작업 시작 중..."
+    : isTrainingActive
+      ? latestSystemMessage
+      : isErrorState
+        ? "재시도"
+        : "INITIATE TRAINING";
+
   return (
     <div className="ml-64 mt-36 p-8 pr-[420px] min-h-screen bg-background">
       {/* Top Status Widget */}
@@ -263,9 +334,13 @@ export default function Training() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-500 ai-pulse"></div>
+          {isTrainingActive ? (
+            <div className="w-3 h-3 rounded-full border border-dashed border-primary animate-spin" />
+          ) : (
+            <div className="w-2 h-2 rounded-full bg-green-500 ai-pulse" />
+          )}
           <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-            System Ready
+            {isTrainingActive ? "Training In Progress" : "System Ready"}
           </span>
         </div>
       </div>
@@ -448,11 +523,19 @@ export default function Training() {
           <div className="pt-6 border-t border-outline-variant/10">
             <button
               onClick={handleStartTraining}
-              disabled={isStarting}
+              disabled={isTrainingActive}
               className="w-full py-4 bg-gradient-to-r from-primary to-primary/80 text-on-primary font-black text-xs uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all group disabled:opacity-60"
             >
-              <Play className="w-5 h-5 fill-current group-hover:scale-110 transition-transform" />
-              {isStarting ? "STARTING..." : "INITIATE TRAINING"}
+              {isTrainingActive ? (
+                <div className="w-5 h-5 shrink-0 rounded-full border-2 border-dashed border-on-primary animate-spin" />
+              ) : isErrorState ? (
+                <RotateCcw className="w-5 h-5" />
+              ) : (
+                <Play className="w-5 h-5 fill-current group-hover:scale-110 transition-transform" />
+              )}
+              <span className="max-w-[250px] text-center leading-tight whitespace-normal break-words">
+                {trainingButtonText}
+              </span>
             </button>
             {jobError && (
               <p className="text-[10px] text-error text-center mt-2">

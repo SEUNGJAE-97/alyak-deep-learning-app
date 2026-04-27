@@ -119,17 +119,21 @@ function AppShell({
             className={
               toast.type === "success"
                 ? "backdrop-blur-2xl border rounded-2xl p-4 shadow-2xl flex items-center gap-4 bg-surface-container-high/90 border-primary/30 text-on-surface"
-                : "backdrop-blur-2xl border rounded-2xl p-4 shadow-2xl flex items-center gap-4 bg-error/90 border-error/40 text-white"
+                : "backdrop-blur-2xl border rounded-2xl p-4 shadow-2xl flex items-center gap-4 bg-red-700 border-red-500 text-white"
             }
           >
             <div
               className={
                 toast.type === "success"
                   ? "w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary"
-                  : "w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white/15 text-white"
+                  : "w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-red-900 text-white border border-red-400"
               }
             >
-              <CheckCircle2 className="w-6 h-6" />
+              {toast.type === "success" ? (
+                <CheckCircle2 className="w-6 h-6" />
+              ) : (
+                <X className="w-6 h-6" />
+              )}
             </div>
             <div className="flex-1">
               <p className="text-sm font-black uppercase tracking-tight">

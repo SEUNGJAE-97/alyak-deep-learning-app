@@ -107,18 +107,49 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
 
         es.addEventListener("done", (e) => {
           const payload = JSON.parse((e as MessageEvent).data) as {
+            status?: "SUCCEEDED" | "FAILED" | "CANCELLED";
             message?: string;
           };
           if (payload.message) {
             setLogs((prev) => [...prev, `[SYSTEM] ${payload.message}`]);
           }
-          setStreamStatus("done");
-          setProgress(100);
-          setToast({
-            type: "success",
-            title: "Training Complete!",
-            description: "Model v2.1.0-LTYK weights stabilized.",
-          });
+          const isSuccess = payload.status === "SUCCEEDED";
+          if (isSuccess) {
+            setStreamStatus("done");
+            setProgress(100);
+            setJob((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    status: "SUCCEEDED",
+                    progress: 100,
+                    message: payload.message ?? prev.message,
+                  }
+                : prev,
+            );
+            setToast({
+              type: "success",
+              title: "Training Complete!",
+              description: "Model v2.1.0-LTYK weights stabilized.",
+            });
+          } else {
+            setStreamStatus("error");
+            setJob((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    status: payload.status ?? "FAILED",
+                    progress: prev.progress ?? 0,
+                    message: payload.message ?? prev.message,
+                  }
+                : prev,
+            );
+            setToast({
+              type: "error",
+              title: "Training Failed",
+              description: payload.message ?? "학습 중 오류가 발생했습니다.",
+            });
+          }
           es.close();
           esRef.current = null;
         });

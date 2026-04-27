@@ -9,13 +9,13 @@ from uuid import uuid4
 from ultralytics import YOLO
 
 from app.schemas.training_schema import TrainRequest
+from app.services.dataset_builder import cleanup_dataset, prepare_dataset
 from app.utils.callback import notify_spring_completion
 
 logger = logging.getLogger(__name__)
 
-# 학습된 모델 경로 및 데이터셋 yaml 경로
+# 학습된 모델 경로
 BASE_MODEL_PATH = os.getenv("BASE_MODEL_PATH", "models/pill_trained.pt")
-DATASET_YAML_PATH = os.getenv("DATASET_YAML_PATH", "datasets/pill/data.yaml")
 
 # freeze 파라미터 변환
 FREEZE_MAP: dict[str, int | None] = {
@@ -98,6 +98,25 @@ class TrainService:
                 self._jobs[job_id]["status"] = "FAILED"
                 self._jobs[job_id]["message"] = error_message
 
+    def _to_user_friendly_error(self, error: Exception) -> str:
+        if isinstance(error, FileNotFoundError):
+            missing_path = getattr(error, "filename", None) or ""
+            if "pill_trained.pt" in missing_path:
+                return "기본 모델 파일을 찾을 수 없습니다. 모델 경로를 확인해 주세요."
+            return "학습에 필요한 파일을 찾을 수 없습니다. 경로 설정을 확인해 주세요."
+
+        raw_message = str(error)
+        if "TRAINING_SET 이미지가 없습니다" in raw_message:
+            return "학습에 사용할 이미지가 없습니다. Training Set을 먼저 준비해 주세요."
+        if "유효한 학습 이미지" in raw_message:
+            return "학습 가능한 이미지가 없습니다. 라벨 박스와 이미지 파일 상태를 확인해 주세요."
+        if "403" in raw_message or "forbidden" in raw_message.lower():
+            return "내부 인증에 실패했습니다. 서버 토큰 설정을 확인해 주세요."
+        if "httpx" in raw_message.lower() or "connect" in raw_message.lower() or "timeout" in raw_message.lower():
+            return "서버 연결에 문제가 발생했습니다. 잠시 후 다시 시도해 주세요."
+
+        return "학습 중 오류가 발생했습니다. 서버 로그를 확인해 주세요."
+
     def _build_epoch_log_line(self, epoch: int, total: int, trainer, req: TrainRequest) -> str:
         metrics = trainer.metrics or {}
         val_box_loss = metrics.get("val/box_loss")
@@ -143,6 +162,7 @@ class TrainService:
         try:
             epochs = max(req.epochs, 1)
             freeze = FREEZE_MAP.get(req.freezeLayers or "medium", 10)
+            dataset_yaml_path = prepare_dataset(job_id)
 
             self._emit(
                 job_id,
@@ -173,7 +193,7 @@ class TrainService:
             # 학습 시작
             self._emit(job_id, "log", {"line": "[SYSTEM] Training started..."})
             model.train(
-                data=DATASET_YAML_PATH,
+                data=dataset_yaml_path,
                 epochs=epochs,
                 batch=req.batchSize,
                 lr0=req.learningRate,
@@ -196,10 +216,13 @@ class TrainService:
 
         except Exception as e:
             logger.exception("Training failed for job %s", job_id)
-            self._mark_job_failed(job_id, str(e))
-            self._emit(job_id, "log", {"line": f"[ERROR] {e}"})
-            self._emit(job_id, "done", {"status": "FAILED", "message": str(e)})
-            notify_spring_completion(job_id, "FAILED", 0, str(e))
+            user_message = self._to_user_friendly_error(e)
+            self._mark_job_failed(job_id, user_message)
+            self._emit(job_id, "log", {"line": f"[ERROR] {user_message}"})
+            self._emit(job_id, "done", {"status": "FAILED", "message": user_message})
+            notify_spring_completion(job_id, "FAILED", 0, user_message)
+        finally:
+            cleanup_dataset(job_id)
 
 
 train_service = TrainService()
