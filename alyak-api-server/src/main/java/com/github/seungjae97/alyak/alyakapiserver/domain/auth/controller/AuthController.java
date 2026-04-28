@@ -28,6 +28,13 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/admin/login")
+    @Operation(summary = "관리자 로그인", description = "이메일과 비밀번호로 로그인하며, 관리자 권한 사용자만 로그인할 수 있습니다.")
+    public ResponseEntity<LoginResponse> adminLogin(@RequestBody LoginRequest loginRequest) {
+        LoginResponse response = authService.adminLogin(loginRequest);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/signup")
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
     public ResponseEntity<TokenResponse> signup(@RequestBody SignupRequest signupRequest) {

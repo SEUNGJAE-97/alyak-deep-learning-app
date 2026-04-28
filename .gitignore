@@ -110,3 +110,6 @@ dist/
 node_modules/
 coverage/
 
+# Runtime shared storage (images/models/runs)
+shared-images/
+

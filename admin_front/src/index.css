@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: #0c1324;
+  --color-surface: #0c1324;
+  --color-surface-container: #191f31;
+  --color-surface-container-low: #151b2d;
+  --color-surface-container-high: #23293c;
+  --color-surface-container-highest: #2e3447;
+  --color-surface-container-lowest: #070d1f;
+  
+  --color-primary: #7bd0ff;
+  --color-on-primary: #00354a;
+  --color-primary-container: #001a27;
+  
+  --color-secondary: #b9c8de;
+  --color-on-secondary: #233143;
+  
+  --color-tertiary: #ffafd3;
+  --color-on-tertiary: #620040;
+  
+  --color-on-surface: #dce1fb;
+  --color-on-surface-variant: #c6c6cd;
+  
+  --color-outline: #909097;
+  --color-outline-variant: #45464d;
+
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface font-sans antialiased;
+  }
+}
+
+.ai-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}

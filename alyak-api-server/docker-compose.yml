@@ -22,10 +22,11 @@ services:
 
   # Redis Cache
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack:latest
     container_name: alyak-redis
     ports:
       - "6379:6379"
+      - "8003:8001"
     volumes:
       - redis_data:/data
     networks:
@@ -43,7 +44,8 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./uplifted-studio-457001-h1-firebase-adminsdk-fbsvc-06cdb7fc02.json:/run/secrets/firebase-adminsdk.json:ro
+      - ./firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
+      - ../shared-images:/app/shared-images
     environment:
       SPRING_PROFILES_ACTIVE: prod
       # Database Configuration
@@ -80,6 +82,10 @@ services:
       JWT_PREFIX: Bearer
       FIREBASE_CREDENTIALS_PATH: /run/secrets/firebase-adminsdk.json
       FIREBASE_PROJECT_ID: uplifted-studio-457001-h1
+      APP_UPLOAD_ROOT_PATH: /app/shared-images/uploads
+      APP_DUMMY_LABELING_ENABLED: "true"
+      ARCHIVE_RUNS_ROOT: /app/shared-images/model-runs
+      ARCHIVE_IMPORT_ON_STARTUP: "true"
     depends_on:
       mysql:
         condition: service_healthy
@@ -116,8 +122,10 @@ services:
       - "8001:8000"
     volumes:
       - ../Pill-Recognition-Pipeline:/app
+      - ../shared-images:/app/shared-images
     environment:
       - PYTHONPATH=/app
+      - TRAINING_RUNS_ROOT=/app/shared-images/model-runs
     networks:
       - alyak-network
 

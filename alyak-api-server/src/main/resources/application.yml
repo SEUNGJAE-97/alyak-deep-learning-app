@@ -60,6 +60,11 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+  servlet:
+    multipart:
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:20MB}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:20MB}
+
 # Swagger Configuration
 springdoc:
   api-docs:
@@ -84,6 +89,10 @@ fast-api:
   server:
     url: ${OCR_SERVER_URL:http://fast-api:8000}
 
+training:
+  callback:
+    token: ${TRAINING_CALLBACK_TOKEN:local-training-callback-token}
+
 # Firebase (FCM) — docker-compose 운영에서는 credentials-path 단일 사용
 firebase:
   credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
@@ -96,3 +105,19 @@ logging:
     org.springframework.security.web.FilterChainProxy: DEBUG
     com.github.seungjae97.alyak.alyakapiserver.domain.auth: DEBUG
     com.github.seungjae97.alyak.alyakapiserver.config: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus, health, info, metrics
+
+app:
+  upload:
+    root-path: ${APP_UPLOAD_ROOT_PATH:./uploads}
+  dummy-labeling:
+    enabled: ${APP_DUMMY_LABELING_ENABLED:true}
+
+archive:
+  runs-root: ${ARCHIVE_RUNS_ROOT:./archive-runs}
+  import-on-startup: ${ARCHIVE_IMPORT_ON_STARTUP:true}
