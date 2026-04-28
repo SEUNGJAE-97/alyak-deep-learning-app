@@ -7,6 +7,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.Passwo
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Request.SignupRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.LoginResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.Role;
+import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.RoleName;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.User;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRole;
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.entity.UserRoleId;
@@ -23,6 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -38,18 +41,17 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
+        User user = authenticateUser(loginRequest);
+        return issueLoginResponse(user);
+    }
 
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .filter(u -> passwordEncoder.matches(loginRequest.getPassword(), u.getPassword()))
-                .orElseThrow(() -> new BusinessException(BusinessError.INVALID_LOGIN));
-
-        String token = jwtTokenProvider.generateToken(user);
-
-        return new LoginResponse(
-                token,
-                jwtProperties.getExpirationTime(),
-                user.getUserId()
-        );
+    @Override
+    public LoginResponse adminLogin(LoginRequest loginRequest) {
+        User user = authenticateUser(loginRequest);
+        if (!hasAdminRole(user)) {
+            throw new BusinessException(BusinessError.ADMIN_LOGIN_FORBIDDEN);
+        }
+        return issueLoginResponse(user);
     }
 
     @Override
@@ -173,5 +175,21 @@ public class AuthServiceImpl implements AuthService {
         String email = user.getEmail();
 
         return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).email(email).build();
+    }
+
+    private User authenticateUser(LoginRequest loginRequest) {
+        return userRepository.findByEmailWithRoles(loginRequest.getEmail())
+                .filter(u -> passwordEncoder.matches(loginRequest.getPassword(), u.getPassword()))
+                .orElseThrow(() -> new BusinessException(BusinessError.INVALID_LOGIN));
+    }
+
+    private boolean hasAdminRole(User user) {
+        return user.getUserRole().stream()
+                .anyMatch(ur -> RoleName.ADMIN.name().equals(ur.getRole().getName()));
+    }
+
+    private LoginResponse issueLoginResponse(User user) {
+        String token = jwtTokenProvider.generateToken(user);
+        return new LoginResponse(token, jwtProperties.getExpirationTime(), user.getUserId());
     }
 }

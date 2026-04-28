@@ -1,10 +1,10 @@
-package com.github.seungjae97.alyak.alyakapiserver.global.redis.controller;
+package com.github.seungjae97.alyak.alyakapiserver.global.Redis.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.user.repository.UserRepository;
+import com.github.seungjae97.alyak.alyakapiserver.global.Redis.service.RedisService;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import com.github.seungjae97.alyak.alyakapiserver.global.redis.dto.request.EmailValidationRequest;
-import com.github.seungjae97.alyak.alyakapiserver.global.redis.service.RedisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

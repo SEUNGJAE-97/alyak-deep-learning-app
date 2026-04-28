@@ -1,0 +1,6 @@
+{
+  "name": "Alyak Admin",
+  "description": "알약 탐지 인공지능 모델의 강화학습 및 성능 모니터링을 위한 관리자 포털.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

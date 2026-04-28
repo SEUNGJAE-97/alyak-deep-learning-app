@@ -20,9 +20,14 @@ public enum BusinessError {
     USER_NOT_EXIST(HttpStatus.BAD_REQUEST, "존재하지 않는 유저입니다."),
     EXIST_USER(HttpStatus.BAD_REQUEST, "이미 가입한 유저 입니다."),
     KAKAO_LOGIN_ERROR(HttpStatus.BAD_REQUEST, "카카오 로그인에 실패했습니다."),
+    ADMIN_LOGIN_FORBIDDEN(HttpStatus.FORBIDDEN, "관리자 권한이 없어 관리자 로그인이 불가합니다."),
     EMAIL_NOT_EXIST(HttpStatus.BAD_REQUEST, "이메일이 비어있습니다."),
     NEW_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "새 비밀번호를 입력해주세요."),
     DONT_EXIST_PILL(HttpStatus.BAD_REQUEST, "존재하지 않는 이름입니다."),
+    INVALID_IMAGE_PATH(HttpStatus.BAD_REQUEST, "이미지 경로가 비어있습니다."),
+    INVALID_IMAGE_FILE(HttpStatus.BAD_REQUEST, "이미지 파일이 비어있거나 유효하지 않습니다."),
+    IMAGE_STORE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 저장에 실패했습니다."),
+    LABELING_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "라벨링 항목을 찾을 수 없습니다."),
 
     // 가족
     DONT_EXIST_FAMILY(HttpStatus.BAD_REQUEST, "존재하는 가족이 없습니다."),

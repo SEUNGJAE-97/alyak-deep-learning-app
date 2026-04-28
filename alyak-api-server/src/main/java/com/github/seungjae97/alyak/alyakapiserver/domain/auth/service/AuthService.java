@@ -8,6 +8,7 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.auth.dto.Response.Token
 
 public interface AuthService {
     LoginResponse login(LoginRequest loginRequest);
+    LoginResponse adminLogin(LoginRequest loginRequest);
     TokenResponse signup(SignupRequest signupRequest);
     void logout(String token);
     TokenResponse tempLogin();
