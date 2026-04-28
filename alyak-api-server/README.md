@@ -1,7 +1,7 @@
 # Alyak API Server
 
 복약·가족·약품·알림을 다루는 **Spring Boot** 백엔드입니다.  
-클라이언트(Android)와 **REST API**로 통신하고, 알약 촬영 인식 시 **FastAPI(OCR)** 서버를 호출합니다. **FCM**으로 가족 초대·복약 알림 푸시를 보냅니다(`prod` 프로필).
+클라이언트(Android)와 **REST API**로 통신하고, 알약 촬영 인식 시 **FastAPI(OCR)** 서버를 호출합니다. 또한 관리자 웹과 연동되어 라벨링 검수, 학습 작업 생성, 모델 아카이브 조회 기능도 제공합니다. **FCM** 푸시는 `prod` 프로필에서 Firebase 설정과 함께 동작합니다.
 
 ## 기술 스택
 
@@ -24,6 +24,9 @@ src/main/java/com/github/seungjae97/alyak/alyakapiserver/
 ├── domain/medication/    # 복용 로그·통계
 ├── domain/schedule/      # 스케줄 백업·복구·삭제
 ├── domain/notification/  # FCM 디바이스 토큰 등록
+├── domain/admin/         # 관리자 세션·권한·관리자 전용 API
+├── domain/labeling/      # 라벨링 항목·박스 좌표·상태 관리
+├── domain/training/      # 파인튜닝 작업·상태 추적·모델 아카이브
 ├── domain/map/           # 지도/약국 등
 ├── global/               # Redis·이메일 인증 등 공통
 └── AlyakApiServerApplication.java
@@ -121,20 +124,56 @@ src/main/java/com/github/seungjae97/alyak/alyakapiserver/
 | POST | `/api/email/send/reset` | 재설정 메일 |
 | POST | `/api/email/verify` | 인증 |
 
+### 관리자 (`/api/admin`)
+
+관리자 컨트롤러는 `@AdminApiController`로 선언되어 있으며, 모두 `hasRole('ADMIN')` 권한이 필요합니다.
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET | `/api/admin/me` | 현재 로그인한 관리자 세션 및 권한 조회 |
+
+### 관리자 라벨링 (`/api/admin/labeling`)
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| POST | `/api/admin/labeling/items` | 라벨링 항목 생성(이미지 + 박스 정보) |
+| GET | `/api/admin/labeling/items` | 상태별 라벨링 항목 목록 조회 |
+| GET | `/api/admin/labeling/items/{id}` | 라벨링 항목 상세 조회 |
+| PUT | `/api/admin/labeling/items/{id}/boxes` | 박스 좌표 전체 수정 |
+| POST | `/api/admin/labeling/items/{id}/approve` | 항목 승인 후 `TRAINING_SET` 이동 |
+| POST | `/api/admin/labeling/items/{id}/reject` | 항목 반려 후 `TRASH` 이동 |
+| PATCH | `/api/admin/labeling/items/bulk/status` | 여러 항목 상태 일괄 변경 |
+
+### 관리자 학습 (`/api/admin/training`)
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| POST | `/api/admin/training/jobs` | 학습 작업 생성 |
+| GET | `/api/admin/training/jobs` | 학습 작업 목록 조회 |
+| GET | `/api/admin/training/jobs/{id}` | 학습 작업 상세 조회 |
+
+### 관리자 아카이브 (`/api/admin/archives`)
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET | `/api/admin/archives/models` | 모델 아카이브 목록 조회 |
+| GET | `/api/admin/archives/models/{id}` | 모델 아카이브 상세 조회 |
+| GET | `/api/admin/archives/models/compare` | 두 모델 성능 비교 |
+
 ## Docker Compose로 실행
 
 저장소 루트가 `alyak-api-server`일 때, `docker-compose.yml`에 다음이 정의되어 있습니다.
 
 - **mysql** — 호스트 `3307` → 컨테이너 `3306`
 - **redis**
-- **alyak-api** — Spring Boot `:8080`, `SPRING_PROFILES_ACTIVE=prod` 등 (**`.env`·Firebase 키 경로 필요**)
+- **alyak-api** — Spring Boot `:8080`, `SPRING_PROFILES_ACTIVE=prod` 등 (**`.env`·Firebase 서비스 계정 JSON 필요**)
 - **fast-api** — `Pill-Recognition-Pipeline` 빌드, 호스트 `8001` → 컨테이너 `8000` (`OCR_SERVER_URL`은 컨테이너 네트워크 기준)
 - **valhalla** — 라우팅(지도 데이터 빌드에 시간 소요)
 
 ```bash
 cd alyak-api-server
 
-# .env 및 Firebase 서비스 계정 JSON 경로를 docker-compose에 맞게 준비한 뒤
+# .env 와 Firebase 서비스 계정 JSON을 준비한 뒤
 docker compose up -d
 
 docker compose logs -f alyak-api
@@ -158,6 +197,8 @@ docker compose up --build -d
 1. **MySQL** — Docker 또는 로컬에 DB 생성 후 `application.yml` / 환경 변수에 URL·계정 설정.
 2. **Redis** — 필요 시 기동 후 호스트·포트 설정.
 3. **OCR** — FastAPI를 띄우고, `OCR_SERVER_URL`(예: `http://localhost:8001`)을 Spring에 맞춤.
+4. **Firebase** — `prod` 프로필 사용 시 `FIREBASE_CREDENTIALS_PATH`에 서비스 계정 JSON 경로 지정.
+5. **관리자 학습 기능** — `TRAINING_CALLBACK_TOKEN`, `APP_UPLOAD_ROOT_PATH`, `ARCHIVE_RUNS_ROOT`까지 함께 맞춰야 전체 흐름이 동작.
 
 ```bash
 cd alyak-api-server
@@ -175,8 +216,11 @@ cd alyak-api-server
 | `SPRING_PROFILES_ACTIVE` | `prod` 등 |
 | `OCR_SERVER_URL` | FastAPI OCR 베이스 URL |
 | `REDIS_HOST` / `REDIS_PORT` | Redis |
-| JWT 관련 | `JWT_SECRET`, 만료 등(설정 파일 참고) |
-| Firebase | `FIREBASE_CREDENTIALS_PATH`, FCM용 |
+| `TRAINING_CALLBACK_TOKEN` | Spring ↔ Python 내부 학습 토큰 |
+| `APP_UPLOAD_ROOT_PATH` | 업로드 이미지 저장 루트 |
+| `ARCHIVE_RUNS_ROOT` | 모델 아카이브/학습 결과 루트 |
+| JWT 관련 | `JWT_SECRET`, 만료 시간 등(설정 파일 참고) |
+| Firebase | `FIREBASE_CREDENTIALS_PATH`, `FIREBASE_PROJECT_ID` |
 
 실제 배포용 비밀값은 **저장소에 커밋하지 말고** `.env`·시크릿 매니저로 관리하세요.
 
@@ -187,6 +231,22 @@ Compose 파일 기준 예:
 - DB 이름: `alyak`
 - 사용자: `alyak_user` (비밀번호는 compose/`init.sql` 참고)
 - 호스트에서 접속: `localhost:3307` (매핑된 포트)
+
+이 MySQL 데이터베이스는 단순 설정 저장소가 아니라, 앱과 관리자 기능이 실행되면서 실제 서비스 데이터를 적재하는 기본 저장소입니다.
+
+- Android 앱 사용 시 회원, 가족, 복약 로그, 스케줄 백업, 약 조회 관련 데이터가 DB에 저장됩니다.
+- 관리자 웹 사용 시 라벨링 항목, 박스 좌표, 학습 작업 이력, 모델 아카이브 메타데이터가 DB에 반영됩니다.
+- `spring.jpa.hibernate.ddl-auto=update` 설정 기준으로 애플리케이션 기동 시 스키마가 자동 반영될 수 있습니다.
+- `init.sql`은 DB 생성과 계정 권한 부여를 담당합니다.
+- `src/main/resources/data.sql`에는 다음과 같은 초기 데이터가 포함되어 있습니다.
+  - 권한 데이터: `ADMIN`, `USER`
+  - 기본 사용자/관리자 계정 샘플
+  - 사용자-권한 매핑(`user_role`)
+  - 로그인 제공자 정보(`LOCAL`, `KAKAO`, `GOOGLE`)
+  - 가족 및 가족 구성원 매핑
+  - 복약 스케줄 상태 코드(`SCHEDULED`, `TAKEN`, `SKIPPED`, `CANCELLED`)
+  - 알약 형태/색상 기준 데이터
+- 약품 상세 데이터와 복약 스케줄 예시 데이터는 현재 `data.sql`에 주석 처리된 상태입니다.
 
 ---
 

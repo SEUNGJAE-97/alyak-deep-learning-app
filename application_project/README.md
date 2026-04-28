@@ -44,8 +44,37 @@
 
 - REST 클라이언트는 **`@AppServerRetrofit`** 으로 주입되는 Retrofit 인스턴스를 사용합니다. 구현은 `app/src/main/java/com/alyak/detector/data/api/NetworkModule.kt` 에 있습니다.
 - 서버 측 스택은 **Spring Boot 3.x, Spring Data JPA, MySQL** 등이며, API 개요·Swagger·Docker 실행 방법은 [**alyak-api-server/README.md**](../alyak-api-server/README.md) 를 참고하세요.
-- **개발 시** API 베이스 URL은 `NetworkModule` 의 `SERVER_URL` 을 환경에 맞게 조정합니다(에뮬레이터에서 호스트 PC는 `10.0.2.2` 등). 저장소에 올라간 값은 로컬 개발용일 수 있으므로 배포·팀 규칙에 맞게 관리하세요.
-- `google-services.json` 및 카카오·지도 키 등은 Firebase / Kakao 콘솔에서 발급한 값을 **`secrets` 플러그인·`local.properties`·BuildConfig** 등 프로젝트 설정에 맞춰 넣어야 합니다.
+- **개발 시** 앱 서버 주소는 `NetworkModule.kt`의 `SERVER_URL` 상수로 관리됩니다.
+- 현재 코드에는 특정 로컬 네트워크 IP가 하드코딩되어 있으므로, 실행 전에 자신의 개발 환경에 맞는 주소로 반드시 변경해야 합니다.
+- 에뮬레이터에서 호스트 PC의 Spring 서버를 붙일 경우 일반적으로 `10.0.2.2:8080` 같은 주소를 사용합니다.
+- 알약 인식 API도 앱이 FastAPI를 직접 호출하지 않고, 이 Spring 서버 주소를 통해 연동됩니다.
+
+## 실행 전 준비 사항
+
+Android 앱은 코드만 받아 바로 실행되는 구조가 아니며, 아래 항목을 먼저 준비해야 합니다.
+
+### 1. Firebase 설정
+
+- `application_project/app/google-services.json`
+- Firebase Cloud Messaging 사용을 위해 Android용 Firebase 설정 파일이 필요합니다.
+- 이 파일은 저장소에 커밋하지 않는 것이 일반적이며, 현재 `.gitignore`에도 제외되어 있습니다.
+
+### 2. 로컬 키 및 개발 설정
+
+다음 값들은 `local.properties`, secrets 플러그인 또는 BuildConfig 기반 설정으로 준비해야 합니다.
+
+- Android SDK 경로
+- Kakao Map SDK 키
+- Kakao REST API 키
+- 필요 시 기타 로컬 전용 비밀값
+
+현재 코드 기준으로 `BuildConfig.KAKAO_MAP_KEY`, `BuildConfig.REST_API_KEY`를 참조하는 기능이 존재합니다.
+
+### 3. 백엔드 서버 주소
+
+- Spring Boot API 서버가 먼저 실행되어 있어야 합니다.
+- 앱은 `NetworkModule.kt`의 `SERVER_URL`을 기준으로 로그인, 가족, 약 검색, 복약, 스케줄, 알림 API를 호출합니다.
+- 팀 개발 환경에서는 이 값을 하드코딩 대신 별도 설정 방식으로 분리하는 것을 권장합니다.
 
 ## 소스 구조 (요약)
 
@@ -73,8 +102,8 @@ app/src/main/java/com/alyak/detector/
 ## 실행 방법
 
 1. 상위 저장소를 클론한 뒤 Android Studio에서 **`application_project`** 디렉터리를 엽니다.
-2. 필요한 경우 `alyak-api-server` 를 기동하고, `NetworkModule` 의 서버 URL을 맞춥니다.
-3. Firebase·Kakao 등 키 설정을 완료합니다.
+2. `google-services.json`, Kakao 키, `local.properties` 등 필수 설정을 준비합니다.
+3. `alyak-api-server` 를 기동하고, `NetworkModule.kt` 의 `SERVER_URL` 을 현재 개발 환경에 맞게 수정합니다.
 4. Gradle 동기화 후 **`app`** 구성으로 실행합니다.
 
 명령줄 예시:
