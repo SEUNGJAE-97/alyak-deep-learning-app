@@ -1,7 +1,7 @@
 # admin_front
 
 ALYAK의 관리자용 웹 대시보드입니다.  
-라벨링 데이터 검수, 학습 작업 실행, 실시간 로그 모니터링, 모델 아카이브 조회를 위한 React/Vite 기반 프론트엔드입니다.
+라벨링 데이터 검수, 학습 작업 실행, 실시간 로그 모니터링, 모델 아카이브 조회를 위한 프론트엔드입니다.
 
 ## 주요 기능
 
@@ -15,13 +15,15 @@ ALYAK의 관리자용 웹 대시보드입니다.
 
 ## 기술 스택
 
-| 구분 | 내용 |
-|------|------|
-| 프레임워크 | React 19 |
-| 언어 | TypeScript |
-| 빌드 도구 | Vite |
-| UI | Tailwind CSS 4, Lucide React, Motion |
-| 차트 | Recharts |
+
+| 구분    | 내용                                   |
+| ----- | ------------------------------------ |
+| 프레임워크 | React 19                             |
+| 언어    | TypeScript                           |
+| 빌드 도구 | Vite                                 |
+| UI    | Tailwind CSS 4, Lucide React, Motion |
+| 차트    | Recharts                             |
+
 
 ## 화면 구성
 
@@ -104,9 +106,9 @@ npm run build
 
 - 관리자 로그인 토큰은 브라우저 `localStorage`에 저장됩니다.
 - 학습 로그와 진행 상태도 일부 `localStorage`에 캐시됩니다.
-- 현재 패키지에는 템플릿 유래 의존성이 일부 남아 있을 수 있으나, 실제 관리자 기능의 핵심 연동은 Spring/FastAPI 기반입니다.
 
 ## 관련 문서
 
 - [모노레포 개요](../README.md)
 - [Spring Boot API](../alyak-api-server/README.md)
+
