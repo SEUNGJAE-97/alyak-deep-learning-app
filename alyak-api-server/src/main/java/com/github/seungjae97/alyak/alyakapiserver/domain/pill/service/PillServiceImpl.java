@@ -393,15 +393,17 @@ public class PillServiceImpl implements PillService {
         for (MultipartFile image : croppedImages) {
             try {
                 OcrResponse ocrResponse = callFastApi(image);
-                log.info("[VLM] FastAPI 응답: shape={}, texts={}",
+                log.info("[VLM] FastAPI 응답: shape={}, texts={}, color={}",
                         ocrResponse != null ? ocrResponse.shape() : null,
-                        ocrResponse != null ? ocrResponse.texts() : null);
+                        ocrResponse != null ? ocrResponse.texts() : null,
+                        ocrResponse != null ? ocrResponse.color() : null);
 
                 if (ocrResponse == null || ocrResponse.texts() == null) continue;
 
                 List<SimplePillInfo> found = searchByTextAndShape(
                         ocrResponse.texts(),
-                        ocrResponse.shape()
+                        ocrResponse.shape(),
+                        ocrResponse.color()
                 );
 
                 found.stream()
@@ -464,7 +466,7 @@ public class PillServiceImpl implements PillService {
         }
     }
 
-    private List<SimplePillInfo> searchByTextAndShape(List<String> texts, String shape) {
+    private List<SimplePillInfo> searchByTextAndShape(List<String> texts, String shape, String color) {
         // 1단계: pill_front 또는 pill_back에서 텍스트 검색
         List<PillAppearance> textResults = texts.stream()
                 .flatMap(text -> pillAppearanceRepository.findByPillTextWithPill(text).stream())
@@ -477,37 +479,83 @@ public class PillServiceImpl implements PillService {
         if (textResults.size() == 1) return toSimplePillInfoList(textResults);
 
         // 2단계: shape로 추가 필터링
+        List<PillAppearance> candidates = textResults;
         if (shape != null && !shape.isBlank()) {
-            Long shapeId = getShapeId(shape);
+            Set<Long> shapeIds = getShapeIds(shape);
 
-            if (shapeId != null) {
+            if (!shapeIds.isEmpty()) {
                 List<PillAppearance> filtered = textResults.stream()
-                        .filter(a -> shapeId.equals(a.getShapeId()))
+                        .filter(a -> shapeIds.contains(a.getShapeId()))
                         .collect(Collectors.toList());
 
                 log.info("[VLM] shape 필터 후 결과: {}건 (shape={})", filtered.size(), shape);
-                return toSimplePillInfoList(filtered.isEmpty() ? textResults : filtered);
+                candidates = filtered.isEmpty() ? textResults : filtered;
             }
         }
 
-        return toSimplePillInfoList(textResults);
+        if (candidates.size() == 1) return toSimplePillInfoList(candidates);
+
+        // 3단계: color 보조 필터링
+        Set<Long> candidateColorIds = getColorCandidateIds(color);
+        if (candidateColorIds != null && !candidateColorIds.isEmpty()) {
+            List<PillAppearance> colorFiltered = candidates.stream()
+                    .filter(a -> (a.getColorClass1Id() != null && candidateColorIds.contains(a.getColorClass1Id()))
+                            || (a.getColorClass2Id() != null && candidateColorIds.contains(a.getColorClass2Id())))
+                    .collect(Collectors.toList());
+            log.info("[VLM] color 필터 후 결과: {}건 (color={})", colorFiltered.size(), color);
+            candidates = colorFiltered.isEmpty() ? candidates : colorFiltered;
+        }
+
+        return toSimplePillInfoList(candidates);
     }
 
-    private static Long getShapeId(String shape) {
-        Map<String, Long> shapeMap = Map.ofEntries(
-                Map.entry("round",       1L),
-                Map.entry("oval",        2L),
-                Map.entry("oblong",      3L),
-                Map.entry("capsule",     3L),
-                Map.entry("triangle",    5L),
-                Map.entry("rectangle",   6L),
-                Map.entry("diamond",     7L),
-                Map.entry("pentagon",    8L),
-                Map.entry("hexagon",     9L),
-                Map.entry("octagon",     10L)
-        );
+    private Set<Long> getColorCandidateIds(String color) {
+        if (color == null || color.isBlank()) return null;
+        return switch (color.toLowerCase()) {
+            case "white" -> Set.of(1L, 17L, 31L, 34L, 35L, 38L, 39L, 41L, 51L, 52L,
+                    14L, 20L, 36L);
+            case "gray"  -> Set.of(14L, 20L, 36L,
+                    1L, 17L, 31L, 34L, 35L, 38L, 39L, 41L, 51L, 52L);
+            case "light_green" -> Set.of(7L, 27L, 50L,
+                    8L, 32L, 35L, 38L, 46L);
+            case "green" -> Set.of(8L, 32L, 35L, 38L, 46L,
+                    7L, 27L, 50L);
+            case "pink"  -> Set.of(4L, 44L, 45L,
+                    3L, 23L, 39L, 43L);
+            case "orange"-> Set.of(3L, 23L, 39L, 43L,
+                    2L, 24L, 28L, 41L, 42L,
+                    6L, 33L, 34L,
+                    4L, 44L, 45L);
+            case "yellow"-> Set.of(2L, 24L, 28L, 41L, 42L,
+                    3L, 23L, 39L, 43L);
+            case "brown" -> Set.of(6L, 33L, 34L,
+                    3L, 23L, 39L, 43L);
+            case "blue"  -> Set.of(10L, 18L, 19L, 29L, 51L,
+                    1L, 17L, 31L, 34L, 35L, 38L, 39L, 41L, 51L, 52L);
+            case "teal"        -> Set.of(9L, 21L, 40L, 52L);
+            case "navy"        -> Set.of(11L, 25L);
+            case "purple"      -> Set.of(13L, 22L, 26L, 37L, 47L, 48L);
+            case "red"         -> Set.of(5L, 30L);
+            case "black"       -> Set.of(15L, 49L);
+            case "transparent" -> Set.of(16L, 19L, 21L, 24L, 26L, 31L, 38L, 39L, 48L, 49L, 50L);
+            default -> null;
+        };
+    }
 
-        return shapeMap.get(shape.toLowerCase());
+    private static Set<Long> getShapeIds(String shape) {
+        return switch (shape.toLowerCase()) {
+            case "oval"    -> Set.of(2L, 3L);
+            case "oblong"  -> Set.of(3L, 2L);
+            case "capsule" -> Set.of(3L, 2L);
+            case "round"   -> Set.of(1L, 2L);
+            case "triangle"   -> Set.of(5L);
+            case "rectangle"  -> Set.of(6L);
+            case "diamond"    -> Set.of(7L);
+            case "pentagon"   -> Set.of(8L);
+            case "hexagon"    -> Set.of(9L);
+            case "octagon"    -> Set.of(10L);
+            default -> Set.of();
+        };
     }
 
     private List<SimplePillInfo> toSimplePillInfoList(List<PillAppearance> appearances) {

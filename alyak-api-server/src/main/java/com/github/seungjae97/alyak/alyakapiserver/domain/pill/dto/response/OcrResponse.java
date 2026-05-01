@@ -4,5 +4,6 @@ import java.util.List;
 
 public record OcrResponse(
         String shape,
-        List<String> texts
+        List<String> texts,
+        String color
 ) {}

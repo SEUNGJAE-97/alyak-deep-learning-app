@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,6 +44,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,9 +59,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.ImageLoader
 import coil.compose.AsyncImage
@@ -73,6 +77,7 @@ import com.alyak.detector.feature.pill.data.model.toPill
 import com.alyak.detector.feature.pill.ui.search.components.PillInfoBox
 import com.alyak.detector.feature.pill.ui.search.components.TextPlaceholder
 import com.valentinilk.shimmer.shimmer
+import kotlinx.coroutines.launch
 import java.util.Collections.emptyList
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,6 +97,7 @@ fun ResultScreen(
     val isLoading = remember { mutableStateOf(true) }
     var showResultSheet by remember { mutableStateOf(false) }
     val resultSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetScope = rememberCoroutineScope()
     val imageLoader = remember {
         ImageLoader.Builder(context)
             .components {
@@ -127,9 +133,11 @@ fun ResultScreen(
         }
     }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(Color(0xFFF8F9FA))) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FA))
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // 1. 이미지 및 결과 영역
             Box(
@@ -294,20 +302,15 @@ fun ResultScreen(
     if (showResultSheet) {
         ModalBottomSheet(
             onDismissRequest = { showResultSheet = false },
-            sheetState = resultSheetState
+            sheetState = resultSheetState,
+            containerColor = Color.White,
+            tonalElevation = 0.dp
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 12.dp)
             ) {
-                Text(
-                    text = "인식 결과",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
                 when {
                     isSending -> {
                         Column(
@@ -332,19 +335,37 @@ fun ResultScreen(
 
                     sendError != null -> {
                         Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 250.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Text(
-                                text = sendError ?: "결과를 불러오지 못했습니다.",
-                                color = colorResource(R.color.RealRed),
-                                style = MaterialTheme.typography.bodyMedium
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .padding(bottom = 16.dp)
                             )
-                            Button(
+                            Text(
+                                text = "데이터를 불러오지 못했습니다.",
+                                fontSize = 16.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                            IconButton(
                                 onClick = { viewModel.sendImage() },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.size(56.dp),
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = Color(0xFF6200EE),
+                                    contentColor = Color.White
+                                )
                             ) {
-                                Text("다시 전송하기")
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "다시 전송하기"
+                                )
                             }
                         }
                     }
@@ -361,7 +382,11 @@ fun ResultScreen(
                                 PillInfoBox(
                                     pillInfo = item.toPill(),
                                     onClick = {
-                                        navController.navigate("PillDetailScreen/${item.pillId}")
+                                        sheetScope.launch {
+                                            resultSheetState.hide()
+                                            showResultSheet = false
+                                            navController.navigate("PillDetailScreen/${item.pillId}")
+                                        }
                                     }
                                 )
                             }
