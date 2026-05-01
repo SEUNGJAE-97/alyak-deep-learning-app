@@ -45,10 +45,10 @@ class CameraViewModel @Inject constructor(
     }
 
     fun setDetectedPills(originalBitmap: Bitmap, detections: List<PillDetection>) {
+        _detections.value = detections
         viewModelScope.launch {
             val cropped = cropDetectedPills(originalBitmap, detections)
             _detectedPillBitmaps.value = cropped
-            _detections.value = detections
         }
     }
 

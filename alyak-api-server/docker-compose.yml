@@ -117,20 +117,20 @@ services:
     networks:
       - alyak-network
 
-  fast-api:
-    build:
-      context: ../Pill-Recognition-Pipeline
-      dockerfile: Dockerfile
-    ports:
-      - "8001:8000"
-    volumes:
-      - ../Pill-Recognition-Pipeline:/app
-      - ../shared-images:/app/shared-images
-    environment:
-      - PYTHONPATH=/app
-      - TRAINING_RUNS_ROOT=/app/shared-images/model-runs
-    networks:
-      - alyak-network
+#  fast-api:
+#    build:
+#      context: ../Pill-Recognition-Pipeline
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8001:8000"
+#    volumes:
+#      - ../Pill-Recognition-Pipeline:/app
+#      - ../shared-images:/app/shared-images
+#    environment:
+#      - PYTHONPATH=/app
+#      - TRAINING_RUNS_ROOT=/app/shared-images/model-runs
+#    networks:
+#      - alyak-network
 
 volumes:
   mysql_data:
