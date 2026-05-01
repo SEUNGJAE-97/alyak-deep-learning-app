@@ -40,6 +40,17 @@ data class MedicineInfoDto(
     @SerializedName("pillImg") val img: String?
 )
 
+fun MedicineInfoDto.toPill(): Pill {
+    return Pill(
+        name = name,
+        classification = classification,
+        manufacturer = manufacturer,
+        pid = pillId.toString(),
+        pillType = category,
+        pillImg = img
+    )
+}
+
 /**
  * 복용 정보를 담는 데이터 클래스.
  *

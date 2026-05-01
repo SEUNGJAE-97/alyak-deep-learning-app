@@ -1,6 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.controller;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.RecognizeBoxRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.service.PillService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,9 +45,10 @@ public class PillController {
     @PostMapping(value = "/recognize", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "알약 이미지 인식", description = "Fast API 서버로 이미지를 전달하고, 반환 받은 식별자로 DB조회 후 정보 반환한다.")
     public ResponseEntity<?> recognizePill(
-            @RequestPart("images") List<MultipartFile> images
+            @RequestPart("images") List<MultipartFile> images,
+            @RequestPart(value = "boxes", required = false) List<RecognizeBoxRequest> boxes
     ) {
-        return ResponseEntity.ok(pillService.recognizeAndFindDetails(images));
+        return ResponseEntity.ok(pillService.recognizeAndFindDetails(images, boxes));
     }
 
     @GetMapping("/autocomplete")

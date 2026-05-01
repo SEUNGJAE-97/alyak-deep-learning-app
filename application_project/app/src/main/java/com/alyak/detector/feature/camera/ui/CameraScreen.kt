@@ -296,7 +296,6 @@ fun CameraOverlay(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-//                verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = onCaptureClick,

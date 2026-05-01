@@ -42,3 +42,5 @@ download_*.tar
 file_list.json
 *.part*
 
+# 기타
+data/**

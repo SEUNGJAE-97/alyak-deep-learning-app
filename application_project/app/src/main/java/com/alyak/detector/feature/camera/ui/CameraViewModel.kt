@@ -33,6 +33,8 @@ class CameraViewModel @Inject constructor(
 
     private val _detectedPillBitmaps = MutableStateFlow<List<Bitmap>>(emptyList())
     val detectedPillBitmaps = _detectedPillBitmaps.asStateFlow()
+    private val _detections = MutableStateFlow<List<PillDetection>>(emptyList())
+    val detections = _detections.asStateFlow()
 
     fun setCameraPermission(granted: Boolean) {
         cameraPermission.value = granted
@@ -46,12 +48,14 @@ class CameraViewModel @Inject constructor(
         viewModelScope.launch {
             val cropped = cropDetectedPills(originalBitmap, detections)
             _detectedPillBitmaps.value = cropped
+            _detections.value = detections
         }
     }
 
     fun sendImage() {
         val originalBitmap = _capturedBitmap.value ?: return
         val detectedImages = _detectedPillBitmaps.value
+        val detections = _detections.value
 
         viewModelScope.launch {
             _isSending.value = true
@@ -59,7 +63,8 @@ class CameraViewModel @Inject constructor(
             try {
                 val result = cameraRepo.sendImage(
                     originalImage = originalBitmap,
-                    detectedImages = detectedImages
+                    detectedImages = detectedImages,
+                    detections = detections
                 )
                 _sendResult.value = result
             } catch (e: Exception) {
