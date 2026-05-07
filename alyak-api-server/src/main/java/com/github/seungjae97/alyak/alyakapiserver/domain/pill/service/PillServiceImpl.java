@@ -468,8 +468,12 @@ public class PillServiceImpl implements PillService {
 
     private List<SimplePillInfo> searchByTextAndShape(List<String> texts, String shape, String color) {
         // 1단계: pill_front 또는 pill_back에서 텍스트 검색
-        List<PillAppearance> textResults = texts.stream()
-                .flatMap(text -> pillAppearanceRepository.findByPillTextWithPill(text).stream())
+        List<String> processedTexts = preprocessTexts(texts);
+        if (processedTexts.isEmpty()) return List.of();
+
+        List<PillAppearance> textResults = pillAppearanceRepository
+                .findByPillTextsWithPill(processedTexts)
+                .stream()
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -639,5 +643,37 @@ public class PillServiceImpl implements PillService {
                 OcrResponse.class
         );
         return response.getBody();
+    }
+
+    private List<String> preprocessTexts(List<String> texts) {
+        if (texts == null) return List.of();
+        return texts.stream()
+                .filter(t -> t != null && !t.isBlank())
+                .filter(t -> !t.contains("마크") && !t.contains("로고"))
+                .flatMap(t -> expandImprint(t).stream())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private List<String> expandImprint(String text) {
+        List<String> variants = new ArrayList<>();
+        variants.add(text);
+        String upper = text.toUpperCase();
+        if (upper.replaceAll("\\s+", "").length() <= 3) {
+            String variant = upper
+                    .replace("0", "O")
+                    .replace("O", "0")
+                    .replace("1", "I")
+                    .replace("I", "1")
+                    .replace("5", "S")
+                    .replace("Λ", "A")
+                    .replace("A", "Λ")
+                    .replace("α", "A")
+                    .replace("S", "5");
+
+            variants.add(variant);
+        }
+        variants.add(upper.replaceAll("\\s+", ""));
+        return variants.stream().distinct().collect(Collectors.toList());
     }
 }

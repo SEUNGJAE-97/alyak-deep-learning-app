@@ -16,4 +16,8 @@ public interface PillAppearanceRepository extends JpaRepository<PillAppearance, 
            OR LOWER(a.pillBack)  LIKE LOWER(CONCAT('%', :text, '%'))
     """)
     List<PillAppearance> findByPillTextWithPill(@Param("text") String text);
+
+    @Query("SELECT DISTINCT pa FROM PillAppearance pa JOIN FETCH pa.pill " +
+            "WHERE pa.pillFront IN :texts OR pa.pillBack IN :texts")
+    List<PillAppearance> findByPillTextsWithPill(@Param("texts") List<String> texts);
 }
