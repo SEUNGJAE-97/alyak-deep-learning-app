@@ -42,3 +42,6 @@ download_*.tar
 file_list.json
 *.part*
 
+*/data
+**/.vite
+**/.venv/
