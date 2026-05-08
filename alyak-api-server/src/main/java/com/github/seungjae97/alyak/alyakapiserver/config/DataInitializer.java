@@ -3,19 +3,13 @@ package com.github.seungjae97.alyak.alyakapiserver.config;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillAppearance;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillColor;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillShape;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository.PillAppearanceRepository;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository.PillColorRepository;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository.PillRepository;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository.PillShapeRepository;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository.*;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
@@ -30,7 +24,8 @@ import org.springframework.stereotype.Component;
 public class DataInitializer {
 
     private final PillRepository pillRepository;
-    private final PillAppearanceRepository pillAppearanceRepository;
+    private final PillRepositoryImpl pillRepositoryImpl;
+    private final PillAppearanceRepositoryImpl pillAppearanceRepositoryImpl;
     private final PillColorRepository pillColorRepository;
     private final PillShapeRepository pillShapeRepository;
 
@@ -47,7 +42,7 @@ public class DataInitializer {
     }
 
     private void loadData() throws Exception {
-        Resource resource = new ClassPathResource("data/pill_data.csv");
+        Resource resource = new ClassPathResource("data/pill_data.csv"); // 정제된 파일명 확인
 
         Map<String, PillColor> colorCache = new HashMap<>();
         Map<String, PillShape> shapeCache = new HashMap<>();
@@ -56,82 +51,70 @@ public class DataInitializer {
         List<PillAppearance> appearances = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) { // 인코딩 확인 필요
+                new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
 
             String line;
             boolean isFirstLine = true;
 
             while ((line = reader.readLine()) != null) {
-                if (isFirstLine) { isFirstLine = false; continue; } // 헤더 스킵
+                if (isFirstLine) { isFirstLine = false; continue; }
 
                 String[] cols = line.split(",", -1);
-                if (cols.length < 10) continue;
+                if (cols.length < 24) continue;
 
-                String pillId = cols[0].trim();
-                String pillName = cols[1].trim();
-                String manufacturer = cols[3].trim();
-                String description = cols[4].trim();
-                String imgUrl = cols[5].trim();
-                String pillFront = nullIfDash(cols[6]);
-                String pillBack = nullIfDash(cols[7]);
-                String pillType = cols[8].trim();
-                String colorFront = nullIfDash(cols[9]);
-                String colorBack = nullIfDash(cols[10]);
-                String lineFront = nullIfDash(cols[11]);
-                String lineBack = nullIfDash(cols[12]);
-                String markFront = nullIfDash(cols[22]);
-                String markBack = nullIfDash(cols[23]);
+                Long currentPillId = Long.parseLong(cols[0].trim());
 
-                PillColor color1 = getOrCreateColor(colorCache, colorFront);
-                PillColor color2 = getOrCreateColor(colorCache, colorBack);
+                // 1. Pill 생성 (중복 체크 없이 바로 추가)
+                pills.add(Pill.builder()
+                        .id(currentPillId)
+                        .pillName(cols[1].trim())
+                        .pillManufacturer(cols[3].trim())
+                        .pillImg(cols[5].trim())
+                        .pillDescription(cols[4].trim())
+                        .build());
 
-                // PillShape 캐시에서 조회 or 생성
-                PillShape shape = getOrCreateShape(shapeCache, pillType);
+                // 2. 관련 캐시 및 외형 정보 생성
+                PillColor color1 = getOrCreateColor(colorCache, nullIfDash(cols[9]));
+                PillColor color2 = getOrCreateColor(colorCache, nullIfDash(cols[10]));
+                PillShape shape = getOrCreateShape(shapeCache, cols[8].trim());
 
-                // Pill 생성
-                Pill pill = Pill.builder()
-                        .id(Long.parseLong(pillId))
-                        .pillName(pillName)
-                        .pillManufacturer(manufacturer)
-                        .pillImg(imgUrl)
-                        .pillDescription(description)
-                        .build();
-                pills.add(pill);
-
-                // PillAppearance 생성
-                PillAppearance appearance = PillAppearance.builder()
-                        .pillId(Long.parseLong(pillId))
-                        .pillFront(pillFront)
-                        .pillBack(pillBack)
-                        .pillClassification(description)
-                        .pillType(pillType)
+                appearances.add(PillAppearance.builder()
+                        .pillId(currentPillId)
+                        .pillFront(nullIfDash(cols[6]))
+                        .pillBack(nullIfDash(cols[7]))
+                        .pillClassification(cols[4].trim())
+                        .pillType(cols[8].trim())
                         .shapeId(shape != null ? shape.getId() : null)
                         .colorClass1Id(color1 != null ? color1.getId() : null)
                         .colorClass2Id(color2 != null ? color2.getId() : null)
-                        .lineFront(lineFront)
-                        .lineBack(lineBack)
-                        .markCodeFrontAnal(markFront)
-                        .markCodeBackAnal(markBack)
-                        .build();
-                appearances.add(appearance);
+                        .lineFront(nullIfDash(cols[11]))
+                        .lineBack(nullIfDash(cols[12]))
+                        .markCodeFrontAnal(nullIfDash(cols[22]))
+                        .markCodeBackAnal(nullIfDash(cols[23]))
+                        .build());
 
+                // 3. 1,000건 단위 배치 저장
                 if (pills.size() >= 1000) {
-                    pillColorRepository.saveAll(colorCache.values());
-                    pillShapeRepository.saveAll(shapeCache.values());
-                    pillRepository.saveAll(pills);
-                    pillAppearanceRepository.saveAll(appearances);
-                    pills.clear();
-                    appearances.clear();
+                    flushData(colorCache, shapeCache, pills, appearances);
                 }
             }
 
             if (!pills.isEmpty()) {
-                pillColorRepository.saveAll(colorCache.values());
-                pillShapeRepository.saveAll(shapeCache.values());
-                pillRepository.saveAll(pills);
-                pillAppearanceRepository.saveAll(appearances);
+                flushData(colorCache, shapeCache, pills, appearances);
             }
         }
+    }
+
+    private void flushData(Map<String, PillColor> colors, Map<String, PillShape> shapes,
+                           List<Pill> pills, List<PillAppearance> apps) {
+        pillColorRepository.saveAll(colors.values());
+        pillShapeRepository.saveAll(shapes.values());
+
+        pillRepositoryImpl.saveAll(pills);
+        pills.clear();
+
+        pillAppearanceRepositoryImpl.saveAll(apps);
+        apps.clear();
     }
 
     private PillColor getOrCreateColor(Map<String, PillColor> cache, String colorName) {

@@ -3,6 +3,7 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillDetailResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.SimplePillInfo;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;

@@ -37,3 +37,4 @@ build/
 
 # Firebase Admin SDK service account key
 *firebase-adminsdk*.json
+*/pill-images/*
