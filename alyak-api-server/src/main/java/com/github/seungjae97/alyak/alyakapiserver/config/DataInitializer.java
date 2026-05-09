@@ -4,48 +4,67 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillAppearance;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillColor;
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillShape;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.*;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository.*;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
-@RequiredArgsConstructor
 public class DataInitializer {
-
+    private final Executor dbExecutor;
     private final PillRepository pillRepository;
     private final PillRepositoryImpl pillRepositoryImpl;
     private final PillAppearanceRepositoryImpl pillAppearanceRepositoryImpl;
     private final PillColorRepository pillColorRepository;
     private final PillShapeRepository pillShapeRepository;
 
+    public DataInitializer(@Qualifier("dbExecutor") Executor dbExecutor,
+                           PillRepository pillRepository,
+                           PillRepositoryImpl pillRepositoryImpl,
+                           PillAppearanceRepositoryImpl pillAppearanceRepositoryImpl,
+                           PillColorRepository pillColorRepository,
+                           PillShapeRepository pillShapeRepository) {
+        this.dbExecutor = dbExecutor;
+        this.pillRepository = pillRepository;
+        this.pillRepositoryImpl = pillRepositoryImpl;
+        this.pillAppearanceRepositoryImpl = pillAppearanceRepositoryImpl;
+        this.pillColorRepository = pillColorRepository;
+        this.pillShapeRepository = pillShapeRepository;
+    }
+
     @PostConstruct
     @Transactional
     public void init() {
         if (pillRepository.count() > 0) return;
+        Map<String, PillColor> colorCache = pillColorRepository.findAll()
+                .stream()
+                .collect(Collectors.toMap(PillColor::getColorName, c -> c));
 
+        Map<String, PillShape> shapeCache = pillShapeRepository.findAll()
+                .stream()
+                .collect(Collectors.toMap(PillShape::getShapeName, s -> s));
         try {
-            loadData();
+            loadData(colorCache, shapeCache);
         } catch (Exception e) {
             throw new RuntimeException("데이터 초기화 실패", e);
         }
     }
 
-    private void loadData() throws Exception {
-        Resource resource = new ClassPathResource("data/pill_data.csv"); // 정제된 파일명 확인
-
-        Map<String, PillColor> colorCache = new HashMap<>();
-        Map<String, PillShape> shapeCache = new HashMap<>();
+    private void loadData(Map<String, PillColor> colorCache, Map<String, PillShape> shapeCache) throws Exception {
+        Resource resource = new ClassPathResource("data/pill_data.csv");
 
         List<Pill> pills = new ArrayList<>();
         List<PillAppearance> appearances = new ArrayList<>();
@@ -57,14 +76,17 @@ public class DataInitializer {
             boolean isFirstLine = true;
 
             while ((line = reader.readLine()) != null) {
-                if (isFirstLine) { isFirstLine = false; continue; }
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
 
                 String[] cols = line.split(",", -1);
                 if (cols.length < 24) continue;
 
                 Long currentPillId = Long.parseLong(cols[0].trim());
 
-                // 1. Pill 생성 (중복 체크 없이 바로 추가)
+                // 1. Pill 생성
                 pills.add(Pill.builder()
                         .id(currentPillId)
                         .pillName(cols[1].trim())
@@ -95,26 +117,32 @@ public class DataInitializer {
 
                 // 3. 1,000건 단위 배치 저장
                 if (pills.size() >= 1000) {
-                    flushData(colorCache, shapeCache, pills, appearances);
+                    flushData(pills, appearances);
                 }
             }
 
             if (!pills.isEmpty()) {
-                flushData(colorCache, shapeCache, pills, appearances);
+                flushData(pills, appearances);
             }
         }
     }
 
-    private void flushData(Map<String, PillColor> colors, Map<String, PillShape> shapes,
-                           List<Pill> pills, List<PillAppearance> apps) {
-        pillColorRepository.saveAll(colors.values());
-        pillShapeRepository.saveAll(shapes.values());
-
-        pillRepositoryImpl.saveAll(pills);
+    private void flushData(List<Pill> pills, List<PillAppearance> apps) {
+        List<Pill> pillsCopy = new ArrayList<>(pills);
+        List<PillAppearance> appsCopy = new ArrayList<>(apps);
         pills.clear();
-
-        pillAppearanceRepositoryImpl.saveAll(apps);
         apps.clear();
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                pillRepositoryImpl.saveAll(pillsCopy);
+                pillAppearanceRepositoryImpl.saveAll(appsCopy);
+            } catch (Exception e) {
+                log.error("", e);
+            }
+            pills.clear();
+            apps.clear();
+        }, dbExecutor);
     }
 
     private PillColor getOrCreateColor(Map<String, PillColor> cache, String colorName) {
