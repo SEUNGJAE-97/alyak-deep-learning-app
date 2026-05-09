@@ -23,27 +23,28 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class DataInitializer {
-    private final Executor dbExecutor;
+//    private final Executor dbExecutor;
     private final PillRepository pillRepository;
     private final PillRepositoryImpl pillRepositoryImpl;
     private final PillAppearanceRepositoryImpl pillAppearanceRepositoryImpl;
     private final PillColorRepository pillColorRepository;
     private final PillShapeRepository pillShapeRepository;
 
-    public DataInitializer(@Qualifier("dbExecutor") Executor dbExecutor,
-                           PillRepository pillRepository,
-                           PillRepositoryImpl pillRepositoryImpl,
-                           PillAppearanceRepositoryImpl pillAppearanceRepositoryImpl,
-                           PillColorRepository pillColorRepository,
-                           PillShapeRepository pillShapeRepository) {
-        this.dbExecutor = dbExecutor;
-        this.pillRepository = pillRepository;
-        this.pillRepositoryImpl = pillRepositoryImpl;
-        this.pillAppearanceRepositoryImpl = pillAppearanceRepositoryImpl;
-        this.pillColorRepository = pillColorRepository;
-        this.pillShapeRepository = pillShapeRepository;
-    }
+//    public DataInitializer(@Qualifier("dbExecutor") Executor dbExecutor,
+//                           PillRepository pillRepository,
+//                           PillRepositoryImpl pillRepositoryImpl,
+//                           PillAppearanceRepositoryImpl pillAppearanceRepositoryImpl,
+//                           PillColorRepository pillColorRepository,
+//                           PillShapeRepository pillShapeRepository) {
+//        this.dbExecutor = dbExecutor;
+//        this.pillRepository = pillRepository;
+//        this.pillRepositoryImpl = pillRepositoryImpl;
+//        this.pillAppearanceRepositoryImpl = pillAppearanceRepositoryImpl;
+//        this.pillColorRepository = pillColorRepository;
+//        this.pillShapeRepository = pillShapeRepository;
+//    }
 
     @PostConstruct
     @Transactional
@@ -127,20 +128,26 @@ public class DataInitializer {
         }
     }
 
+//        private void flushData(List<Pill> pills, List<PillAppearance> apps) {
+//        List<Pill> pillsCopy = new ArrayList<>(pills);
+//        List<PillAppearance> appsCopy = new ArrayList<>(apps);
+//        pills.clear();
+//        apps.clear();
+//
+//        CompletableFuture.runAsync(() -> {
+//            try {
+//                pillRepositoryImpl.saveAll(pillsCopy);
+//                pillAppearanceRepositoryImpl.saveAll(appsCopy);
+//            } catch (Exception e) {
+//                log.error("", e);
+//            }
+//        }, dbExecutor);
+//    }
     private void flushData(List<Pill> pills, List<PillAppearance> apps) {
-        List<Pill> pillsCopy = new ArrayList<>(pills);
-        List<PillAppearance> appsCopy = new ArrayList<>(apps);
+        pillRepositoryImpl.saveAll(new ArrayList<>(pills));
+        pillAppearanceRepositoryImpl.saveAll(new ArrayList<>(apps));
         pills.clear();
         apps.clear();
-
-        CompletableFuture.runAsync(() -> {
-            try {
-                pillRepositoryImpl.saveAll(pillsCopy);
-                pillAppearanceRepositoryImpl.saveAll(appsCopy);
-            } catch (Exception e) {
-                log.error("", e);
-            }
-        }, dbExecutor);
     }
 
     private PillColor getOrCreateColor(Map<String, PillColor> cache, String colorName) {
