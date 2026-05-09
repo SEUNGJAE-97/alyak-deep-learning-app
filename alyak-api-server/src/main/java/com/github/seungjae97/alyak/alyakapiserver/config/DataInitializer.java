@@ -140,8 +140,6 @@ public class DataInitializer {
             } catch (Exception e) {
                 log.error("", e);
             }
-            pills.clear();
-            apps.clear();
         }, dbExecutor);
     }
 
