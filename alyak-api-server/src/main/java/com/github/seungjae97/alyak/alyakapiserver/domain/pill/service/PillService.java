@@ -1,6 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.RecognizeBoxRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.PillDetailResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.SimplePillInfo;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillAppearance;
@@ -30,7 +31,7 @@ public interface PillService {
      * */
     PillDetailResponse detailPill(Long pillId);
 
-    List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images);
+    List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images, List<RecognizeBoxRequest> boxes);
 
     List<String> autocomplete(String keyword);
 

@@ -17,7 +17,8 @@ class ScheduleBackupLocalRepository @Inject constructor(
 ) {
 
     suspend fun insertOrReplaceFromServer(responses: List<ScheduleBackupResponse>) {
-        val entities = responses.mapNotNull { it.toEntityOrNull() }
+        val syncedAtMillis = System.currentTimeMillis()
+        val entities = responses.mapNotNull { it.toEntityOrNull(minCreatedAtEpochMillis = syncedAtMillis) }
         if (entities.isNotEmpty()) {
             scheduleBackupDao.insertAll(entities)
         }
@@ -28,8 +29,9 @@ class ScheduleBackupLocalRepository @Inject constructor(
      * 서버에 없는 로컬 행은 제거됩니다.
      */
     suspend fun replaceAllFromServerRestore(responses: List<ScheduleBackupResponse>) {
+        val restoredAtMillis = System.currentTimeMillis()
         scheduleBackupDao.deleteAll()
-        val entities = responses.mapNotNull { it.toEntityOrNull() }
+        val entities = responses.mapNotNull { it.toEntityOrNull(minCreatedAtEpochMillis = restoredAtMillis) }
         if (entities.isNotEmpty()) {
             scheduleBackupDao.insertAll(entities)
         }
@@ -38,14 +40,15 @@ class ScheduleBackupLocalRepository @Inject constructor(
     suspend fun getAllForAlarms(): List<ScheduleBackupEntity> = scheduleBackupDao.getAll()
 }
 
-private fun ScheduleBackupResponse.toEntityOrNull(): ScheduleBackupEntity? {
+private fun ScheduleBackupResponse.toEntityOrNull(minCreatedAtEpochMillis: Long): ScheduleBackupEntity? {
     val id = scheduleId ?: return null
     val name = pillName ?: return null
     val d = dosage ?: return null
     val (h, m) = scheduledTime.toHourMinuteOrNull() ?: return null
     val start = startDate.toEpochDayOrNull() ?: return null
     val end = endDate.toEpochDayOrNull() ?: return null
-    val created = createdAt.toEpochMillisOrNull() ?: System.currentTimeMillis()
+    val parsedCreated = createdAt.toEpochMillisOrNull() ?: minCreatedAtEpochMillis
+    val created = maxOf(parsedCreated, minCreatedAtEpochMillis)
     return ScheduleBackupEntity(
         scheduleId = id,
         pillId = pillId,

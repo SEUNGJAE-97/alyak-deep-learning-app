@@ -7,35 +7,45 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,9 +59,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.ImageLoader
 import coil.compose.AsyncImage
@@ -60,10 +72,15 @@ import coil.decode.ImageDecoderDecoder
 import com.alyak.detector.R
 import com.alyak.detector.feature.camera.data.model.PillDetection
 import com.alyak.detector.feature.camera.data.model.PillDetector
+import com.alyak.detector.feature.pill.data.model.Pill
+import com.alyak.detector.feature.pill.data.model.toPill
+import com.alyak.detector.feature.pill.ui.search.components.PillInfoBox
 import com.alyak.detector.feature.pill.ui.search.components.TextPlaceholder
 import com.valentinilk.shimmer.shimmer
+import kotlinx.coroutines.launch
 import java.util.Collections.emptyList
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultScreen(
     navController: NavController,
@@ -74,8 +91,13 @@ fun ResultScreen(
 
     val bitmap by viewModel.capturedBitmap.collectAsState()
     val isSending by viewModel.isSending.collectAsState()
+    val sendResult by viewModel.sendResult.collectAsState()
+    val sendError by viewModel.sendError.collectAsState()
     val detectedObjects = remember { mutableStateOf<List<PillDetection>>(emptyList()) }
     val isLoading = remember { mutableStateOf(true) }
+    var showResultSheet by remember { mutableStateOf(false) }
+    val resultSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetScope = rememberCoroutineScope()
     val imageLoader = remember {
         ImageLoader.Builder(context)
             .components {
@@ -105,7 +127,17 @@ fun ResultScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF8F9FA))) {
+    LaunchedEffect(isSending, sendResult, sendError) {
+        if (isSending || sendResult != null || sendError != null) {
+            showResultSheet = true
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FA))
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // 1. 이미지 및 결과 영역
             Box(
@@ -190,7 +222,7 @@ fun ResultScreen(
                     Row(
                         modifier = Modifier
                             .padding(16.dp)
-                            .then(if(isLoading.value) Modifier.shimmer() else Modifier),
+                            .then(if (isLoading.value) Modifier.shimmer() else Modifier),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -234,7 +266,9 @@ fun ResultScreen(
                 ) {
                     OutlinedButton(
                         onClick = { navController.popBackStack() },
-                        modifier = Modifier.weight(1f).height(56.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = Color.Black
@@ -244,8 +278,13 @@ fun ResultScreen(
                     }
 
                     Button(
-                        onClick = { viewModel.sendImage() },
-                        modifier = Modifier.weight(1f).height(56.dp),
+                        onClick = {
+                            showResultSheet = true
+                            viewModel.sendImage()
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
                         enabled = detectedObjects.value.isNotEmpty() && !isLoading.value && !isSending,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
@@ -260,6 +299,117 @@ fun ResultScreen(
         }
     }
 
+    if (showResultSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showResultSheet = false },
+            sheetState = resultSheetState,
+            containerColor = Color.White,
+            tonalElevation = 0.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                when {
+                    isSending -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            repeat(5) {
+                                PillInfoBox(
+                                    pillInfo = Pill(
+                                        name = "",
+                                        classification = "",
+                                        manufacturer = "",
+                                        pid = "",
+                                        pillType = "",
+                                        pillImg = ""
+                                    ),
+                                    isLoading = true
+                                )
+                            }
+                        }
+                    }
+
+                    sendError != null -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 250.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .padding(bottom = 16.dp)
+                            )
+                            Text(
+                                text = "데이터를 불러오지 못했습니다.",
+                                fontSize = 16.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                            IconButton(
+                                onClick = { viewModel.sendImage() },
+                                modifier = Modifier.size(56.dp),
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = Color(0xFF6200EE),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "다시 전송하기"
+                                )
+                            }
+                        }
+                    }
+
+                    !sendResult.isNullOrEmpty() -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 440.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
+                            items(sendResult ?: emptyList()) { item ->
+                                PillInfoBox(
+                                    pillInfo = item.toPill(),
+                                    onClick = {
+                                        sheetScope.launch {
+                                            resultSheetState.hide()
+                                            showResultSheet = false
+                                            navController.navigate("PillDetailScreen/${item.pillId}")
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    sendResult != null -> {
+                        Text(
+                            text = "인식된 알약 정보가 없습니다.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    else -> {
+                        Text(
+                            text = "결과 전송을 누르면 인식 결과가 표시됩니다.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

@@ -1,10 +1,14 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.RecognizeBoxRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.service.PillService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +20,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/pill")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "08.알약", description = "알약 정보 관련 API")
 public class PillController {
 
     private final PillService pillService;
+    private final ObjectMapper objectMapper;
 
     @GetMapping("/find")
     @Operation(summary = "검색", description = "알약명을 기준으로 세부정보를 조회한다.")
@@ -44,9 +50,19 @@ public class PillController {
     @PostMapping(value = "/recognize", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "알약 이미지 인식", description = "Fast API 서버로 이미지를 전달하고, 반환 받은 식별자로 DB조회 후 정보 반환한다.")
     public ResponseEntity<?> recognizePill(
-            @RequestPart("images") List<MultipartFile> images
+            @RequestPart("images") List<MultipartFile> images,
+            @RequestPart(value = "boxes", required = false) String boxesJson
     ) {
-        return ResponseEntity.ok(pillService.recognizeAndFindDetails(images));
+        List<RecognizeBoxRequest> boxes = List.of();
+        if (boxesJson != null && !boxesJson.isBlank()) {
+            try {
+                boxes = objectMapper.readValue(boxesJson, new TypeReference<List<RecognizeBoxRequest>>() {});
+            } catch (Exception e) {
+                log.warn("boxes 파싱 실패: {}", boxesJson, e);
+                throw new IllegalArgumentException("boxes JSON 파싱에 실패했습니다.");
+            }
+        }
+        return ResponseEntity.ok(pillService.recognizeAndFindDetails(images, boxes));
     }
 
     @GetMapping("/autocomplete")

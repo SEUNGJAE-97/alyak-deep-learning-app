@@ -1,8 +1,12 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.service;
 
-import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.OcrResult;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.PillSearchRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.request.RecognizeBoxRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.dto.response.*;
+import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.entity.DataStatus;
+import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.entity.PillImageBox;
+import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.entity.PillImageData;
+import com.github.seungjae97.alyak.alyakapiserver.domain.labeling.repository.PillImageDataRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillAppearance;
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.PillColor;
@@ -33,14 +37,15 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.data.domain.Range;
-import org.springframework.data.redis.connection.Limit;
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.search.FTSearchParams;
 import redis.clients.jedis.search.SearchResult;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -57,8 +62,9 @@ public class PillServiceImpl implements PillService {
     private final PillColorRepository pillColorRepository;
     private final PillShapeRepository pillShapeRepository;
     private final RestTemplateService restTemplateService;
+    private final PillImageDataRepository pillImageDataRepository;
 
-    @Value("${ocr.server.url:http://localhost:8000}")
+    @Value("${OCR_SERVER_URL}")
     private String ocrServerUrl;
 
     @Qualifier("pillIdentifyTaskScheduler")
@@ -107,6 +113,9 @@ public class PillServiceImpl implements PillService {
 
     @Value("${OPEN_DATA_KEY}")
     private String serviceKey;
+
+    @Value("${app.upload.root-path:./uploads}")
+    private String uploadRootPath;
 
     @Override
     public List<SimplePillInfo> findPill(String pillName) {
@@ -365,48 +374,206 @@ public class PillServiceImpl implements PillService {
     }
 
 
-    public List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images) {
+    public List<SimplePillInfo> recognizeAndFindDetails(List<MultipartFile> images, List<RecognizeBoxRequest> boxes) {
         List<SimplePillInfo> results = new ArrayList<>();
-        log.info("[OCR] 이미지 {}장 처리 시작", images.size());
-        for (MultipartFile image : images) {
+        if (images == null || images.isEmpty()) {
+            return List.of();
+        }
+
+        saveOriginalImage(images.get(0), boxes);
+
+        List<MultipartFile> croppedImages = images.size() > 1
+                ? images.subList(1, images.size())
+                : List.of();
+        if (croppedImages.isEmpty()) {
+            log.info("[VLM] 크롭 이미지가 없어 FastAPI 호출을 건너뜁니다.");
+            return List.of();
+        }
+
+        for (MultipartFile image : croppedImages) {
             try {
-                // 1. FastAPI 호출
                 OcrResponse ocrResponse = callFastApi(image);
-                log.info("[OCR] FastAPI 응답: filename={}, results 개수={}",
-                        ocrResponse != null ? ocrResponse.filename() : null,
-                        ocrResponse != null && ocrResponse.results() != null ? ocrResponse.results().size() : 0);
-                if (ocrResponse != null && ocrResponse.results() != null) {
-                    // 2. 결과(알약명)로 DB 조회
-                    for (OcrResult ocrResult : ocrResponse.results()) {
-                        log.debug("[OCR] text={}, confidence={}", ocrResult.text(), ocrResult.confidence());
-                        if (ocrResult.confidence() > 0.5f) {
-                            List<SimplePillInfo> found = pillRepository.findByPillNameWithType(ocrResult.text());
-                            log.info("[OCR] DB 조회: text='{}', confidence={}, 매칭 수={}",
-                                    ocrResult.text(), ocrResult.confidence(), found.size());
-                            found.stream()
-                                    .map(pill -> SimplePillInfo.builder()
-                                            .pillId(pill.getPillId())
-                                            .pillName(pill.getPillName())
-                                            .manufacturer(pill.getManufacturer())
-                                            .classification(pill.getClassification())
-                                            .pillType(pill.getPillType())
-                                            .pillImg(pill.getPillImg())
-                                            .build()
-                                    )
-                                    .forEach(results::add);
-                        } else {
-                            log.info("[OCR] confidence 낮음 제외: text='{}', confidence={} (임계값 0.5)",
-                                    ocrResult.text(), ocrResult.confidence());
-                        }
-                    }
-                }
+                log.info("[VLM] FastAPI 응답: shape={}, texts={}, color={}",
+                        ocrResponse != null ? ocrResponse.shape() : null,
+                        ocrResponse != null ? ocrResponse.texts() : null,
+                        ocrResponse != null ? ocrResponse.color() : null);
+
+                if (ocrResponse == null || ocrResponse.texts() == null) continue;
+
+                List<SimplePillInfo> found = searchByTextAndShape(
+                        ocrResponse.texts(),
+                        ocrResponse.shape(),
+                        ocrResponse.color()
+                );
+
+                found.stream()
+                        .map(pill -> SimplePillInfo.builder()
+                                .pillId(pill.getPillId())
+                                .pillName(pill.getPillName())
+                                .manufacturer(pill.getManufacturer())
+                                .classification(pill.getClassification())
+                                .pillType(pill.getPillType())
+                                .pillImg(pill.getPillImg())
+                                .build()
+                        )
+                        .forEach(results::add);
+
             } catch (Exception e) {
-                log.error("[OCR] 이미지 처리 중 오류: {}", e.getMessage(), e);
+                log.error("[VLM] 이미지 처리 중 오류: {}", e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         }
-        log.info("[OCR] 최종 결과: {}건", results.size());
+
+        log.info("[VLM] 최종 결과: {}건", results.size());
         return results.isEmpty() ? List.of() : results;
+    }
+
+    private void saveOriginalImage(MultipartFile originalImage, List<RecognizeBoxRequest> boxes) {
+        if (originalImage == null || originalImage.isEmpty()) {
+            return;
+        }
+        try {
+            Path originalDir = Path.of(uploadRootPath, "originals");
+            Files.createDirectories(originalDir);
+            String savedName = "original_" + UUID.randomUUID() + ".jpg";
+            Path target = originalDir.resolve(savedName);
+            Files.copy(originalImage.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            String webImagePath = "/uploads/originals/" + savedName;
+            PillImageData imageData = PillImageData.builder()
+                    .imagePath(webImagePath)
+                    .status(DataStatus.INBOX)
+                    .build();
+            if (boxes != null) {
+                for (int i = 0; i < boxes.size(); i++) {
+                    RecognizeBoxRequest box = boxes.get(i);
+                    if (box == null || box.getXMin() == null || box.getYMin() == null
+                            || box.getXMax() == null || box.getYMax() == null) {
+                        continue;
+                    }
+                    imageData.addBox(PillImageBox.builder()
+                            .boxIndex(box.getBoxIndex() == null ? i : box.getBoxIndex())
+                            .xMin(box.getXMin())
+                            .yMin(box.getYMin())
+                            .xMax(box.getXMax())
+                            .yMax(box.getYMax())
+                            .build());
+                }
+            }
+            pillImageDataRepository.save(imageData);
+            log.info("[VLM] 원본 이미지 저장 및 DB기록 완료: file={}, imagePath={}", target, webImagePath);
+        } catch (Exception e) {
+            log.warn("[VLM] 원본 이미지 저장 실패: {}", e.getMessage(), e);
+        }
+    }
+
+    private List<SimplePillInfo> searchByTextAndShape(List<String> texts, String shape, String color) {
+        // 1단계: pill_front 또는 pill_back에서 텍스트 검색
+        List<String> processedTexts = preprocessTexts(texts);
+        if (processedTexts.isEmpty()) return List.of();
+
+        List<PillAppearance> textResults = pillAppearanceRepository
+                .findByPillTextsWithPill(processedTexts)
+                .stream()
+                .distinct()
+                .collect(Collectors.toList());
+
+        log.info("[VLM] 텍스트 검색 결과: {}건", textResults.size());
+
+        if (textResults.isEmpty()) return List.of();
+        if (textResults.size() == 1) return toSimplePillInfoList(textResults);
+
+        // 2단계: shape로 추가 필터링
+        List<PillAppearance> candidates = textResults;
+        if (shape != null && !shape.isBlank()) {
+            Set<Long> shapeIds = getShapeIds(shape);
+
+            if (!shapeIds.isEmpty()) {
+                List<PillAppearance> filtered = textResults.stream()
+                        .filter(a -> shapeIds.contains(a.getShapeId()))
+                        .collect(Collectors.toList());
+
+                log.info("[VLM] shape 필터 후 결과: {}건 (shape={})", filtered.size(), shape);
+                candidates = filtered.isEmpty() ? textResults : filtered;
+            }
+        }
+
+        if (candidates.size() == 1) return toSimplePillInfoList(candidates);
+
+        // 3단계: color 보조 필터링
+        Set<Long> candidateColorIds = getColorCandidateIds(color);
+        if (candidateColorIds != null && !candidateColorIds.isEmpty()) {
+            List<PillAppearance> colorFiltered = candidates.stream()
+                    .filter(a -> (a.getColorClass1Id() != null && candidateColorIds.contains(a.getColorClass1Id()))
+                            || (a.getColorClass2Id() != null && candidateColorIds.contains(a.getColorClass2Id())))
+                    .collect(Collectors.toList());
+            log.info("[VLM] color 필터 후 결과: {}건 (color={})", colorFiltered.size(), color);
+            candidates = colorFiltered.isEmpty() ? candidates : colorFiltered;
+        }
+
+        return toSimplePillInfoList(candidates);
+    }
+
+    private Set<Long> getColorCandidateIds(String color) {
+        if (color == null || color.isBlank()) return null;
+        return switch (color.toLowerCase()) {
+            case "white" -> Set.of(1L, 17L, 31L, 34L, 35L, 38L, 39L, 41L, 51L, 52L,
+                    14L, 20L, 36L);
+            case "gray"  -> Set.of(14L, 20L, 36L,
+                    1L, 17L, 31L, 34L, 35L, 38L, 39L, 41L, 51L, 52L);
+            case "light_green" -> Set.of(7L, 27L, 50L,
+                    8L, 32L, 35L, 38L, 46L);
+            case "green" -> Set.of(8L, 32L, 35L, 38L, 46L,
+                    7L, 27L, 50L);
+            case "pink"  -> Set.of(4L, 44L, 45L,
+                    3L, 23L, 39L, 43L);
+            case "orange"-> Set.of(3L, 23L, 39L, 43L,
+                    2L, 24L, 28L, 41L, 42L,
+                    6L, 33L, 34L,
+                    4L, 44L, 45L);
+            case "yellow"-> Set.of(2L, 24L, 28L, 41L, 42L,
+                    3L, 23L, 39L, 43L);
+            case "brown" -> Set.of(6L, 33L, 34L,
+                    3L, 23L, 39L, 43L);
+            case "blue"  -> Set.of(10L, 18L, 19L, 29L, 51L,
+                    1L, 17L, 31L, 34L, 35L, 38L, 39L, 41L, 51L, 52L);
+            case "teal"        -> Set.of(9L, 21L, 40L, 52L);
+            case "navy"        -> Set.of(11L, 25L);
+            case "purple"      -> Set.of(13L, 22L, 26L, 37L, 47L, 48L);
+            case "red"         -> Set.of(5L, 30L);
+            case "black"       -> Set.of(15L, 49L);
+            case "transparent" -> Set.of(16L, 19L, 21L, 24L, 26L, 31L, 38L, 39L, 48L, 49L, 50L);
+            default -> null;
+        };
+    }
+
+    private static Set<Long> getShapeIds(String shape) {
+        return switch (shape.toLowerCase()) {
+            case "oval"    -> Set.of(2L, 3L);
+            case "oblong"  -> Set.of(3L, 2L);
+            case "capsule" -> Set.of(3L, 2L);
+            case "round"   -> Set.of(1L, 2L);
+            case "triangle"   -> Set.of(5L);
+            case "rectangle"  -> Set.of(6L);
+            case "diamond"    -> Set.of(7L);
+            case "pentagon"   -> Set.of(8L);
+            case "hexagon"    -> Set.of(9L);
+            case "octagon"    -> Set.of(10L);
+            default -> Set.of();
+        };
+    }
+
+    private List<SimplePillInfo> toSimplePillInfoList(List<PillAppearance> appearances) {
+        return appearances.stream()
+                .map(a -> SimplePillInfo.builder()
+                        .pillId(a.getPillId())
+                        .pillName(a.getPill().getPillName())
+                        .manufacturer(a.getPill().getPillManufacturer())
+                        .classification(a.getPillClassification())
+                        .pillType(a.getPillType())
+                        .pillImg(a.getPill().getPillImg())
+                        .build()
+                )
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -476,5 +643,37 @@ public class PillServiceImpl implements PillService {
                 OcrResponse.class
         );
         return response.getBody();
+    }
+
+    private List<String> preprocessTexts(List<String> texts) {
+        if (texts == null) return List.of();
+        return texts.stream()
+                .filter(t -> t != null && !t.isBlank())
+                .filter(t -> !t.contains("마크") && !t.contains("로고"))
+                .flatMap(t -> expandImprint(t).stream())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private List<String> expandImprint(String text) {
+        List<String> variants = new ArrayList<>();
+        variants.add(text);
+        String upper = text.toUpperCase();
+        if (upper.replaceAll("\\s+", "").length() <= 3) {
+            String variant = upper
+                    .replace("0", "O")
+                    .replace("O", "0")
+                    .replace("1", "I")
+                    .replace("I", "1")
+                    .replace("5", "S")
+                    .replace("Λ", "A")
+                    .replace("A", "Λ")
+                    .replace("α", "A")
+                    .replace("S", "5");
+
+            variants.add(variant);
+        }
+        variants.add(upper.replaceAll("\\s+", ""));
+        return variants.stream().distinct().collect(Collectors.toList());
     }
 }

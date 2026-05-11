@@ -66,6 +66,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,6 +99,9 @@ fun MedicineStatisticsScreen(
     var isAlarmEnabled by remember { mutableStateOf(true) }
     val timeEntries by viewModel.timeEntries.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var showCustomTimeDialog by remember { mutableStateOf(false) }
+    var customHour by remember { mutableStateOf("") }
+    var customMinute by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -418,9 +422,17 @@ fun MedicineStatisticsScreen(
                                                 MealTime.MORNING -> 8 to 0
                                                 MealTime.LUNCH -> 13 to 0
                                                 MealTime.DINNER -> 19 to 0
+                                                MealTime.CUSTOM -> 0 to 0
                                             }
-                                            viewModel.addTimeEntry(mealTime, hour, minute)
-                                            showAddDialog = false
+                                            if (mealTime == MealTime.CUSTOM) {
+                                                customHour = ""
+                                                customMinute = ""
+                                                showAddDialog = false
+                                                showCustomTimeDialog = true
+                                            } else {
+                                                viewModel.addTimeEntry(mealTime, hour, minute)
+                                                showAddDialog = false
+                                            }
                                         }
                                         .padding(vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -431,12 +443,69 @@ fun MedicineStatisticsScreen(
                                         tint = colorResource(mealTime.tint)
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
-                                    Text(mealTime.name)
+                                    Text(mealTime.displayName)
                                 }
                             }
                         }
                     },
                     confirmButton = {}
+                )
+            }
+
+            if (showCustomTimeDialog) {
+                AlertDialog(
+                    onDismissRequest = { showCustomTimeDialog = false },
+                    title = { Text("커스텀 시간 추가") },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedTextField(
+                                value = customHour,
+                                onValueChange = { value ->
+                                    customHour = value.filter { it.isDigit() }.take(2)
+                                },
+                                label = { Text("시 (0-23)") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Next,
+                                ),
+                            )
+                            OutlinedTextField(
+                                value = customMinute,
+                                onValueChange = { value ->
+                                    customMinute = value.filter { it.isDigit() }.take(2)
+                                },
+                                label = { Text("분 (0-59)") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done,
+                                ),
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                val hour = customHour.toIntOrNull()
+                                val minute = customMinute.toIntOrNull()
+                                if (hour != null && minute != null && hour in 0..23 && minute in 0..59) {
+                                    viewModel.addCustomTimeEntry(hour, minute)
+                                    showCustomTimeDialog = false
+                                }
+                            },
+                        ) {
+                            Text("추가")
+                        }
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = { showCustomTimeDialog = false },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                        ) {
+                            Text("취소")
+                        }
+                    },
                 )
             }
         }
@@ -475,7 +544,7 @@ fun MedicationTimeItem(
 
             Column {
                 Text(
-                    entry.mealTime.name,
+                    entry.mealTime.displayName,
                     fontSize = 11.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Bold

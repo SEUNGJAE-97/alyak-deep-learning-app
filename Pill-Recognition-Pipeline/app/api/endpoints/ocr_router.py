@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, UploadFile, File
 from app.services.ocr_service import ocr_service
 from app.schemas.ocr_schema import OCRResponse
 from typing import List
@@ -15,7 +15,4 @@ async def perform_ocr(images: List[UploadFile] = File(...)):
     content = await file.read()
     ocr_results = await ocr_service.process_ocr(content)
     logger.info(f"OCR results: {ocr_results}")
-    return OCRResponse(
-        filename=file.filename or "unknown",
-        results=ocr_results
-    )
+    return OCRResponse(**ocr_results)

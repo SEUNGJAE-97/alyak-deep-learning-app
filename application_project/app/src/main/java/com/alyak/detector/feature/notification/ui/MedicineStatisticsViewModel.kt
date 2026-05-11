@@ -67,6 +67,25 @@ class MedicineStatisticsViewModel @Inject constructor(
             .sortedBy { it.mealTime.ordinal }
     }
 
+    /**
+     * 커스텀 시간은 1개만 허용합니다.
+     */
+    fun addCustomTimeEntry(hour: Int, minute: Int) {
+        val current = _timeEntries.value
+        if (current.any { it.mealTime == MealTime.CUSTOM }) return
+
+        val safeHour = hour.coerceIn(0, 23)
+        val safeMinute = minute.coerceIn(0, 59)
+        val newEntry = MedicationTimeEntry(
+            id = (current.maxOfOrNull { it.id } ?: 0) + 1,
+            mealTime = MealTime.CUSTOM,
+            hour = safeHour,
+            minute = safeMinute,
+        )
+        _timeEntries.value = (current + newEntry)
+            .sortedBy { it.mealTime.ordinal }
+    }
+
     fun removeTimeEntry(id: Int) {
         _timeEntries.value = _timeEntries.value.filter { it.id != id }
     }

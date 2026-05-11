@@ -58,8 +58,10 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
 
-      # Fast api url
-      OCR_SERVER_URL: http://fast-api:8000
+      # Fast api url (기존: FastAPI 컨테이너를 같은 compose 네트워크로 붙일 때)
+      # OCR_SERVER_URL: http://fast-api:8000
+      # Fast api url (현재 권장: FastAPI 로컬 실행, Spring은 Docker 실행)
+      OCR_SERVER_URL: http://host.docker.internal:8000
 
       # Redis Configuration
       REDIS_HOST: redis
@@ -91,8 +93,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      fast-api:
-        condition: service_started
+      # fast-api:
+      #   condition: service_started
+      # FastAPI를 로컬(도커 밖)에서 실행할 때는 의존성에서 제외
     networks:
       - alyak-network
     restart: unless-stopped
@@ -114,20 +117,20 @@ services:
     networks:
       - alyak-network
 
-  fast-api:
-    build:
-      context: ../Pill-Recognition-Pipeline
-      dockerfile: Dockerfile
-    ports:
-      - "8001:8000"
-    volumes:
-      - ../Pill-Recognition-Pipeline:/app
-      - ../shared-images:/app/shared-images
-    environment:
-      - PYTHONPATH=/app
-      - TRAINING_RUNS_ROOT=/app/shared-images/model-runs
-    networks:
-      - alyak-network
+#  fast-api:
+#    build:
+#      context: ../Pill-Recognition-Pipeline
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8001:8000"
+#    volumes:
+#      - ../Pill-Recognition-Pipeline:/app
+#      - ../shared-images:/app/shared-images
+#    environment:
+#      - PYTHONPATH=/app
+#      - TRAINING_RUNS_ROOT=/app/shared-images/model-runs
+#    networks:
+#      - alyak-network
 
 volumes:
   mysql_data:

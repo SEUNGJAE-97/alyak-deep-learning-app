@@ -212,6 +212,14 @@ class MainViewModel @Inject constructor(
         entity: ScheduleBackupEntity,
         scheduledMillis: Long,
     ) {
+        // 일정 "등록 이전 회차"는 자동 정리만 하고 서버 SKIPPED/푸시는 만들지 않는다.
+        // (예: 늦은 시간에 일정 등록 시 이미 지난 당일 회차)
+        if (scheduledMillis < entity.createdAtEpochMillis) {
+            scheduleBackupDao.deleteByScheduleId(entity.scheduleId)
+            medicationAlarmScheduler.rescheduleAllFromLocal(scheduleBackupDao.getAll())
+            return
+        }
+
         val req = MedicationLogRequest(
             pillName = entity.pillName,
             dosage = entity.dosage,
@@ -230,6 +238,7 @@ class MainViewModel @Inject constructor(
         )
         scheduleBackupDao.deleteByScheduleId(entity.scheduleId)
         medicationAlarmScheduler.rescheduleAllFromLocal(scheduleBackupDao.getAll())
+        fetchFamilyMembers()
     }
 
     fun onMedicationCheckClick() {
@@ -260,6 +269,7 @@ class MainViewModel @Inject constructor(
         )
         scheduleBackupDao.deleteByScheduleId(ui.entity.scheduleId)
         medicationAlarmScheduler.rescheduleAllFromLocal(scheduleBackupDao.getAll())
+        fetchFamilyMembers()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
