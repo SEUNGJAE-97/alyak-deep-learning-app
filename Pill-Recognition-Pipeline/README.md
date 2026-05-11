@@ -5,7 +5,7 @@ ALYAK의 Python 기반 OCR 및 학습 서비스입니다.
 
 ## 주요 역할
 
-- 이미지 업로드 기반 OCR 처리
+- 이미지 업로드 기반 VLM(qwen2.5 3b)모델이 텍스트, 외형, 색상 추출
 - 관리자 학습 작업 생성
 - 학습 상태 조회
 - 학습 로그 SSE 스트리밍
@@ -19,8 +19,7 @@ ALYAK의 Python 기반 OCR 및 학습 서비스입니다.
 | 언어 | Python 3.11 |
 | 웹 프레임워크 | FastAPI |
 | 서버 | Uvicorn |
-| OCR | EasyOCR |
-| 이미지 처리 | OpenCV |
+| 모델 | Qwen2.5 3b |
 | 학습 | Ultralytics |
 | HTTP 클라이언트 | httpx |
 
