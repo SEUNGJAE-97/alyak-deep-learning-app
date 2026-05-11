@@ -115,4 +115,8 @@ coverage/
 # Runtime shared storage (images/models/runs)
 shared-images/
 
-venv/
+**/.venv/
+**/venv/
+**/.vite/
+**/data/
+**/datasets/
