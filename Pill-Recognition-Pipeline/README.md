@@ -1,6 +1,6 @@
 # Pill-Recognition-Pipeline
 
-ALYAK의 Python 기반 OCR 및 학습 서비스입니다.  
+ALYAK 프로젝트의 Python 기반 판별 및 학습 서버입니다.  
 사용자용 알약 인식 요청을 처리하는 FastAPI 서버이면서, 관리자 학습 파이프라인에서는 데이터셋 구성, 학습 실행, 로그 스트리밍, Spring 콜백까지 담당합니다.
 
 ## 주요 역할
@@ -85,17 +85,6 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 기본 포트는 `8000`입니다.
 
-### Docker 실행
-
-`Dockerfile`은 Python 3.11 slim 이미지를 사용하며, OCR 처리에 필요한 시스템 패키지와 Python 의존성을 함께 설치합니다.
-
-```bash
-cd Pill-Recognition-Pipeline
-docker build -t pill-recognition-pipeline .
-docker run -p 8000:8000 pill-recognition-pipeline
-```
-
-실제 프로젝트에서는 보통 단독 실행보다 `alyak-api-server/docker-compose.yml`을 통해 함께 기동합니다.
 
 ## 디렉터리 구성
 
