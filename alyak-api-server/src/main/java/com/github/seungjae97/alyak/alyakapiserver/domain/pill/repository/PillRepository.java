@@ -1,6 +1,7 @@
 package com.github.seungjae97.alyak.alyakapiserver.domain.pill.repository;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.Pill;
+import com.github.seungjae97.alyak.alyakapiserver.global.common.repository.JDBCRepository;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +15,6 @@ import java.util.List;
 public interface PillRepository extends JpaRepository<Pill, Long> , PillRepositoryCustom {
 
     List<Pill> findByPillName(String pillName);
-    // PillRepository 수정
+
     Page<Pill> findByPillNameContaining(String keyword, Pageable pageable);
 }
