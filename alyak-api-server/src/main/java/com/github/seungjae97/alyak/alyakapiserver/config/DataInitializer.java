@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import com.github.seungjae97.alyak.alyakapiserver.domain.pill.entity.*;
@@ -23,28 +25,30 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class DataInitializer {
-//    private final Executor dbExecutor;
+//    private final AtomicLong totalWaitTime = new AtomicLong(0);
+//    private final AtomicLong totalCpuTime = new AtomicLong(0);
+    private final Executor dbExecutor;
     private final PillRepository pillRepository;
     private final PillRepositoryImpl pillRepositoryImpl;
     private final PillAppearanceRepositoryImpl pillAppearanceRepositoryImpl;
     private final PillColorRepository pillColorRepository;
     private final PillShapeRepository pillShapeRepository;
-
-//    public DataInitializer(@Qualifier("dbExecutor") Executor dbExecutor,
-//                           PillRepository pillRepository,
-//                           PillRepositoryImpl pillRepositoryImpl,
-//                           PillAppearanceRepositoryImpl pillAppearanceRepositoryImpl,
-//                           PillColorRepository pillColorRepository,
-//                           PillShapeRepository pillShapeRepository) {
-//        this.dbExecutor = dbExecutor;
-//        this.pillRepository = pillRepository;
-//        this.pillRepositoryImpl = pillRepositoryImpl;
-//        this.pillAppearanceRepositoryImpl = pillAppearanceRepositoryImpl;
-//        this.pillColorRepository = pillColorRepository;
-//        this.pillShapeRepository = pillShapeRepository;
-//    }
+    private final AtomicInteger batchCounter = new AtomicInteger(0);
+    public DataInitializer(@Qualifier("dbExecutor") Executor dbExecutor,
+                           PillRepository pillRepository,
+                           PillRepositoryImpl pillRepositoryImpl,
+                           PillAppearanceRepositoryImpl pillAppearanceRepositoryImpl,
+                           PillColorRepository pillColorRepository,
+                           PillShapeRepository pillShapeRepository) {
+        this.dbExecutor = dbExecutor;
+        this.pillRepository = pillRepository;
+        this.pillRepositoryImpl = pillRepositoryImpl;
+        this.pillAppearanceRepositoryImpl = pillAppearanceRepositoryImpl;
+        this.pillColorRepository = pillColorRepository;
+        this.pillShapeRepository = pillShapeRepository;
+    }
 
     @PostConstruct
     @Transactional
@@ -66,7 +70,7 @@ public class DataInitializer {
 
     private void loadData(Map<String, PillColor> colorCache, Map<String, PillShape> shapeCache) throws Exception {
         Resource resource = new ClassPathResource("data/pill_data.csv");
-
+//        long start = System.currentTimeMillis();
         List<Pill> pills = new ArrayList<>();
         List<PillAppearance> appearances = new ArrayList<>();
 
@@ -125,29 +129,48 @@ public class DataInitializer {
             if (!pills.isEmpty()) {
                 flushData(pills, appearances);
             }
+//            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+//            log.info("모든 배치 DB 저장 완료");
+//            log.info("누적 큐 대기 시간: {}ms", totalWaitTime.get());
+//            log.info("누적 실행 시간: {}ms", totalCpuTime.get());
+//            log.info("전체 완료: {}ms", System.currentTimeMillis() - start);
         }
     }
 
-//        private void flushData(List<Pill> pills, List<PillAppearance> apps) {
-//        List<Pill> pillsCopy = new ArrayList<>(pills);
-//        List<PillAppearance> appsCopy = new ArrayList<>(apps);
-//        pills.clear();
-//        apps.clear();
-//
-//        CompletableFuture.runAsync(() -> {
-//            try {
-//                pillRepositoryImpl.saveAll(pillsCopy);
-//                pillAppearanceRepositoryImpl.saveAll(appsCopy);
-//            } catch (Exception e) {
-//                log.error("", e);
-//            }
-//        }, dbExecutor);
-//    }
+    private final List<CompletableFuture<Void>> futures = new ArrayList<>();
+
     private void flushData(List<Pill> pills, List<PillAppearance> apps) {
-        pillRepositoryImpl.saveAll(new ArrayList<>(pills));
-        pillAppearanceRepositoryImpl.saveAll(new ArrayList<>(apps));
+        List<Pill> pillsCopy = new ArrayList<>(pills);
+        List<PillAppearance> appsCopy = new ArrayList<>(apps);
         pills.clear();
         apps.clear();
+
+        long submitTime = System.currentTimeMillis();
+        int batchNum = batchCounter.incrementAndGet();
+
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+//            long waitTime = System.currentTimeMillis() - submitTime;
+//            totalWaitTime.addAndGet(waitTime);
+//            long startTime = System.currentTimeMillis();
+//            log.info("[Batch-{}] 큐 대기 시간: {}ms | 스레드: {}", batchNum, waitTime, Thread.currentThread().getName());
+
+            try {
+//                long t1 = System.currentTimeMillis();
+                pillRepositoryImpl.saveAll(pillsCopy);
+//                log.info("[Batch-{}] pill saveAll: {}ms", batchNum, System.currentTimeMillis() - t1);
+
+//                long t2 = System.currentTimeMillis();
+                pillAppearanceRepositoryImpl.saveAll(appsCopy);
+//                log.info("[Batch-{}] appearance saveAll: {}ms", batchNum, System.currentTimeMillis() - t2);
+//                long execTime = System.currentTimeMillis() - startTime;
+//                totalCpuTime.addAndGet(execTime);
+//                log.info("[Batch-{}] 총 실행 시간: {}ms", batchNum, execTime);
+            } catch (Exception e) {
+                log.error("[Batch-{}] 실패", batchNum, e);
+            }
+        }, dbExecutor);
+
+        futures.add(future);
     }
 
     private PillColor getOrCreateColor(Map<String, PillColor> cache, String colorName) {
