@@ -1,7 +1,7 @@
 # application_project (Android)
 
 가족 단위 **복약 관리**, **약 검색·상세**, **촬영·QR 기반 인식**, **지도(약국 등)** 를 제공하는 **Kotlin / Jetpack Compose** 기반 안드로이드 앱 모듈입니다.  
-백엔드는 모노레포의 `[alyak-api-server](../alyak-api-server/)` **Spring Boot API**와 통신하며, 알약 OCR은 앱이 FastAPI를 직접 호출하지 않고 **Spring의 `/api/pill/recognize`** 를 통해 처리합니다.
+백엔드는 모노레포의 `[alyak-api-server](../alyak-api-server/)` **Spring Boot API**와 통신하며, 알약 판별은 앱이 FastAPI를 직접 호출하지 않고 **Spring의 `/api/pill/recognize`** 를 통해 처리합니다.
 
 ## 주요 기능
 
@@ -28,7 +28,7 @@
 | 푸시     | Firebase Cloud Messaging                                    |
 | 지도     | Kakao Map SDK, Kakao 로컬 API                                 |
 | 이미지    | Coil 2/3                                                    |
-| 기타     | CameraX, TensorFlow Lite, ZXing, Lottie, Chrome Custom Tabs |
+| 기타     | CameraX, TensorFlow Lite, ZXing, Lottie|
 
 
 빌드 도구: **Android Gradle Plugin** 9.x, **Gradle** 9.3.x(Wrapper), JVM 11 타겟.
@@ -46,7 +46,7 @@
 
 ## 백엔드·API와의 관계
 
-- REST 클라이언트는 `**@AppServerRetrofit`** 으로 주입되는 Retrofit 인스턴스를 사용합니다. 구현은 `app/src/main/java/com/alyak/detector/data/api/NetworkModule.kt` 에 있습니다.
+- REST 클라이언트는 `@AppServerRetrofit` 으로 주입되는 Retrofit 인스턴스를 사용합니다. 구현은 `app/src/main/java/com/alyak/detector/data/api/NetworkModule.kt` 에 있습니다.
 - 서버 측 스택은 **Spring Boot 3.x, Spring Data JPA, MySQL** 등이며, API 개요·Swagger·Docker 실행 방법은 **[alyak-api-server/README.md](../alyak-api-server/README.md)** 를 참고하세요.
 - **개발 시** 앱 서버 주소는 `NetworkModule.kt`의 `SERVER_URL` 상수로 관리됩니다.
 - 현재 코드에는 특정 로컬 네트워크 IP가 하드코딩되어 있으므로, 실행 전에 자신의 개발 환경에 맞는 주소로 반드시 변경해야 합니다.
@@ -81,7 +81,7 @@ Android 앱은 코드만 받아 바로 실행되는 구조가 아니며, 아래 
 
 ## 소스 구조 (요약)
 
-패키지 루트: `com.alyak.detector`. 기능 단위로 `**feature/`** 가 나뉘어 있습니다.
+패키지 루트: `com.alyak.detector`. 기능 단위로 `feature/` 가 나뉘어 있습니다.
 
 ```text
 app/src/main/java/com/alyak/detector/
@@ -104,10 +104,10 @@ app/src/main/java/com/alyak/detector/
 
 ## 실행 방법
 
-1. 상위 저장소를 클론한 뒤 Android Studio에서 `**application_project**` 디렉터리를 엽니다.
+1. 상위 저장소를 클론한 뒤 Android Studio에서 `application_project` 디렉터리를 엽니다.
 2. `google-services.json`, Kakao 키, `local.properties` 등 필수 설정을 준비합니다.
 3. `alyak-api-server` 를 기동하고, `NetworkModule.kt` 의 `SERVER_URL` 을 현재 개발 환경에 맞게 수정합니다.
-4. Gradle 동기화 후 `**app**` 구성으로 실행합니다.
+4. Gradle 동기화 후 `app` 구성으로 실행합니다.
 
 명령줄 예시:
 

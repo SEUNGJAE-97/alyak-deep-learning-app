@@ -11,7 +11,7 @@
 | 런타임   | **Java 17**                                                          |
 | 프레임워크 | **Spring Boot 3.5.x**                                                |
 | 빌드    | **Gradle** (`./gradlew`)                                             |
-| 데이터   | **Spring Data JPA**, **MySQL 8**                                     |
+| 데이터   | **Spring Data JPA**, **MySQL**                                     |
 | 기타    | Spring Security, Redis, Mail, Firebase Admin(FCM), SpringDoc OpenAPI |
 
 
