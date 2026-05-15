@@ -57,7 +57,7 @@ public class FamilyService {
         Map<Long, User> memberMap = new LinkedHashMap<>();
         for (FamilyMember fm : familyMemberList) {
             List<FamilyMember> familyMembers = familyMemberRepository
-                    .findByFamily_Id(fm.getFamily().getId());
+                    .findAllByFamilyWithUser(fm.getFamily().getId());
             for (FamilyMember member : familyMembers) {
                 memberMap.putIfAbsent(member.getUser().getUserId(), member.getUser());
             }

@@ -38,6 +38,7 @@ dependencies {
 
     runtimeOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testRuntimeOnly("com.h2database:h2")
 
     annotationProcessor("org.projectlombok:lombok")
 
@@ -70,4 +71,19 @@ tasks.withType<Javadoc> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+tasks.named<Test>("test") {
+    val envFile = rootProject.file(".env")
+    if (envFile.exists()) {
+        envFile.readLines()
+            .filter { it.isNotBlank() && !it.startsWith("#") && it.contains("=") }
+            .forEach { line ->
+                val key = line.substringBefore("=").trim()
+                val value = line.substringAfter("=").trim()
+                    .removeSurrounding("\"")
+                environment(key, value)
+            }
+    }
+    environment("FIREBASE_CREDENTIALS_PATH", "")
+    environment("SPRING_PROFILES_ACTIVE", "test")
 }

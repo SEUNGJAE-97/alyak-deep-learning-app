@@ -46,6 +46,7 @@ spring:
         dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.MySQL8Dialect}
         order_updates: true
         order_inserts: true
+#        default_batch_fetch_size: 100
 
     # Ensure data.sql runs AFTER Hibernate creates tables
     defer-datasource-initialization: true

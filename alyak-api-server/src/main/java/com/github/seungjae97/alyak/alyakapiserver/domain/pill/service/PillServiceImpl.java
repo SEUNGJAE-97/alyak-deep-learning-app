@@ -33,8 +33,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.data.domain.Range;
-import org.springframework.data.redis.connection.Limit;
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.search.FTSearchParams;
 import redis.clients.jedis.search.SearchResult;
@@ -64,9 +62,7 @@ public class PillServiceImpl implements PillService {
     @Qualifier("pillIdentifyTaskScheduler")
     private final TaskScheduler pillIdentifyTaskScheduler;
 
-    private final StringRedisTemplate redisTemplate;
     private final JedisPooled jedis;
-    private static final String AUTOCOMPLETE_KEY = "autocomplete";
     private static final Duration IDENTIFY_API_DELAY = Duration.ofSeconds(5);
     private static final Pattern ALERT_SPLIT_PATTERN = Pattern.compile("[.!?]\\s*\\n*");
     private static final WebClient webClient = WebClient.builder().baseUrl("").build();
@@ -100,7 +96,7 @@ public class PillServiceImpl implements PillService {
         map.put("감기의 제증상", "감기 완화");
         map.put("콧물", "코감기 증상");
         map.put("코막힘", "코감기 증상");
-        map.put("인후", "목 통증"); // 인후(목구멍)통
+        map.put("인후", "목 통증");
         map.put("오한", "오한");
         EFFICACY_KEYWORD_MAP = Collections.unmodifiableMap(map);
     }
