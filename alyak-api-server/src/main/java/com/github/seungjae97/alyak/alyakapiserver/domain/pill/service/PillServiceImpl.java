@@ -143,10 +143,6 @@ public class PillServiceImpl implements PillService {
             // 2. 만약 외부 API 조회결과가 존재한다면? 새 알약을 DB에 저장
             List<Pill> pills = new ArrayList<>();
             for (PillInfoResponse.Item item : pillInfoResponse.getBody().getItems()) {
-                List<String> efficacyTags = extractEfficacyTags(item.getEfcyQesitm());
-                List<String> specialCautionTags = extractSpecialCautionTags(item.getAtpnQesitm());
-                List<String> alertItems = parseAlertItems(item.getAtpnWarnQesitm(), item.getIntrcQesitm());
-
                 Pill pill = Pill.builder()
                         .id(item.getItemSeq())
                         .pillName(item.getItemName())
