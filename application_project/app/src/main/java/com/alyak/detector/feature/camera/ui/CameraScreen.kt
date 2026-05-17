@@ -11,7 +11,9 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -251,7 +253,7 @@ fun CameraOverlay(
             )
 
             drawRoundRect(
-                color = if (mode == CAMERA_MODE_QR) Color.White else Color.Yellow,
+                color = Color.White,
                 topLeft = Offset(left, top),
                 size = Size(overlayWidth, overlayHeight),
                 cornerRadius = CornerRadius(cornerRadious, cornerRadious),
@@ -281,15 +283,49 @@ fun CameraOverlay(
                 )
             }
         } else {
-            IconElevatedButton(
-                onClick = onCaptureClick,
-                icon = Icons.Default.CameraAlt,
-                iconDescription = "촬영 버튼",
+            Text(
+                text = "알약을 프레임 안에 맞춘 뒤 촬영해 주세요.",
+                color = Color.White,
                 modifier = Modifier
-                    .padding(bottom = 50.dp)
-                    .size(80.dp)
                     .align(Alignment.BottomCenter)
+                    .padding(bottom = 200.dp)
             )
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                IconButton(
+                    onClick = onCaptureClick,
+                    modifier = Modifier
+                        .size(72.dp)
+                        .background(
+                            color = Color.White.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(50)
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "촬영 버튼",
+                        tint = Color.White
+                    )
+                }
+
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier
+                        .padding(top = 14.dp)
+                        .size(56.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "닫기",
+                        tint = Color.White
+                    )
+                }
+            }
         }
     }
 }
