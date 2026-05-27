@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File
-from app.services.ocr_service import ocr_service
+from app.services.vlm_service import ocr_service
 from app.schemas.ocr_schema import OCRResponse
 from typing import List
 import logging
