@@ -3,16 +3,20 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.training.controller;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.FastApiTrainingClient;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.dto.FastApiSystemStatusResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.request.TrainingCompletionCallbackRequest;
+import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.response.TrainingSnapshotResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.service.ModelArchiveService;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.service.TrainingJobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -85,6 +89,15 @@ public class InternalTrainingCallbackController {
         streamThread.setDaemon(true);
         streamThread.start();
         return emitter;
+    }
+
+    @GetMapping("/training-snapshot/{externalJobId}")
+    public ResponseEntity<Page<TrainingSnapshotResponse>> getTrainingSnapshot(
+            @PathVariable String externalJobId,
+            Pageable pageable) {
+        Page<TrainingSnapshotResponse> snapshots =
+                trainingJobService.getSnapshotByExternalJobId(externalJobId, pageable);
+        return ResponseEntity.ok(snapshots);
     }
 
     private FastApiSystemStatusResponse buildOfflineStatus(String message) {

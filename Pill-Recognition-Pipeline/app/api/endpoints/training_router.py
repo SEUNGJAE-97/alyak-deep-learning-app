@@ -9,8 +9,8 @@ router = APIRouter()
 
 @router.post("/train/jobs")
 def start_training(req: TrainRequest, background_tasks: BackgroundTasks):
-    job = train_service.create_job()
-    background_tasks.add_task(train_service.run_yolo_training, job["jobId"], req)
+    job = train_service.create_job(req.jobId)
+    background_tasks.add_task(train_service.run_yolo_training, req.jobId, req)
     return job
 
 

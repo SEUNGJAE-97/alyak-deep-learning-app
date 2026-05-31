@@ -82,7 +82,7 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
   const fastApiBaseUrl =
-    import.meta.env.VITE_FAST_API_BASE_URL ?? "http://localhost:8001";
+    import.meta.env.VITE_FAST_API_BASE_URL ?? "http://localhost:8000";
 
   const connectStream = useCallback(
     async (externalJobId?: string) => {
@@ -117,7 +117,10 @@ export function TrainingStreamProvider({ children }: { children: ReactNode }) {
               setStreamStatus("idle");
             } else if (latestJob.status === "SUCCEEDED") {
               setStreamStatus("done");
-            } else if (latestJob.status === "FAILED" || latestJob.status === "CANCELLED") {
+            } else if (
+              latestJob.status === "FAILED" ||
+              latestJob.status === "CANCELLED"
+            ) {
               setStreamStatus("error");
             } else {
               setStreamStatus("idle");

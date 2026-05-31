@@ -7,20 +7,16 @@ import re
 import time
 from threading import Lock
 from typing import Any, Generator
-from uuid import uuid4
 
 import torch
 from ultralytics import YOLO
 
 from app.schemas.training_schema import TrainRequest
 from app.services.dataset_builder import cleanup_dataset, prepare_dataset
+from app.settings import BASE_MODEL_PATH, TRAINING_RUNS_ROOT
 from app.utils.callback import notify_spring_completion
 
 logger = logging.getLogger(__name__)
-
-# 학습된 모델 경로
-BASE_MODEL_PATH = os.getenv("BASE_MODEL_PATH", "models/pill_trained.pt")
-TRAINING_RUNS_ROOT = os.getenv("TRAINING_RUNS_ROOT", "/app/shared-images/model-runs")
 
 # freeze 파라미터 변환
 FREEZE_MAP: dict[str, int | None] = {
@@ -39,18 +35,21 @@ class TrainService:
         self._log_lock = Lock()
         self._timing_by_job: dict[str, dict[str, float]] = {}
 
-    def create_job(self) -> dict[str, Any]:
-        job_id = str(uuid4())
+    def create_job(self, job_id: str) -> dict[str, Any]:
+        normalized_job_id = job_id.strip()
+        if not normalized_job_id:
+            raise ValueError("jobId is required")
+
         with self._jobs_lock:
-            self._jobs[job_id] = {
-                "jobId": job_id,
+            self._jobs[normalized_job_id] = {
+                "jobId": normalized_job_id,
                 "status": "RUNNING",
                 "progress": 0,
                 "message": "Training started",
             }
         with self._log_lock:
-            self._log_queues[job_id] = queue.Queue()
-        return self._jobs[job_id]
+            self._log_queues[normalized_job_id] = queue.Queue()
+        return self._jobs[normalized_job_id]
 
     def get_job(self, job_id: str) -> dict[str, Any]:
         with self._jobs_lock:
@@ -285,7 +284,7 @@ class TrainService:
         Ultralytics YOLO 파인튜닝 실행.
         on_fit_epoch_end 콜백으로 epoch마다 메트릭을 SSE로 전송.
         """
-
+        
         try:
             epochs = max(req.epochs, 1)
             freeze = FREEZE_MAP.get(req.freezeLayers or "medium", 10)

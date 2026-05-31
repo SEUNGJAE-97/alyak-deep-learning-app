@@ -1,17 +1,15 @@
 import json
 import logging
-import os
 import urllib.error
 import urllib.request
 
-logger = logging.getLogger(__name__)
+import app.settings as settings
 
-SPRING_CALLBACK_BASE_URL = os.getenv("SPRING_CALLBACK_BASE_URL", "http://alyak-api:8080")
-SPRING_CALLBACK_TOKEN = os.getenv("TRAINING_CALLBACK_TOKEN", "local-training-callback-token")
+logger = logging.getLogger(__name__)
 
 
 def notify_spring_completion(job_id: str, status: str, progress: int, message: str) -> None:
-    callback_url = f"{SPRING_CALLBACK_BASE_URL}/api/internal/training/jobs/{job_id}/complete"
+    callback_url = f"{settings.SPRING_CALLBACK_BASE_URL}/api/internal/training/jobs/{job_id}/complete"
     payload = {"status": status, "progress": progress, "message": message}
     req = urllib.request.Request(
         callback_url,
@@ -19,7 +17,7 @@ def notify_spring_completion(job_id: str, status: str, progress: int, message: s
         method="PATCH",
         headers={
             "Content-Type": "application/json",
-            "X-Internal-Token": SPRING_CALLBACK_TOKEN,
+            "X-Internal-Token": settings.TRAINING_CALLBACK_TOKEN,
         },
     )
 

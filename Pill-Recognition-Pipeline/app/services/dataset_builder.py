@@ -1,7 +1,7 @@
 """
-Build YOLO dataset files from Spring TRAINING_SET items.
+Build YOLO dataset files from Spring training snapshots.
 
-- Fetch image list/details from internal Spring endpoints.
+- Fetch snapshot rows for a Spring training job id.
 - Generate YOLO label .txt files under shared storage.
 - Generate a temporary data.yaml for one training job.
 """
@@ -10,33 +10,31 @@ import logging
 import os
 import random
 import shutil
+from collections import defaultdict
 from pathlib import Path
 
 import httpx
 import yaml
 
-logger = logging.getLogger(__name__)
+import app.settings as settings
 
-SPRING_BASE_URL = os.getenv("SPRING_BASE_URL", "http://alyak-api:8080")
-SPRING_INTERNAL_TOKEN = os.getenv("TRAINING_CALLBACK_TOKEN", "local-training-callback-token")
-SHARED_IMAGE_BASE = os.getenv("SHARED_IMAGE_BASE", "/app/shared-images/uploads")
-SHARED_LABEL_BASE = os.getenv("SHARED_LABEL_BASE", "/app/shared-images/labels")
+logger = logging.getLogger(__name__)
 
 
 def _headers() -> dict[str, str]:
-    return {"X-Internal-Token": SPRING_INTERNAL_TOKEN}
+    return {"X-Internal-Token": settings.TRAINING_CALLBACK_TOKEN}
 
 
-def _fetch_training_items() -> list[dict]:
-    """Fetch all TRAINING_SET items with pagination."""
+def _fetch_training_snapshots(job_id: str) -> list[dict]:
+    """Fetch all snapshot rows for a training job UUID."""
     all_items: list[dict] = []
     page = 0
 
     while True:
         resp = httpx.get(
-            f"{SPRING_BASE_URL}/api/internal/labeling/items",
+            f"{settings.SPRING_BASE_URL}/api/internal/training/jobs/training-snapshot/{job_id}",
             headers=_headers(),
-            params={"status": "TRAINING_SET", "page": page, "pageSize": 100},
+            params={"page": page, "size": 100},
             timeout=30,
         )
         resp.raise_for_status()
@@ -48,22 +46,8 @@ def _fetch_training_items() -> list[dict]:
             break
         page += 1
 
-    logger.info("Fetched %d TRAINING_SET items", len(all_items))
+    logger.info("Fetched %d snapshot rows for jobId=%s", len(all_items), job_id)
     return all_items
-
-
-def _fetch_item_detail(item_id: int) -> dict | None:
-    try:
-        resp = httpx.get(
-            f"{SPRING_BASE_URL}/api/internal/labeling/items/{item_id}",
-            headers=_headers(),
-            timeout=30,
-        )
-        resp.raise_for_status()
-        return resp.json()
-    except Exception as exc:
-        logger.warning("Failed to fetch detail for item %s: %s", item_id, exc)
-        return None
 
 
 def _convert_to_yolo(box: dict) -> str:
@@ -79,16 +63,14 @@ def _convert_to_yolo(box: dict) -> str:
     return f"0 {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}"
 
 
-def _write_label_file(item_detail: dict) -> str | None:
-    image_path = item_detail.get("imagePath", "")
-    boxes = item_detail.get("boxes", [])
+def _write_label_file(image_path: str, boxes: list[dict]) -> str | None:
     if not boxes:
-        logger.warning("No boxes for item %s, skipping", item_detail.get("id"))
+        logger.warning("No boxes for image %s, skipping", image_path)
         return None
 
     filename_stem = Path(image_path).stem
-    os.makedirs(SHARED_LABEL_BASE, exist_ok=True)
-    label_path = os.path.join(SHARED_LABEL_BASE, f"{filename_stem}.txt")
+    os.makedirs(settings.SHARED_LABEL_BASE, exist_ok=True)
+    label_path = os.path.join(settings.SHARED_LABEL_BASE, f"{filename_stem}.txt")
 
     lines = [_convert_to_yolo(box) for box in boxes]
     with open(label_path, "w", encoding="utf-8") as file:
@@ -105,32 +87,35 @@ def _resolve_image_abs_path(web_image_path: str) -> str:
     """
     Convert web path to mounted filesystem path.
     Example:
-      /uploads/pill-images/a.jpg -> /app/shared-images/uploads/pill-images/a.jpg
+      /uploads/pill-images/a.jpg -> ../shared-images/uploads/pill-images/a.jpg
     """
     web_path = (web_image_path or "").strip()
     if web_path.startswith("/uploads/"):
         rel_path = web_path[len("/uploads/") :]
     else:
         rel_path = Path(web_path).name
-    return os.path.join(SHARED_IMAGE_BASE, rel_path)
+    return os.path.join(settings.SHARED_IMAGE_BASE, rel_path)
 
 
 def prepare_dataset(job_id: str, val_ratio: float = 0.2) -> str:
-    items = _fetch_training_items()
-    if not items:
-        raise ValueError("TRAINING_SET 이미지가 없습니다. 학습을 시작할 수 없습니다.")
+    snapshots = _fetch_training_snapshots(job_id)
+    if not snapshots:
+        raise ValueError("학습 스냅샷이 없습니다. TRAINING_SET 데이터를 확인하세요.")
+
+    boxes_by_image: dict[str, list[dict]] = defaultdict(list)
+    for row in snapshots:
+        image_path = row.get("imagePath")
+        if not image_path:
+            continue
+        boxes_by_image[image_path].append(row)
 
     valid_items: list[dict] = []
-    for item in items:
-        detail = _fetch_item_detail(item["id"])
-        if not detail:
-            continue
-
-        label_path = _write_label_file(detail)
+    for image_path, boxes in boxes_by_image.items():
+        label_path = _write_label_file(image_path, boxes)
         if label_path is None:
             continue
 
-        image_abs_path = _resolve_image_abs_path(detail.get("imagePath", ""))
+        image_abs_path = _resolve_image_abs_path(image_path)
         if not os.path.exists(image_abs_path):
             logger.warning("Image file not found: %s", image_abs_path)
             continue
@@ -140,7 +125,7 @@ def prepare_dataset(job_id: str, val_ratio: float = 0.2) -> str:
     if not valid_items:
         raise ValueError("유효한 학습 이미지(이미지+라벨 모두 존재)가 없습니다.")
 
-    logger.info("Valid items: %d / %d", len(valid_items), len(items))
+    logger.info("Valid items: %d / %d images", len(valid_items), len(boxes_by_image))
 
     random.shuffle(valid_items)
     split_idx = max(1, int(len(valid_items) * (1 - val_ratio)))
@@ -197,8 +182,6 @@ def prepare_dataset(job_id: str, val_ratio: float = 0.2) -> str:
 
 
 def cleanup_dataset(job_id: str) -> None:
-    import shutil
-
     yaml_dir = f"/tmp/datasets/{job_id}"
     if os.path.exists(yaml_dir):
         shutil.rmtree(yaml_dir)

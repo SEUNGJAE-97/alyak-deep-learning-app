@@ -1,3 +1,5 @@
+import app.settings  # noqa: F401 — load .env before other app modules
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints.ocr_router import router as ocr_router

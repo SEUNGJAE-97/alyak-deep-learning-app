@@ -62,6 +62,13 @@ public class TrainingJob {
         this.startedAt = LocalDateTime.now();
     }
 
+    public void markStarted(String message) {
+        this.status = TrainingJobStatus.RUNNING;
+        this.progress = Math.max(this.progress, 0);
+        this.message = message;
+        this.startedAt = LocalDateTime.now();
+    }
+
     public void markFailed(String message) {
         this.status = TrainingJobStatus.FAILED;
         this.message = message;

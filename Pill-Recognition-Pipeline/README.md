@@ -62,16 +62,19 @@ Android 앱은 이 서비스를 직접 호출하지 않습니다.
 
 주요 환경 변수는 다음과 같습니다.
 
+기본값은 **FastAPI 로컬 + Spring Docker** 기준(`http://localhost:8080`)입니다.  
+`Pill-Recognition-Pipeline/.env` 파일을 자동 로드합니다.
+
 | 변수 | 설명 |
 |------|------|
-| `SPRING_BASE_URL` | Spring 내부 라벨링 API 주소 |
-| `SPRING_CALLBACK_BASE_URL` | 학습 완료 콜백을 보낼 Spring 주소 |
-| `TRAINING_CALLBACK_TOKEN` | Spring 내부 토큰과 일치해야 하는 값 |
-| `SHARED_IMAGE_BASE` | 업로드 이미지 실제 저장 경로 |
-| `SHARED_LABEL_BASE` | 생성 라벨 저장 경로 |
+| `SPRING_BASE_URL` | Spring 내부 API 주소 (기본 `http://localhost:8080`) |
+| `SPRING_CALLBACK_BASE_URL` | 학습 완료 콜백 Spring 주소 |
+| `TRAINING_CALLBACK_TOKEN` | Spring `training.callback.token`과 동일 값 |
+| `SHARED_IMAGE_BASE` | 업로드 이미지 경로 (기본: 레포 `shared-images/uploads`) |
+| `SHARED_LABEL_BASE` | YOLO 라벨 저장 경로 |
 | `TRAINING_RUNS_ROOT` | 학습 결과물 저장 경로 |
 
-기본값은 Docker Compose 기준 주소를 전제로 하고 있으므로, 로컬 직접 실행 시에는 환경에 맞게 조정해야 합니다.
+Docker Compose 전용으로 FastAPI까지 컨테이너에서 띄울 때는 `.env`에서 `SPRING_*`를 `http://alyak-api:8080`으로 바꾸면 됩니다.
 
 ## 실행 방법
 

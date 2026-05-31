@@ -6,7 +6,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface PillImageDataRepository extends JpaRepository<PillImageData, Long> {
     Page<PillImageData> findByStatus(DataStatus status, Pageable pageable);
     boolean existsByImagePath(String imagePath);
+
+    List<PillImageData> findAllByStatus(DataStatus status);
 }

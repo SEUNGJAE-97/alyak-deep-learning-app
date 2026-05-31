@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TrainRequest(BaseModel):
+    jobId: str = Field(min_length=1)
     datasetStatus: str
     epochs: int
     batchSize: int

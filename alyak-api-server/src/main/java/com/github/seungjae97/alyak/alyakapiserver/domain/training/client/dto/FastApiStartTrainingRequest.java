@@ -6,6 +6,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class FastApiStartTrainingRequest {
+    private String jobId;
     private String datasetStatus;
     private Integer epochs;
     private Integer batchSize;
