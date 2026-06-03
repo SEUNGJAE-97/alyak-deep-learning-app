@@ -32,8 +32,9 @@ public class RedisIndexConfig implements ApplicationRunner {
                             .prefix("pill:"),
                     TagField.of("name").withSuffixTrie(),
                     TagField.of("name_cho").withSuffixTrie(),
-                    TagField.of("name_en").withSuffixTrie(),
-                    TagField.of("ingredient_cho").withSuffixTrie()
+                    TagField.of("name_en").withSuffixTrie()
+//                    TagField.of("ingredient").withSuffixTrie(),
+//                    TagField.of("ingredient_cho").withSuffixTrie()
             );
             log.info("인덱스 생성 완료");
         } catch (Exception e) {

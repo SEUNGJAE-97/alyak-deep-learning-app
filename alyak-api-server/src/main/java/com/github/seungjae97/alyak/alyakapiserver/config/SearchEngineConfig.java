@@ -38,13 +38,13 @@ public class SearchEngineConfig implements ApplicationRunner {
             String key = "pill:" + pill.getId();
             Map<String, String> fields = new HashMap<>();
             String pillName = pill.getPillName() == null ? "" : pill.getPillName();
-            String ingredient = pill.getPillIngredient() == null ? "" : pill.getPillIngredient();
+//            String ingredient = pill.getPillIngredient() == null ? "" : pill.getPillIngredient();
 
             fields.put("name", pillName);
             fields.put("name_cho", HangulUtils.decompose(pillName));
             fields.put("name_en", "");
-            fields.put("ingredient", ingredient.toLowerCase());
-            fields.put("ingredient_cho", HangulUtils.decompose(ingredient));
+//            fields.put("ingredient", ingredient.toLowerCase());
+//            fields.put("ingredient_cho", HangulUtils.decompose(ingredient));
 
             hashOps.putAll(key, fields);
         }
