@@ -21,8 +21,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final AuthFilter authFilter;
-
     private static final String[] PUBLIC_URLS = {
             "/api/auth/**",
             "/api/internal/training/**",
@@ -52,8 +50,6 @@ public class SecurityConfig {
                        .pathMatchers(PUBLIC_URLS).permitAll()
                        .anyExchange().authenticated()
                )
-               .addFilterAt(authFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-
                .build();
     }
 
