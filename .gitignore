@@ -120,3 +120,5 @@ shared-images/
 **/.vite/
 **/data/
 **/datasets/
+
+valhalla_data/

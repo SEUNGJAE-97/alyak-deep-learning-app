@@ -12,11 +12,11 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./alyak-api-server/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - alyak-network
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
 
@@ -32,19 +32,21 @@ services:
     networks:
       - alyak-network
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       timeout: 20s
       retries: 10
 
   # Spring Boot Application
   alyak-api:
-    env_file: .env
-    build: .
+    env_file: ./alyak-api-server/.env
+    build:
+      context: ./alyak-api-server
+      dockerfile: Dockerfile
     container_name: alyak-api-server
     ports:
       - "8080:8080"
     volumes:
-      - ./firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
+      - ./alyak-api-server/firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
       - ../shared-images:/app/shared-images
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -68,7 +70,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD:
       REDIS_DATABASE: 0
-      
+
       # Email Configuration
       SPRING_MAIL_HOST: smtp.gmail.com
       SPRING_MAIL_PORT: 587
@@ -76,7 +78,7 @@ services:
       SPRING_MAIL_PASSWORD: zxdhpueaufcqzyft
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
-      
+
       # JWT Configuration
       JWT_SECRET: your-super-secret-key-here-change-in-production
       JWT_EXPIRATION_TIME: 3600000
@@ -86,16 +88,28 @@ services:
       FIREBASE_PROJECT_ID: uplifted-studio-457001-h1
       APP_UPLOAD_ROOT_PATH: /app/shared-images/uploads
       APP_DUMMY_LABELING_ENABLED: "true"
-      ARCHIVE_RUNS_ROOT: /Users/hsj/Documents/GitHub/alyak-deep-learning-app/shared-images/model-runs
+      ARCHIVE_RUNS_ROOT: /app/shared-images/model-runs
       ARCHIVE_IMPORT_ON_STARTUP: "true"
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
-      # fast-api:
-      #   condition: service_started
-      # FastAPI를 로컬(도커 밖)에서 실행할 때는 의존성에서 제외
+    networks:
+      - alyak-network
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: alyak-gateway
+    ports:
+      - "8080:8080" # 외부 클라이언트는 오직 이 포트(8080)로만 들어옴
+    environment:
+      - API_SERVER_URL=http://alyak-api:8081
+    depends_on:
+      - alyak-api
     networks:
       - alyak-network
     restart: unless-stopped
@@ -110,27 +124,12 @@ services:
     environment:
       # 한국 지도 데이터 자동 다운로드 및 빌드 설정
       - tile_urls=https://download.geofabrik.de/asia/south-korea-latest.osm.pbf
-      - build_elevation=True  # 도보 경로를 위한 고도 데이터 포함
-      - build_admins=True     # 행정 구역 데이터
+      - build_elevation=True # 도보 경로를 위한 고도 데이터 포함
+      - build_admins=True # 행정 구역 데이터
       - build_time_zones=True
-      - server_threads=2      # CPU 사용량에 따라 조절 (기본 2)
+      - server_threads=2 # CPU 사용량에 따라 조절 (기본 2)
     networks:
       - alyak-network
-
-#  fast-api:
-#    build:
-#      context: ../Pill-Recognition-Pipeline
-#      dockerfile: Dockerfile
-#    ports:
-#      - "8001:8000"
-#    volumes:
-#      - ../Pill-Recognition-Pipeline:/app
-#      - ../shared-images:/app/shared-images
-#    environment:
-#      - PYTHONPATH=/app
-#      - TRAINING_RUNS_ROOT=/app/shared-images/model-runs
-#    networks:
-#      - alyak-network
 
 volumes:
   mysql_data:
@@ -138,4 +137,4 @@ volumes:
 
 networks:
   alyak-network:
-    driver: bridge 
+    driver: bridge

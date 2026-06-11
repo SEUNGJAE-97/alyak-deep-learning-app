@@ -13,7 +13,6 @@ public class GatewayConfig {
 
     private final AuthFilter authFilter;
 
-
     @Bean
     public RouteLocator routes(RouteLocatorBuilder builder) {
         return builder.routes()
@@ -31,7 +30,6 @@ public class GatewayConfig {
                         .path("/stream/**")
                         .filters(f -> f.filter(authFilter))
                         .uri("http://fastapi-service:8000"))
-
                 .build();
     }
 }
