@@ -132,6 +132,10 @@ public class TrainingJobServiceImpl implements TrainingJobService {
         });
     }
 
+    /*
+    * TODO : 스냅샷 테이블에 저장하기보다는 jobId 값을 키로 갖고 해당 json파일의 경로를
+    *        db에 저장하자...
+    * */
     @Transactional
     protected void createSnapshot(TrainingJob job) {
         // 1. Training_Set에 포함된 상태의 이미지들을 모두 가져온다.

@@ -26,7 +26,6 @@ public class TrainingSnapshot {
     @JoinColumn(name = "training_job_id", nullable = false)
     private TrainingJob trainingJob;
 
-    // PillImageData에서 복사
     @Column(name = "image_path", nullable = false, length = 500)
     private String imagePath;
 
