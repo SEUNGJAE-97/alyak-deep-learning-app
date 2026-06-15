@@ -3,7 +3,6 @@ package com.github.seungjae97.alyak.alyakapiserver.domain.training.service;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -32,13 +31,12 @@ public class ImageLockServiceImpl implements ImageLockService {
 
         if (!acquired) {
             String lockedBy = redisTemplate.opsForValue().get(key);
-            throw new BusinessException(BusinessError.ALREADY_SOMEONE_EDIT);
+            throw new BusinessException(BusinessError.ALREADY_SOMEONE_EDIT, lockedBy);
         }
-
     }
 
     /**
-     * 편집 완료 or 취소했을때
+     * 편집 완료 or 취소했을때 or 만료되었을때
      *
      * @param imageId : 수정이 완료된 이미지 아이디 값
      * @param userId  : 라벨러의 아이디 값
@@ -53,6 +51,12 @@ public class ImageLockServiceImpl implements ImageLockService {
         }
     }
 
+    /**
+     * TTL 연장할때 호출
+     *
+     * @param imageId : 수정이 완료된 이미지 아이디 값
+     * @param userId  : 라벨러의 아이디 값
+     */
     @Override
     public void refreshLock(Long imageId, Long userId) {
         String key = LOCK_PREFIX + imageId;
