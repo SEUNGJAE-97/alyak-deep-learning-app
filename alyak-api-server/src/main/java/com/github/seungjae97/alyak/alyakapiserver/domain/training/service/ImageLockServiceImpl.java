@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 public class ImageLockServiceImpl implements ImageLockService {
 
     private final StringRedisTemplate redisTemplate;
-    private static final long LOCK_TTL = 300L;
+    private static final long LOCK_TTL = 30L;
     private static final String LOCK_PREFIX = "lock:image:";
 
     /**

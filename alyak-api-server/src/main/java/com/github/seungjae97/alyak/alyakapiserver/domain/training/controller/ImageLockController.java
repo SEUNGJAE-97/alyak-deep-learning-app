@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/images")
+@RequestMapping("/api/admin/labeling/images")
 public class ImageLockController {
 
     private final ImageLockService imageLockService;

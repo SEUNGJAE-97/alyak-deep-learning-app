@@ -79,9 +79,15 @@ export default function Dashboard() {
   const [deleteMenu, setDeleteMenu] = useState<DeleteMenuState | null>(null);
   const [draftBox, setDraftBox] = useState<EditableBox | null>(null);
   const [draggingBoxId, setDraggingBoxId] = useState<number | null>(null);
-  const [bulkActionToast, setBulkActionToast] = useState<BulkActionToastState | null>(null);
+  const [isLockOwner, setIsLockOwner] = useState<boolean>(false);
+  const [lockMessage, setLockMessage] = useState<string | null>(null);
+  const [bulkActionToast, setBulkActionToast] =
+    useState<BulkActionToastState | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
-  const dragStartRef = useRef<{ point: { x: number; y: number }; box: EditableBox } | null>(null);
+  const dragStartRef = useRef<{
+    point: { x: number; y: number };
+    box: EditableBox;
+  } | null>(null);
 
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
@@ -142,8 +148,10 @@ export default function Dashboard() {
   });
 
   const selectedItem = currentItems[selectedIndex] || null;
-  const selectedBox = editableBoxes.find((box) => box.id === selectedBoxId) ?? null;
-  const hoveredBox = editableBoxes.find((box) => box.id === hoveredBoxId) ?? null;
+  const selectedBox =
+    editableBoxes.find((box) => box.id === selectedBoxId) ?? null;
+  const hoveredBox =
+    editableBoxes.find((box) => box.id === hoveredBoxId) ?? null;
   const previewInfoBox = hoveredBox ?? selectedBox;
 
   useEffect(() => {
@@ -175,7 +183,10 @@ export default function Dashboard() {
   }, [selectedItem, token, apiBaseUrl]);
 
   useEffect(() => {
-    console.log("[LabelingDetail] selectedDetail?.boxes(state)", selectedDetail?.boxes);
+    console.log(
+      "[LabelingDetail] selectedDetail?.boxes(state)",
+      selectedDetail?.boxes,
+    );
   }, [selectedDetail]);
 
   useEffect(() => {
@@ -200,6 +211,78 @@ export default function Dashboard() {
     dragStartRef.current = null;
   }, [selectedDetail]);
 
+  useEffect(() => {
+    if (!selectedItem || !token) {
+      setIsLockOwner(false);
+      setLockMessage(null);
+      return;
+    }
+
+    const imageId = selectedItem.id;
+    let heartbeatInterval: NodeJS.Timeout;
+
+    const acquireImageLock = async () => {
+      try {
+        setLockMessage(null);
+        const response = await fetch(
+          `${apiBaseUrl}/api/admin/labeling/images/${imageId}/lock`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+
+        if (!response.ok) {
+          if (response.status === 400 || response.status === 409) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+              errorData.message ||
+                "다른 사용자가 현재 이 이미지를 편집 중입니다.",
+            );
+          }
+          throw new Error("편집 권한(Lock)을 획득하지 못했습니다.");
+        }
+
+        setIsLockOwner(true);
+
+        heartbeatInterval = setInterval(
+          async () => {
+            try {
+              await fetch(
+                `${apiBaseUrl}/api/admin/labeling/images/${imageId}/lock`,
+                {
+                  method: "PUT",
+                  headers: { Authorization: `Bearer ${token}` },
+                },
+              );
+              console.log(`[Lock] 락 연장 완료 (imageId: ${imageId})`);
+            } catch (err) {
+              console.error("Lock 연장 실패", err);
+            }
+          },
+          1000 * 60 * 2,
+        );
+      } catch (error) {
+        setIsLockOwner(false);
+        setLockMessage(error instanceof Error ? error.message : "락 획득 실패");
+      }
+    };
+
+    acquireImageLock();
+
+    return () => {
+      clearInterval(heartbeatInterval);
+
+      fetch(`${apiBaseUrl}/api/admin/labeling/images/${imageId}/lock`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => {
+          if (res.ok) console.log(`[Lock] 락 해제 완료 (imageId: ${imageId})`);
+        })
+        .catch((err) => console.error("Lock 해제 실패", err));
+    };
+  }, [selectedItem, token, apiBaseUrl]);
   const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 
   const normalizeBox = (box: EditableBox): EditableBox => {
@@ -272,7 +355,9 @@ export default function Dashboard() {
       const dy = point.y - dragStartRef.current.point.y;
       const baseBox = dragStartRef.current.box;
       setEditableBoxes((prev) =>
-        prev.map((box) => (box.id === draggingBoxId ? moveBox(baseBox, dx, dy) : box)),
+        prev.map((box) =>
+          box.id === draggingBoxId ? moveBox(baseBox, dx, dy) : box,
+        ),
       );
     }
   };
@@ -299,7 +384,10 @@ export default function Dashboard() {
     setSelectedBoxId(normalized.id);
   };
 
-  const handleBoxMouseDown = (event: MouseEvent<HTMLDivElement>, box: EditableBox) => {
+  const handleBoxMouseDown = (
+    event: MouseEvent<HTMLDivElement>,
+    box: EditableBox,
+  ) => {
     event.stopPropagation();
     event.preventDefault();
     setSelectedBoxId(box.id);
@@ -311,7 +399,10 @@ export default function Dashboard() {
     dragStartRef.current = { point, box };
   };
 
-  const handleBoxContextMenu = (event: MouseEvent<HTMLDivElement>, box: EditableBox) => {
+  const handleBoxContextMenu = (
+    event: MouseEvent<HTMLDivElement>,
+    box: EditableBox,
+  ) => {
     event.preventDefault();
     event.stopPropagation();
     setSelectedBoxId(box.id);
@@ -388,7 +479,9 @@ export default function Dashboard() {
       await fetchItems(activeTab);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "저장/승인 중 오류가 발생했습니다.",
+        error instanceof Error
+          ? error.message
+          : "저장/승인 중 오류가 발생했습니다.",
       );
     } finally {
       setIsSaving(false);
@@ -424,7 +517,10 @@ export default function Dashboard() {
       const actions =
         activeTab === "Inbox"
           ? [
-              { label: "전체를 Training Set으로 보내기", status: "TRAINING_SET" as const },
+              {
+                label: "전체를 Training Set으로 보내기",
+                status: "TRAINING_SET" as const,
+              },
               { label: "전체를 Trash로 보내기", status: "TRASH" as const },
             ]
           : activeTab === "Training Set"
@@ -434,7 +530,10 @@ export default function Dashboard() {
               ]
             : [
                 { label: "전체를 Inbox로 보내기", status: "INBOX" as const },
-                { label: "전체를 Training Set으로 보내기", status: "TRAINING_SET" as const },
+                {
+                  label: "전체를 Training Set으로 보내기",
+                  status: "TRAINING_SET" as const,
+                },
               ];
       setBulkActionToast({
         ids: allIds,
@@ -447,7 +546,9 @@ export default function Dashboard() {
   const toggleSelect = (id: number, e: MouseEvent) => {
     e.stopPropagation();
     setSelectedIds((prev) => {
-      const next = prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id];
+      const next = prev.includes(id)
+        ? prev.filter((i) => i !== id)
+        : [...prev, id];
       if (next.length !== currentItems.length) {
         setBulkActionToast(null);
       }
@@ -460,24 +561,29 @@ export default function Dashboard() {
     setIsSaving(true);
     setErrorMessage(null);
     try {
-      const response = await fetch(`${apiBaseUrl}/api/admin/labeling/items/bulk/status`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${apiBaseUrl}/api/admin/labeling/items/bulk/status`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ids: bulkActionToast.ids,
+            status: targetStatus,
+          }),
         },
-        body: JSON.stringify({
-          ids: bulkActionToast.ids,
-          status: targetStatus,
-        }),
-      });
+      );
       if (!response.ok) throw new Error("일괄 상태 변경에 실패했습니다.");
       setSelectedIds([]);
       setBulkActionToast(null);
       await fetchItems(activeTab);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "일괄 상태 변경 중 오류가 발생했습니다.",
+        error instanceof Error
+          ? error.message
+          : "일괄 상태 변경 중 오류가 발생했습니다.",
       );
     } finally {
       setIsSaving(false);
@@ -671,7 +777,9 @@ export default function Dashboard() {
                   onContextMenu={(event) => event.preventDefault()}
                   className={cn(
                     "relative aspect-video bg-black rounded-3xl overflow-hidden border border-outline-variant/20 group",
-                    interactionMode === "draw" ? "cursor-crosshair" : "cursor-default",
+                    interactionMode === "draw"
+                      ? "cursor-crosshair"
+                      : "cursor-default",
                   )}
                 >
                   <img
@@ -702,10 +810,14 @@ export default function Dashboard() {
                       }}
                       onMouseEnter={() => setHoveredBoxId(box.id)}
                       onMouseLeave={() =>
-                        setHoveredBoxId((prev) => (prev === box.id ? null : prev))
+                        setHoveredBoxId((prev) =>
+                          prev === box.id ? null : prev,
+                        )
                       }
                       onMouseDown={(event) => handleBoxMouseDown(event, box)}
-                      onContextMenu={(event) => handleBoxContextMenu(event, box)}
+                      onContextMenu={(event) =>
+                        handleBoxContextMenu(event, box)
+                      }
                       className={cn(
                         "absolute border-2 shadow-[0_0_15px_rgba(123,208,255,0.4)]",
                         selectedBoxId === box.id
@@ -738,12 +850,13 @@ export default function Dashboard() {
                   <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-40">
                     <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
                       <button
+                        disabled={!isLockOwner}
                         onClick={() => {
                           setInteractionMode("select");
                           setDeleteMenu(null);
                         }}
                         className={cn(
-                          "p-2 backdrop-blur rounded-lg",
+                          "p-2 backdrop-blur rounded-lg disabled:opacity-40",
                           interactionMode === "select"
                             ? "bg-surface-container-highest/80 text-primary"
                             : "bg-surface/20 text-white",
@@ -752,6 +865,7 @@ export default function Dashboard() {
                         <MousePointer2 className="w-4 h-4" />
                       </button>
                       <button
+                        disabled={!isLockOwner}
                         onClick={() => {
                           setInteractionMode("draw");
                           setDraggingBoxId(null);
@@ -759,7 +873,7 @@ export default function Dashboard() {
                           setDeleteMenu(null);
                         }}
                         className={cn(
-                          "p-2 backdrop-blur rounded-lg",
+                          "p-2 backdrop-blur rounded-lg disabled:opacity-40",
                           interactionMode === "draw"
                             ? "bg-surface-container-highest/80 text-primary"
                             : "bg-surface/20 text-white",
@@ -769,14 +883,17 @@ export default function Dashboard() {
                       </button>
                     </div>
                   </div>
-                  {deleteMenu && interactionMode === "select" && (
+                  {deleteMenu &&
+                    interactionMode === "select" &&
                     (() => {
                       const targetBox = editableBoxes.find(
                         (box) => box.id === deleteMenu.boxId,
                       );
                       if (!targetBox) return null;
-                      const centerX = ((targetBox.xMin + targetBox.xMax) / 2) * 100;
-                      const centerY = ((targetBox.yMin + targetBox.yMax) / 2) * 100;
+                      const centerX =
+                        ((targetBox.xMin + targetBox.xMax) / 2) * 100;
+                      const centerY =
+                        ((targetBox.yMin + targetBox.yMax) / 2) * 100;
                       return (
                         <button
                           onMouseDown={(event) => event.stopPropagation()}
@@ -790,8 +907,7 @@ export default function Dashboard() {
                           삭제
                         </button>
                       );
-                    })()
-                  )}
+                    })()}
                 </div>
                 <p className="text-[9px] text-center text-on-surface-variant italic">
                   마우스로 영역을 드래그하여 바운딩 박스를 수정할 수 있습니다.
@@ -800,27 +916,35 @@ export default function Dashboard() {
                   <div className="grid grid-cols-2 gap-2 rounded-xl border border-outline-variant/20 bg-surface-container-high p-3">
                     <div className="text-[10px] font-bold text-on-surface-variant">
                       X Min
-                      <p className="text-on-surface">{previewInfoBox.xMin.toFixed(6)}</p>
+                      <p className="text-on-surface">
+                        {previewInfoBox.xMin.toFixed(6)}
+                      </p>
                       <p className="text-[8px] opacity-60">NORM</p>
                     </div>
                     <div className="text-[10px] font-bold text-on-surface-variant">
                       Y Min
-                      <p className="text-on-surface">{previewInfoBox.yMin.toFixed(6)}</p>
+                      <p className="text-on-surface">
+                        {previewInfoBox.yMin.toFixed(6)}
+                      </p>
                       <p className="text-[8px] opacity-60">NORM</p>
                     </div>
                     <div className="text-[10px] font-bold text-on-surface-variant">
                       X Max
-                      <p className="text-on-surface">{previewInfoBox.xMax.toFixed(6)}</p>
+                      <p className="text-on-surface">
+                        {previewInfoBox.xMax.toFixed(6)}
+                      </p>
                       <p className="text-[8px] opacity-60">NORM</p>
                     </div>
                     <div className="text-[10px] font-bold text-on-surface-variant">
                       Y Max
-                      <p className="text-on-surface">{previewInfoBox.yMax.toFixed(6)}</p>
+                      <p className="text-on-surface">
+                        {previewInfoBox.yMax.toFixed(6)}
+                      </p>
                       <p className="text-[8px] opacity-60">NORM</p>
                     </div>
                   </div>
                 )}
-              </section>             
+              </section>
 
               {/* Action Section */}
               <section className="pt-8 border-t border-outline-variant/10 space-y-4">
@@ -839,17 +963,29 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
+                  {lockMessage && (
+                    <div className="p-3 bg-error/10 border border-error/20 rounded-xl text-center">
+                      <p className="text-[11px] text-error font-bold">
+                        {lockMessage}
+                      </p>
+                    </div>
+                  )}
+
                   <button
                     onClick={handleApprove}
-                    disabled={isSaving}
-                    className="w-full py-4 bg-primary text-on-primary font-black text-xs uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    disabled={isSaving || !isLockOwner}
+                    className="w-full py-4 bg-primary text-on-primary font-black text-xs uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 disabled:scale-100"
                   >
                     <CheckCircle2 className="w-5 h-5" />
-                    {isSaving ? "Saving & Approving..." : "Update Label & Approve"}
+                    {isSaving
+                      ? "Saving & Approving..."
+                      : "Update Label & Approve"}
                   </button>
+
                   <button
                     onClick={handleReject}
-                    className="w-full py-4 bg-error/10 text-error border border-error/20 font-black text-xs uppercase tracking-[0.15em] rounded-2xl flex items-center justify-center gap-3 hover:bg-error/20 transition-all"
+                    disabled={!isLockOwner}
+                    className="w-full py-4 bg-error/10 text-error border border-error/20 font-black text-xs uppercase tracking-[0.15em] rounded-2xl flex items-center justify-center gap-3 hover:bg-error/20 transition-all disabled:opacity-40"
                   >
                     <Trash2 className="w-5 h-5" />
                     Reject & Flag
@@ -876,7 +1012,9 @@ export default function Dashboard() {
       {bulkActionToast && (
         <div className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 w-[min(92vw,640px)]">
           <div className="bg-surface-container-high/95 backdrop-blur-xl border border-outline-variant/20 rounded-2xl shadow-2xl px-4 py-3 flex items-center justify-between gap-4">
-            <p className="text-[11px] text-on-surface font-bold">{bulkActionToast.message}</p>
+            <p className="text-[11px] text-on-surface font-bold">
+              {bulkActionToast.message}
+            </p>
             <div className="flex items-center gap-2">
               {bulkActionToast.actions.map((action) => (
                 <button
