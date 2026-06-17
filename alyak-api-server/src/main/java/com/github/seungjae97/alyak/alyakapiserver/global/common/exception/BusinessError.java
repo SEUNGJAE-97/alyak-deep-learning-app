@@ -28,6 +28,7 @@ public enum BusinessError {
     INVALID_IMAGE_FILE(HttpStatus.BAD_REQUEST, "이미지 파일이 비어있거나 유효하지 않습니다."),
     IMAGE_STORE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 저장에 실패했습니다."),
     LABELING_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "라벨링 항목을 찾을 수 없습니다."),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
 
     // 가족
     DONT_EXIST_FAMILY(HttpStatus.BAD_REQUEST, "존재하는 가족이 없습니다."),

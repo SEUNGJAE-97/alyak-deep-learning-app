@@ -11,25 +11,29 @@ import com.github.seungjae97.alyak.alyakapiserver.domain.training.client.dto.Fas
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.request.CreateTrainingJobRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.request.TrainingCompletionCallbackRequest;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.response.TrainingJobResponse;
-import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.response.TrainingSnapshotResponse;
+import com.github.seungjae97.alyak.alyakapiserver.domain.training.dto.response.TrainingLabelJsonPathResponse;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.entity.ModelArchive;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.entity.TrainingJob;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.entity.TrainingJobStatus;
-import com.github.seungjae97.alyak.alyakapiserver.domain.training.entity.TrainingSnapshot;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.repository.ModelArchiveRepository;
 import com.github.seungjae97.alyak.alyakapiserver.domain.training.repository.TrainingJobRepository;
-import com.github.seungjae97.alyak.alyakapiserver.domain.training.repository.TrainingSnapshotRepository;
-import com.github.seungjae97.alyak.alyakapiserver.domain.training.repository.TrainingSnapshotRepositoryImpl;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessError;
 import com.github.seungjae97.alyak.alyakapiserver.global.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -43,8 +47,9 @@ public class TrainingJobServiceImpl implements TrainingJobService {
     private final FastApiTrainingClient fastApiTrainingClient;
     private final ObjectMapper objectMapper;
     private final PillImageDataRepository pillImageDataRepository;
-    private final TrainingSnapshotRepository snapshotRepository;
-    private final TrainingSnapshotRepositoryImpl snapshotRepositoryImpl;
+
+    @Value("${training.label-root:datasets/label}")
+    private String labelRootPath;
 
     @Override
     public TrainingJobResponse createJob(CreateTrainingJobRequest request) {
@@ -132,21 +137,49 @@ public class TrainingJobServiceImpl implements TrainingJobService {
         });
     }
 
-    /*
-    * TODO : 스냅샷 테이블에 저장하기보다는 jobId 값을 키로 갖고 해당 json파일의 경로를
-    *        db에 저장하자...
-    * */
     @Transactional
     protected void createSnapshot(TrainingJob job) {
-        // 1. Training_Set에 포함된 상태의 이미지들을 모두 가져온다.
         List<PillImageData> images = pillImageDataRepository.findAllByStatus(DataStatus.TRAINING_SET);
-        // 2. 반복문을 돌면서 이미지-박스 조합을 스냅샷 row로 변환한다. (1 box = 1 row)
-        List<TrainingSnapshot> snapshots = images.stream()
-                .flatMap(image -> image.getBoxes().stream()
-                        .map(box -> TrainingSnapshot.of(job, image, box)))
+
+        List<Map<String, Object>> items = images.stream()
+                .map(image -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("imagePath", image.getImagePath());
+                    item.put("boxes", image.getBoxes().stream()
+                            .map(box -> {
+                                Map<String, Object> boxMap = new LinkedHashMap<>();
+                                boxMap.put("boxIndex", box.getBoxIndex());
+                                boxMap.put("xMin", box.getXMin());
+                                boxMap.put("yMin", box.getYMin());
+                                boxMap.put("xMax", box.getXMax());
+                                boxMap.put("yMax", box.getYMax());
+                                return boxMap;
+                            })
+                            .toList());
+                    return item;
+                })
                 .toList();
 
-        snapshotRepositoryImpl.saveAll(snapshots);
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("jobId", job.getExternalJobId());
+        payload.put("items", items);
+
+        String labelJsonPath = writeLabelJsonFile(job.getExternalJobId(), payload);
+        job.updateLabelJsonPath(labelJsonPath);
+        trainingJobRepository.save(job);
+    }
+
+    private String writeLabelJsonFile(String jobId, Map<String, Object> payload) {
+        try {
+            Path root = Path.of(labelRootPath);
+            Files.createDirectories(root);
+            Path target = root.resolve(jobId + ".json");
+            String json = objectMapper.writeValueAsString(payload);
+            Files.writeString(target, json, StandardCharsets.UTF_8);
+            return target.toString();
+        } catch (IOException e) {
+            throw new BusinessException(BusinessError.INTERNAL_SERVER_ERROR);
+        }
     }
 
     private TrainingJobStatus toInternalStatus(String fastApiStatus) {
@@ -170,10 +203,17 @@ public class TrainingJobServiceImpl implements TrainingJobService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<TrainingSnapshotResponse> getSnapshotByExternalJobId(String externalJobId, Pageable pageable) {
+    public TrainingLabelJsonPathResponse getLabelJsonPathByExternalJobId(String externalJobId) {
         TrainingJob job = trainingJobRepository.findByExternalJobId(externalJobId)
                 .orElseThrow(() -> new BusinessException(BusinessError.LABELING_ITEM_NOT_FOUND));
-        return snapshotRepository.findAllByTrainingJobId(job.getId(), pageable)
-                .map(TrainingSnapshotResponse::from);
+
+        if (job.getLabelJsonPath() == null || job.getLabelJsonPath().isBlank()) {
+            throw new BusinessException(BusinessError.LABELING_ITEM_NOT_FOUND);
+        }
+
+        return TrainingLabelJsonPathResponse.builder()
+                .jobId(externalJobId)
+                .labelJsonPath(job.getLabelJsonPath())
+                .build();
     }
 }

@@ -35,6 +35,9 @@ public class TrainingJob {
     @Column(name = "external_job_id", length = 128)
     private String externalJobId;
 
+    @Column(name = "label_json_path", length = 1024)
+    private String labelJsonPath;
+
     @Column(name = "progress", nullable = false)
     @Builder.Default
     private Integer progress = 0;
@@ -86,6 +89,10 @@ public class TrainingJob {
                 || status == TrainingJobStatus.CANCELLED) {
             this.finishedAt = LocalDateTime.now();
         }
+    }
+
+    public void updateLabelJsonPath(String labelJsonPath) {
+        this.labelJsonPath = labelJsonPath;
     }
 
     @PrePersist
