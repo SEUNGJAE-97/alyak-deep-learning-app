@@ -12,6 +12,10 @@ SPRING_BASE_URL = os.getenv("SPRING_BASE_URL", "http://localhost:8080")
 SPRING_CALLBACK_BASE_URL = os.getenv("SPRING_CALLBACK_BASE_URL", "http://localhost:8080")
 TRAINING_CALLBACK_TOKEN = os.getenv("TRAINING_CALLBACK_TOKEN", "local-training-callback-token")
 
+LABEL_ROOT = os.getenv(
+    "LABEL_ROOT",
+    str(_REPO_ROOT / "datasets" / "label"),
+)
 SHARED_IMAGE_BASE = os.getenv(
     "SHARED_IMAGE_BASE",
     str(_REPO_ROOT / "shared-images" / "uploads"),

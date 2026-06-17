@@ -26,6 +26,30 @@ def _headers() -> dict[str, str]:
     return {"X-Internal-Token": settings.TRAINING_CALLBACK_TOKEN}
 
 
+def _resolve_label_json_path(raw_path: str | None) -> str:
+    if not raw_path:
+        raise ValueError("labelJsonPath가 비어 있습니다.")
+
+    raw_path = raw_path.strip()
+    candidate = Path(raw_path).expanduser()
+
+    if candidate.is_absolute() and candidate.exists():
+        return str(candidate.resolve())
+
+    if not candidate.is_absolute() or candidate.name == candidate.as_posix():
+        local_candidate = Path(settings.LABEL_ROOT) / candidate
+        if local_candidate.exists():
+            return str(local_candidate.resolve())
+        return str(local_candidate.resolve())
+
+    if str(candidate).startswith("/app/"):
+        host_candidate = Path(settings.LABEL_ROOT) / candidate.name
+        if host_candidate.exists():
+            return str(host_candidate.resolve())
+        return str(host_candidate.resolve())
+    return str(candidate.resolve())
+
+
 def _fetch_label_json_path(job_id: str) -> str:
     """Fetch the label JSON file path for a training job UUID."""
     resp = httpx.get(
@@ -35,7 +59,8 @@ def _fetch_label_json_path(job_id: str) -> str:
     )
     resp.raise_for_status()
     data = resp.json()
-    return data.get("labelJsonPath") or data.get("label_json_path")
+    raw_path = data.get("labelJsonPath") or data.get("label_json_path")
+    return _resolve_label_json_path(raw_path)
 
 
 def _load_label_json(label_json_path: str) -> list[dict]:
@@ -43,7 +68,17 @@ def _load_label_json(label_json_path: str) -> list[dict]:
     if not label_json_path:
         raise ValueError("labelJsonPath가 비어 있습니다.")
 
-    with open(label_json_path, "r", encoding="utf-8") as file:
+    label_path = Path(label_json_path).expanduser()
+    if not label_path.is_absolute():
+        label_path = Path(settings.LABEL_ROOT) / label_path
+    label_path = label_path.resolve()
+
+    if not label_path.exists():
+        raise FileNotFoundError(
+            f"라벨 JSON 파일을 찾지 못했습니다: {label_path} (configured LABEL_ROOT={settings.LABEL_ROOT})"
+        )
+
+    with open(label_path, "r", encoding="utf-8") as file:
         payload = json.load(file)
 
     items = payload.get("items", [])

@@ -171,13 +171,14 @@ public class TrainingJobServiceImpl implements TrainingJobService {
 
     private String writeLabelJsonFile(String jobId, Map<String, Object> payload) {
         try {
-            Path root = Path.of(labelRootPath);
+            Path root = Path.of(labelRootPath).toAbsolutePath().normalize();
             Files.createDirectories(root);
-            Path target = root.resolve(jobId + ".json");
+            Path target = root.resolve(jobId + ".json").toAbsolutePath().normalize();
             String json = objectMapper.writeValueAsString(payload);
             Files.writeString(target, json, StandardCharsets.UTF_8);
             return target.toString();
         } catch (IOException e) {
+            log.error("=== JSON 저장 실패: {}", e.getMessage());
             throw new BusinessException(BusinessError.INTERNAL_SERVER_ERROR);
         }
     }

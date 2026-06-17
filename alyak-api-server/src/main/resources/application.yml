@@ -93,6 +93,7 @@ fast-api:
 training:
   callback:
     token: ${TRAINING_CALLBACK_TOKEN:local-training-callback-token}
+  label-root: ${TRAINING_LABEL_ROOT:/Users/hsj/Documents/GitHub/alyak-deep-learning-app/datasets/label}
 
 # Firebase (FCM) — docker-compose 운영에서는 credentials-path 단일 사용
 firebase:
