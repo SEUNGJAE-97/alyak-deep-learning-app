@@ -6,6 +6,7 @@ Build YOLO dataset files from Spring training snapshots.
 - Generate a temporary data.yaml for one training job.
 """
 
+import json
 import logging
 import os
 import random
@@ -25,29 +26,31 @@ def _headers() -> dict[str, str]:
     return {"X-Internal-Token": settings.TRAINING_CALLBACK_TOKEN}
 
 
-def _fetch_training_snapshots(job_id: str) -> list[dict]:
-    """Fetch all snapshot rows for a training job UUID."""
-    all_items: list[dict] = []
-    page = 0
+def _fetch_label_json_path(job_id: str) -> str:
+    """Fetch the label JSON file path for a training job UUID."""
+    resp = httpx.get(
+        f"{settings.SPRING_BASE_URL}/api/internal/training/jobs/training-snapshot/{job_id}",
+        headers=_headers(),
+        timeout=30,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("labelJsonPath") or data.get("label_json_path")
 
-    while True:
-        resp = httpx.get(
-            f"{settings.SPRING_BASE_URL}/api/internal/training/jobs/training-snapshot/{job_id}",
-            headers=_headers(),
-            params={"page": page, "size": 100},
-            timeout=30,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        items = data.get("content", [])
-        all_items.extend(items)
 
-        if data.get("last", True) or not items:
-            break
-        page += 1
+def _load_label_json(label_json_path: str) -> list[dict]:
+    """Load training snapshot rows from a JSON file path."""
+    if not label_json_path:
+        raise ValueError("labelJsonPath가 비어 있습니다.")
 
-    logger.info("Fetched %d snapshot rows for jobId=%s", len(all_items), job_id)
-    return all_items
+    with open(label_json_path, "r", encoding="utf-8") as file:
+        payload = json.load(file)
+
+    items = payload.get("items", [])
+    if not isinstance(items, list):
+        raise ValueError("라벨 JSON의 items 형식이 올바르지 않습니다.")
+
+    return items
 
 
 def _convert_to_yolo(box: dict) -> str:
@@ -98,7 +101,25 @@ def _resolve_image_abs_path(web_image_path: str) -> str:
 
 
 def prepare_dataset(job_id: str, val_ratio: float = 0.2) -> str:
-    snapshots = _fetch_training_snapshots(job_id)
+    label_json_path = _fetch_label_json_path(job_id)
+    if not label_json_path:
+        raise ValueError("라벨 JSON 경로를 찾을 수 없습니다.")
+
+    label_items = _load_label_json(label_json_path)
+    if not label_items:
+        raise ValueError("학습 스냅샷이 없습니다. TRAINING_SET 데이터를 확인하세요.")
+
+    snapshots: list[dict] = []
+    for item in label_items:
+        image_path = item.get("imagePath")
+        boxes = item.get("boxes", [])
+        if not image_path or not isinstance(boxes, list):
+            continue
+        for box in boxes:
+            row = dict(box)
+            row["imagePath"] = image_path
+            snapshots.append(row)
+
     if not snapshots:
         raise ValueError("학습 스냅샷이 없습니다. TRAINING_SET 데이터를 확인하세요.")
 
